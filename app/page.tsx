@@ -3,276 +3,131 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 type Zone = "above" | "within" | "below" | "sparse-tail";
-type ZipfRow = {
-  rank: number;
-  term: string;
-  actualCount: number;
-  expectedCount: number;
-  ratio: number;
-  zone: Zone;
-};
+type ZipfRow = { rank:number; term:string; actualCount:number; expectedCount:number; ratio:number; zone:Zone };
+type FocusRow = { term:string; count:number; per1000:number };
 type Analysis = {
-  language: string;
-  tokenCount: number;
-  vocabularySize: number;
-  fittedExponent: number;
-  rSquared: number;
-  rows: ZipfRow[];
-  bigrams: { term: string; count: number; share: number }[];
-  focusCoverage: { term: string; count: number; per1000: number }[];
-  notes: string[];
+  language:string; tokenCount:number; vocabularySize:number; fittedExponent:number; rSquared:number;
+  rows:ZipfRow[]; bigrams:{ term:string; count:number; share:number }[]; focusCoverage:FocusRow[]; notes:string[];
 };
+type SavedResult = { result:Analysis; savedAt:string; label:string };
 
-const SAMPLE = `Онлайн-расклад Таро помогает внимательнее посмотреть на отношения, чувства и возможные сценарии развития ситуации. Карты не принимают решение за вас, но могут подсветить скрытые эмоции, повторяющиеся patterns и вопросы, которые стоит обсудить с партнёром. Сформулируйте ясный вопрос, выберите карты и прочитайте толкование спокойно — как повод для размышления, а не неизбежный прогноз.`;
+const CACHE_KEY = "bow-zipf-baseline-v2";
+const SAMPLE = `Онлайн-расклад Таро помогает внимательнее посмотреть на отношения, чувства и возможные сценарии развития ситуации. Карты не принимают решение за вас, но могут подсветить скрытые эмоции и вопросы, которые стоит обсудить с партнёром. Сформулируйте ясный вопрос, выберите карты и прочитайте толкование спокойно — как повод для размышления, а не неизбежный прогноз.`;
 
-function ZoneBadge({ zone }: { zone: Zone }) {
-  const labels: Record<Zone, string> = {
-    above: "выше",
-    within: "в норме",
-    below: "ниже",
-    "sparse-tail": "редкий хвост",
-  };
+function Tip({ children }: { children:React.ReactNode }) {
+  return <span className="tip" tabIndex={0} aria-label={String(children)}>i<span>{children}</span></span>;
+}
+
+function Metric({ label, value, explanation }: { label:string; value:string; explanation:string }) {
+  return <div className="metric simple-metric"><span>{label}<Tip>{explanation}</Tip></span><strong>{value}</strong><small>{explanation}</small></div>;
+}
+
+function ZoneBadge({ zone }: { zone:Zone }) {
+  const labels:Record<Zone,string> = { above:"выше модели", within:"в пределах", below:"ниже модели", "sparse-tail":"редкий хвост" };
   return <span className={`zone zone-${zone}`}>{labels[zone]}</span>;
 }
 
-function Metric({ label, value, hint }: { label: string; value: string; hint: string }) {
-  return (
-    <div className="metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>{hint}</small>
-    </div>
-  );
-}
-
-function ZipfChart({ rows }: { rows: ZipfRow[] }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
+function ZipfChart({ rows }: { rows:ZipfRow[] }) {
+  const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = ref.current;
     if (!canvas || rows.length < 2) return;
     const draw = () => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.scale(dpr, dpr);
-      const w = rect.width;
-      const h = rect.height;
-      const pad = { left: 44, right: 18, top: 20, bottom: 34 };
-      const plotW = w - pad.left - pad.right;
-      const plotH = h - pad.top - pad.bottom;
-      const maxRank = Math.max(...rows.map((r) => r.rank));
-      const maxCount = Math.max(...rows.map((r) => r.actualCount));
-      const x = (rank: number) => pad.left + (Math.log(rank) / Math.log(maxRank)) * plotW;
-      const y = (count: number) => pad.top + (1 - Math.log(Math.max(count, 1)) / Math.log(Math.max(maxCount, 2))) * plotH;
-
-      ctx.clearRect(0, 0, w, h);
-      ctx.strokeStyle = "#dfe3dc";
-      ctx.lineWidth = 1;
-      for (let i = 0; i <= 4; i++) {
-        const gy = pad.top + (plotH / 4) * i;
-        ctx.beginPath();
-        ctx.moveTo(pad.left, gy);
-        ctx.lineTo(w - pad.right, gy);
-        ctx.stroke();
-      }
-
-      const line = (key: "actualCount" | "expectedCount", color: string, dashed = false) => {
-        ctx.beginPath();
-        rows.forEach((row, index) => {
-          const px = x(row.rank);
-          const py = y(row[key]);
-          if (index === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        });
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.setLineDash(dashed ? [6, 5] : []);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      };
-      line("expectedCount", "#a6ada3", true);
-      line("actualCount", "#175c4b");
-
-      rows.forEach((row) => {
-        ctx.beginPath();
-        ctx.arc(x(row.rank), y(row.actualCount), 3, 0, Math.PI * 2);
-        ctx.fillStyle = row.zone === "above" ? "#d26b45" : "#175c4b";
-        ctx.fill();
-      });
-
-      ctx.fillStyle = "#6f756e";
-      ctx.font = "11px ui-monospace, SFMono-Regular, Menlo, monospace";
-      ctx.fillText("частота", 4, 13);
-      ctx.fillText("ранг →", w - 62, h - 8);
+      const rect = canvas.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d"); if (!ctx) return; ctx.scale(dpr,dpr);
+      const w=rect.width,h=rect.height,p={l:42,r:16,t:18,b:30},pw=w-p.l-p.r,ph=h-p.t-p.b;
+      const maxRank=Math.max(...rows.map(r=>r.rank)),maxCount=Math.max(...rows.map(r=>r.actualCount));
+      const x=(rank:number)=>p.l+(Math.log(rank)/Math.log(maxRank))*pw;
+      const y=(count:number)=>p.t+(1-Math.log(Math.max(count,1))/Math.log(Math.max(maxCount,2)))*ph;
+      ctx.clearRect(0,0,w,h); ctx.strokeStyle="#dfe3dc"; ctx.lineWidth=1;
+      for(let i=0;i<=4;i++){const gy=p.t+(ph/4)*i;ctx.beginPath();ctx.moveTo(p.l,gy);ctx.lineTo(w-p.r,gy);ctx.stroke();}
+      const line=(key:"actualCount"|"expectedCount",color:string,dash=false)=>{ctx.beginPath();rows.forEach((r,i)=>i?ctx.lineTo(x(r.rank),y(r[key])):ctx.moveTo(x(r.rank),y(r[key])));ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash(dash?[6,5]:[]);ctx.stroke();ctx.setLineDash([]);};
+      line("expectedCount","#a6ada3",true); line("actualCount","#175c4b");
+      rows.forEach(r=>{ctx.beginPath();ctx.arc(x(r.rank),y(r.actualCount),3,0,Math.PI*2);ctx.fillStyle=r.zone==="above"?"#d26b45":"#175c4b";ctx.fill();});
+      ctx.fillStyle="#747b74";ctx.font="10px ui-monospace, monospace";ctx.fillText("частота",2,12);ctx.fillText("ранг →",w-54,h-6);
     };
-    draw();
-    const observer = new ResizeObserver(draw);
-    observer.observe(canvas);
-    return () => observer.disconnect();
-  }, [rows]);
+    draw(); const observer=new ResizeObserver(draw);observer.observe(canvas);return()=>observer.disconnect();
+  },[rows]);
+  return <canvas ref={ref} className="chart compact-chart" aria-label="Фактическая и ожидаемая частота слов" />;
+}
 
-  return <canvas ref={canvasRef} className="chart" aria-label="График фактической и ожидаемой частоты по закону Ципфа" />;
+function Comparison({ baseline, current, onClear }: { baseline:SavedResult; current:Analysis; onClear:()=>void }) {
+  const over=(r:Analysis)=>r.rows.filter(row=>row.zone==="above").length;
+  const metrics=[
+    ["Слов после фильтра",baseline.result.tokenCount,current.tokenCount,"Сколько слов участвовало в расчёте после удаления коротких слов и, при необходимости, стоп-слов."],
+    ["Уникальных слов",baseline.result.vocabularySize,current.vocabularySize,"Размер словаря текста: каждое слово считается один раз."],
+    ["Показатель Ципфа",baseline.result.fittedExponent.toFixed(2),current.fittedExponent.toFixed(2),"Наклон частотной кривой. Около 1 — классический ориентир, но это не SEO-оценка."],
+    ["Выше модели",over(baseline.result),over(current),"Слова, встречающиеся чаще модели Ципфа с учётом выбранного допуска."],
+  ];
+  const terms=[...new Set([...baseline.result.focusCoverage.map(r=>r.term),...current.focusCoverage.map(r=>r.term)])];
+  const get=(rows:FocusRow[],term:string)=>rows.find(r=>r.term===term) || {term,count:0,per1000:0};
+  return <section className="compare-section">
+    <div className="compare-head"><div><p className="eyebrow">СРАВНЕНИЕ</p><h2>Результат A рядом с результатом B</h2><p>Результат A хранится только в кэше этого браузера. B — ваш последний анализ.</p></div><button className="text-button" onClick={onClear}>Удалить A</button></div>
+    <div className="compare-labels"><div><span>A</span><b>{baseline.label}</b><small>сохранён {new Date(baseline.savedAt).toLocaleString("ru-RU")}</small></div><div><span>B</span><b>Текущий результат</b><small>последний запущенный анализ</small></div></div>
+    <div className="compare-table">
+      <div className="compare-row compare-row-head"><span>Показатель</span><b>A</b><b>B</b></div>
+      {metrics.map(([label,a,b,help])=><div className="compare-row" key={String(label)}><span>{label}<Tip>{help}</Tip></span><strong>{a}</strong><strong>{b}</strong></div>)}
+    </div>
+    {terms.length>0&&<div className="focus-compare"><div className="focus-explainer"><h3>Контрольные фразы</h3><p><b>«На 1000 слов»</b> — это нормализованная частота для сравнения текстов разной длины. Например, 2 упоминания в тексте из 100 слов = 20 на 1000. Это не рекомендация повторить фразу 20 раз.</p></div>
+      <div className="compare-table">
+        <div className="compare-row compare-row-head"><span>Фраза</span><b>A</b><b>B</b></div>
+        {terms.map(term=>{const a=get(baseline.result.focusCoverage,term),b=get(current.focusCoverage,term);return <div className="compare-row phrase-row" key={term}><span>«{term}»</span><strong>{a.count} {a.count===1?"раз":"раза"}<small>{a.per1000.toFixed(1)} на 1000</small></strong><strong>{b.count} {b.count===1?"раз":"раза"}<small>{b.per1000.toFixed(1)} на 1000</small></strong></div>;})}
+      </div>
+    </div>}
+  </section>;
 }
 
 export default function Home() {
-  const [sourceType, setSourceType] = useState<"text" | "url">("text");
-  const [source, setSource] = useState(SAMPLE);
-  const [language, setLanguage] = useState("auto");
-  const [focus, setFocus] = useState("таро онлайн, отношения, чувства");
-  const [top, setTop] = useState(20);
-  const [tolerance, setTolerance] = useState(2);
-  const [keepStopwords, setKeepStopwords] = useState(false);
-  const [result, setResult] = useState<Analysis | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [sourceType,setSourceType]=useState<"text"|"url">("text"); const [source,setSource]=useState(SAMPLE);
+  const [language,setLanguage]=useState("auto"); const [focus,setFocus]=useState("таро онлайн, отношения, чувства");
+  const [top,setTop]=useState(20); const [tolerance,setTolerance]=useState(2); const [keepStopwords,setKeepStopwords]=useState(false);
+  const [result,setResult]=useState<Analysis|null>(null); const [baseline,setBaseline]=useState<SavedResult|null>(null);
+  const [loading,setLoading]=useState(false); const [error,setError]=useState("");
 
-  async function analyze(event?: FormEvent) {
-    event?.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sourceType, source, language, focus, top, tolerance, keepStopwords }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Не удалось выполнить анализ");
-      setResult(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Неизвестная ошибка");
-    } finally {
-      setLoading(false);
-    }
-  }
+  useEffect(()=>{const timer=window.setTimeout(()=>{try{const raw=localStorage.getItem(CACHE_KEY);if(raw)setBaseline(JSON.parse(raw));}catch{}},0);return()=>window.clearTimeout(timer);},[]);
 
-  return (
-    <main>
-      <header className="topbar">
-        <a className="brand" href="#top" aria-label="BOW Zipf Lab — наверх">
-          <span className="brand-mark">B</span>
-          <span>BOW <i>/</i> ZIPF LAB</span>
-        </a>
-        <span className="status"><b /> локальный анализ</span>
-      </header>
+  async function analyze(event?:FormEvent){event?.preventDefault();setLoading(true);setError("");try{const response=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sourceType,source,language,focus,top,tolerance,keepStopwords})});const data=await response.json();if(!response.ok)throw new Error(data.error||"Не удалось выполнить анализ");setResult(data);setTimeout(()=>document.getElementById("result")?.scrollIntoView({behavior:"smooth",block:"start"}),50);}catch(err){setError(err instanceof Error?err.message:"Неизвестная ошибка");}finally{setLoading(false);}}
+  function saveA(){if(!result)return;const saved={result,savedAt:new Date().toISOString(),label:`Анализ · ${result.tokenCount} слов`};setBaseline(saved);localStorage.setItem(CACHE_KEY,JSON.stringify(saved));}
+  function clearA(){setBaseline(null);localStorage.removeItem(CACHE_KEY);}
 
-      <section className="hero" id="top">
-        <p className="eyebrow">ЛЕКСИЧЕСКАЯ ДИАГНОСТИКА</p>
-        <h1>Проверьте текст<br />на <em>естественность.</em></h1>
-        <p className="hero-copy">Частотность слов, биграммы и распределение по закону Ципфа — в одном понятном отчёте без магических SEO-баллов.</p>
+  return <main>
+    <header className="topbar"><a className="brand" href="#top"><span className="brand-mark">B</span><span>BOW <i>/</i> ZIPF LAB</span></a><span className="status"><b/>данные не сохраняются на сервере</span></header>
+    <section className="hero reduced" id="top"><p className="eyebrow">СРАВНЕНИЕ ЛЕКСИКИ</p><h1>Два текста.<br/><em>Одна картина.</em></h1><p className="hero-copy">Сначала сохраните анализ как A, затем запустите второй текст. Сравнение появится автоматически.</p></section>
+
+    <form className="workspace" onSubmit={analyze}>
+      <section className="input-card">
+        <div className="section-head"><div><span>01</span><h2>Текст для анализа</h2></div><div className="tabs"><button type="button" className={sourceType==="text"?"active":""} onClick={()=>{setSourceType("text");setSource(SAMPLE)}}>Текст</button><button type="button" className={sourceType==="url"?"active":""} onClick={()=>{setSourceType("url");setSource("")}}>URL</button></div></div>
+        {sourceType==="text"?<div className="textarea-wrap"><textarea value={source} onChange={e=>setSource(e.target.value)} placeholder="Вставьте текст или HTML…"/><span>{source.length.toLocaleString("ru-RU")} знаков</span></div>:<input className="url-input" type="url" value={source} onChange={e=>setSource(e.target.value)} placeholder="https://example.com/page" required/>}
+        <label className="field wide"><span>Контрольные фразы <Tip>Слова и фразы, которые вы хотите проверить отдельно. Инструмент покажет точное число упоминаний; это не список обязательных SEO-ключей.</Tip></span><input value={focus} onChange={e=>setFocus(e.target.value)} placeholder="таро онлайн, отношения, чувства"/><small>Введите через запятую. Мы посчитаем точные упоминания каждой фразы.</small></label>
       </section>
+      <aside className="settings-card">
+        <div className="section-head simple"><div><span>02</span><h2>Настройки</h2></div></div>
+        <label className="field"><span>Язык <Tip>Нужен для правильного списка стоп-слов. В режиме «авто» язык определяется по буквам в тексте.</Tip></span><select value={language} onChange={e=>setLanguage(e.target.value)}><option value="auto">Определить автоматически</option><option value="ru">Русский</option><option value="uk">Украинский</option><option value="en">English</option></select><small>Обычно оставляйте «автоматически».</small></label>
+        <label className="field"><span>Слов в подробной таблице <Tip>Определяет только длину скрытой подробной таблицы. На сам расчёт показателей не влияет.</Tip></span><input type="number" min="5" max="100" value={top} onChange={e=>setTop(Number(e.target.value))}/><small>20 достаточно для быстрой проверки.</small></label>
+        <label className="field range-field"><span><span>Чувствительность <Tip>При ×2 слово помечается как частое, если встречается более чем вдвое чаще модели Ципфа. Меньше число — больше предупреждений.</Tip></span><b>×{tolerance.toFixed(1)}</b></span><input type="range" min="1.2" max="4" step="0.1" value={tolerance} onChange={e=>setTolerance(Number(e.target.value))}/><small>×2 — спокойный базовый режим.</small></label>
+        <label className="check"><input type="checkbox" checked={keepStopwords} onChange={e=>setKeepStopwords(e.target.checked)}/><span><b>Учитывать стоп-слова <Tip>Стоп-слова — частые служебные слова: «и», «в», «это», «the». Для SEO-лексики их обычно исключают.</Tip></b><small>Обычно оставляйте выключенным.</small></span></label>
+        <button className="analyze-button" disabled={loading||!source.trim()}><span>{loading?"Считаю…":baseline?"Анализировать как B":"Запустить анализ"}</span><b>→</b></button>
+        {baseline&&<div className="cached-pill"><span>A</span><p><b>{baseline.label}</b><small>Сохранён в этом браузере</small></p><button type="button" onClick={clearA} aria-label="Удалить сохранённый результат">×</button></div>}
+        {error&&<p className="error">{error}</p>}
+      </aside>
+    </form>
 
-      <form className="workspace" onSubmit={analyze}>
-        <section className="input-card">
-          <div className="section-head">
-            <div><span>01</span><h2>Источник</h2></div>
-            <div className="tabs" role="tablist" aria-label="Тип источника">
-              <button type="button" className={sourceType === "text" ? "active" : ""} onClick={() => { setSourceType("text"); setSource(SAMPLE); }}>Текст</button>
-              <button type="button" className={sourceType === "url" ? "active" : ""} onClick={() => { setSourceType("url"); setSource(""); }}>URL</button>
-            </div>
-          </div>
+    {result&&<section className="results simplified" id="result">
+      <div className="results-title"><div><span>03</span><h2>{baseline?"Текущий результат B":"Результат анализа"}</h2></div>{!baseline&&<button className="save-button" onClick={saveA}>Сохранить как результат A</button>}</div>
+      {!baseline&&<div className="next-step"><span>Следующий шаг</span><p>Сохраните этот результат как A, замените текст сверху и запустите анализ ещё раз. Второй результат станет B.</p></div>}
+      <div className="metrics-grid clean-metrics">
+        <Metric label="Слов в расчёте" value={result.tokenCount.toLocaleString("ru-RU")} explanation="Количество слов после очистки текста. Это не символы и не все слова страницы."/>
+        <Metric label="Уникальных слов" value={String(result.vocabularySize)} explanation="Сколько разных слов найдено. Повторы считаются один раз."/>
+        <Metric label="Показатель Ципфа" value={result.fittedExponent.toFixed(2)} explanation="Форма частотного распределения. Значение около 1 — ориентир, а не оценка качества или ранжирования."/>
+        <Metric label="Выше модели" value={String(result.rows.filter(r=>r.zone==="above").length)} explanation="Сколько слов превысило выбранный допуск относительно модели. Их нужно проверить в контексте, а не автоматически удалить."/>
+      </div>
+      <div className="plain-summary"><h3>Что это значит</h3><ol>{result.notes.slice(0,3).map((note,i)=><li key={note}><span>{i+1}</span><p>{note}</p></li>)}</ol></div>
+      <details className="details-block"><summary>Показать график и подробные данные <span>необязательно для быстрого сравнения</span></summary><div className="details-content"><article className="chart-card"><div className="card-title"><div><p>Распределение слов</p><h3>Фактическая частота и модель Ципфа</h3></div><div className="legend"><span className="actual">Факт</span><span className="expected">Модель</span></div></div><ZipfChart rows={result.rows}/><p className="chart-note">По горизонтали — место слова по частоте. По вертикали — сколько раз оно встретилось. Пунктир показывает теоретическую модель.</p></article><div className="table-card compact-table"><table><thead><tr><th>#</th><th>Слово</th><th>В тексте</th><th>По модели</th><th>Статус</th></tr></thead><tbody>{result.rows.map(row=><tr key={row.rank}><td>{row.rank}</td><td><b>{row.term}</b></td><td>{row.actualCount} раз</td><td>{row.expectedCount.toFixed(1)}</td><td><ZoneBadge zone={row.zone}/></td></tr>)}</tbody></table></div></div></details>
+    </section>}
 
-          {sourceType === "text" ? (
-            <div className="textarea-wrap">
-              <textarea value={source} onChange={(e) => setSource(e.target.value)} placeholder="Вставьте текст или HTML…" aria-label="Текст для анализа" />
-              <span>{source.length.toLocaleString("ru-RU")} знаков</span>
-            </div>
-          ) : (
-            <input className="url-input" type="url" value={source} onChange={(e) => setSource(e.target.value)} placeholder="https://example.com/page" aria-label="URL страницы" required />
-          )}
-
-          <label className="field wide">
-            <span>Контрольные слова и фразы</span>
-            <input value={focus} onChange={(e) => setFocus(e.target.value)} placeholder="таро онлайн, отношения, чувства" />
-            <small>Через запятую — проверим покрытие отдельно</small>
-          </label>
-        </section>
-
-        <aside className="settings-card">
-          <div className="section-head simple"><div><span>02</span><h2>Настройки</h2></div></div>
-          <label className="field">
-            <span>Язык</span>
-            <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-              <option value="auto">Определить автоматически</option>
-              <option value="ru">Русский</option>
-              <option value="uk">Украинский</option>
-              <option value="en">English</option>
-            </select>
-          </label>
-          <label className="field">
-            <span>Количество терминов</span>
-            <input type="number" min="5" max="100" value={top} onChange={(e) => setTop(Number(e.target.value))} />
-          </label>
-          <label className="field range-field">
-            <span><span>Допуск Ципфа</span><b>×{tolerance.toFixed(1)}</b></span>
-            <input type="range" min="1.2" max="4" step="0.1" value={tolerance} onChange={(e) => setTolerance(Number(e.target.value))} />
-            <small>Чем ниже, тем чувствительнее диагностика</small>
-          </label>
-          <label className="check">
-            <input type="checkbox" checked={keepStopwords} onChange={(e) => setKeepStopwords(e.target.checked)} />
-            <span><b>Учитывать стоп-слова</b><small>Союзы, предлоги и местоимения</small></span>
-          </label>
-          <button className="analyze-button" disabled={loading || !source.trim()}>
-            <span>{loading ? "Считаю…" : "Запустить анализ"}</span><b>→</b>
-          </button>
-          {error && <p className="error" role="alert">{error}</p>}
-        </aside>
-      </form>
-
-      {result ? (
-        <section className="results" aria-live="polite">
-          <div className="results-title"><div><span>03</span><h2>Результат</h2></div><p>Язык: <b>{result.language.toUpperCase()}</b></p></div>
-          <div className="metrics-grid">
-            <Metric label="Слов после фильтра" value={result.tokenCount.toLocaleString("ru-RU")} hint={`${result.vocabularySize} уникальных`} />
-            <Metric label="Показатель Ципфа" value={result.fittedExponent.toFixed(2)} hint="ориентир для текста ≈ 1" />
-            <Metric label="Соответствие кривой" value={`${Math.round(result.rSquared * 100)}%`} hint="коэффициент R²" />
-            <Metric label="Термины выше зоны" value={String(result.rows.filter((r) => r.zone === "above").length)} hint={`допуск ×${tolerance.toFixed(1)}`} />
-          </div>
-
-          <div className="analysis-grid">
-            <article className="chart-card">
-              <div className="card-title"><div><p>Распределение частот</p><h3>Факт против модели</h3></div><div className="legend"><span className="actual">Факт</span><span className="expected">Ципф</span></div></div>
-              <ZipfChart rows={result.rows} />
-              <p className="chart-note">Логарифмическая шкала · пунктир — ожидаемая частота f(r)=f₁/r</p>
-            </article>
-
-            <article className="notes-card">
-              <div className="card-title"><div><p>Редакторская проверка</p><h3>Что посмотреть</h3></div></div>
-              <ol>{result.notes.map((note, index) => <li key={note}><span>{String(index + 1).padStart(2, "0")}</span><p>{note}</p></li>)}</ol>
-              <div className="caution"><b>Важно</b><p>Закон Ципфа — диагностический сигнал, а не фактор ранжирования. Решение о правке всегда принимает редактор.</p></div>
-            </article>
-          </div>
-
-          <article className="table-card">
-            <div className="card-title"><div><p>Ранжированные униграммы</p><h3>Частотная таблица</h3></div><span className="table-count">TOP {result.rows.length}</span></div>
-            <div className="table-scroll">
-              <table>
-                <thead><tr><th>#</th><th>Термин</th><th>Факт</th><th>Ожидание</th><th>Отношение</th><th>Зона</th></tr></thead>
-                <tbody>{result.rows.map((row) => <tr key={row.rank}><td>{String(row.rank).padStart(2, "0")}</td><td><b>{row.term}</b></td><td>{row.actualCount}</td><td>{row.expectedCount.toFixed(2)}</td><td>×{row.ratio.toFixed(2)}</td><td><ZoneBadge zone={row.zone} /></td></tr>)}</tbody>
-              </table>
-            </div>
-          </article>
-
-          <div className="lower-grid">
-            <article className="mini-card">
-              <div className="card-title"><div><p>Фразы</p><h3>Топ биграмм</h3></div></div>
-              <ul className="rank-list">{result.bigrams.slice(0, 8).map((row, i) => <li key={row.term}><span>{i + 1}</span><b>{row.term}</b><em>{row.count}</em></li>)}</ul>
-            </article>
-            <article className="mini-card">
-              <div className="card-title"><div><p>Целевое покрытие</p><h3>Контрольные фразы</h3></div></div>
-              {result.focusCoverage.length ? <ul className="focus-list">{result.focusCoverage.map((row) => <li key={row.term}><div><b>{row.term}</b><small>{row.per1000.toFixed(2)} на 1000 слов</small></div><strong className={row.count ? "found" : "missing"}>{row.count ? row.count : "нет"}</strong></li>)}</ul> : <p className="empty">Добавьте контрольные слова перед запуском анализа.</p>}
-            </article>
-          </div>
-        </section>
-      ) : (
-        <section className="empty-state"><span>03</span><p>Здесь появится отчёт после запуска анализа.</p></section>
-      )}
-
-      <footer><span>BOW / ZIPF LAB</span><p>Данные не сохраняются · Анализ выполняется по запросу</p></footer>
-    </main>
-  );
+    {baseline&&result&&<Comparison baseline={baseline} current={result} onClear={clearA}/>} 
+    {!result&&<section className="empty-state"><span>03</span><p>Запустите анализ — здесь появится короткое объяснение результата.</p></section>}
+    <footer><span>BOW / ZIPF LAB</span><p>Сохранённый результат A хранится только в вашем браузере</p></footer>
+  </main>;
 }
