@@ -1,3 +1,5 @@
+import { translate, type UiLang } from "../i18n";
+
 type Lang = "en" | "ru" | "uk";
 
 const STOPWORDS: Record<Lang, Set<string>> = {
@@ -14,6 +16,7 @@ export type AnalyzeInput = {
   tolerance?: number;
   keepStopwords?: boolean;
   stopwordLists?: Partial<Record<Lang, string[]>>;
+  uiLanguage?: UiLang;
 };
 
 function detectLanguage(text: string): Lang {
@@ -54,12 +57,13 @@ function countTerms(tokens: string[], n = 1) {
 }
 
 export function analyzeText(input: AnalyzeInput) {
+  const uiLanguage = input.uiLanguage || "ru";
   const plain = cleanHtml(input.text);
   const language = input.language === "auto" || !input.language ? detectLanguage(plain) : input.language;
   const suppliedStopwords = input.stopwordLists?.[language];
   const activeStopwords = suppliedStopwords ? new Set(suppliedStopwords.map((word) => word.trim().toLowerCase()).filter(Boolean)) : STOPWORDS[language];
   const tokens = tokenize(plain, language, Boolean(input.keepStopwords), activeStopwords);
-  if (tokens.length < 3) throw new Error("В источнике слишком мало текста для анализа");
+  if (tokens.length < 3) throw new Error(translate(uiLanguage, "tooLittle"));
   const unigramCounts = countTerms(tokens);
   const bigramCounts = countTerms(tokens, 2);
   const top = Math.max(5, Math.min(Number(input.top) || 20, 100));
@@ -101,12 +105,12 @@ export function analyzeText(input: AnalyzeInput) {
   const above = rows.filter((row) => row.zone === "above");
   const missingFocus = focusCoverage.filter((row) => row.count === 0);
   const notes: string[] = [];
-  if (tokens.length < 100) notes.push("Текст короткий: распределение нестабильно. Используйте результат как ориентир, а не как норму.");
-  if (above.length) notes.push(`Проверьте повторение ${above.slice(0, 3).map((row) => `«${row.term}»`).join(", ")}: эти слова выше выбранной зоны.`);
-  else notes.push("В верхней части распределения нет слов, заметно превышающих выбранный допуск.");
-  if (missingFocus.length) notes.push(`Не найдены контрольные фразы: ${missingFocus.slice(0, 3).map((row) => `«${row.term}»`).join(", ")}. Добавляйте только если они соответствуют интенту.`);
-  else if (focusCoverage.length) notes.push("Все контрольные фразы присутствуют; проверьте, естественно ли они встроены в контекст.");
-  notes.push("Перед правкой проверьте меню, повторяющиеся блоки и шаблонный текст: они часто искажают частотность страницы.");
+  if (tokens.length < 100) notes.push(translate(uiLanguage, "shortNote"));
+  if (above.length) notes.push(translate(uiLanguage, "aboveNote", { terms: above.slice(0, 3).map((row) => `“${row.term}”`).join(", ") }));
+  else notes.push(translate(uiLanguage, "noneAbove"));
+  if (missingFocus.length) notes.push(translate(uiLanguage, "missingFocus", { terms: missingFocus.slice(0, 3).map((row) => `“${row.term}”`).join(", ") }));
+  else if (focusCoverage.length) notes.push(translate(uiLanguage, "allFocus"));
+  notes.push(translate(uiLanguage, "templateNote"));
 
   return {
     language,

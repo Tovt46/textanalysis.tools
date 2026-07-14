@@ -13,6 +13,10 @@ main { min-height:100vh; }
 .brand-mark { width:30px; height:30px; display:grid; place-items:center; background:var(--green); color:white; border-radius:50%; font:700 14px Georgia,serif; }
 .status { display:flex; align-items:center; gap:8px; color:var(--muted); font:500 11px var(--font-geist-mono); text-transform:uppercase; letter-spacing:.06em; }
 .status b { width:7px; height:7px; border-radius:50%; background:#7dab62; box-shadow:0 0 0 4px #e1e9d8; }
+.header-tools { display:flex; align-items:center; gap:20px; }
+.ui-languages { display:flex; gap:2px; padding:3px; background:#e7e9e3; border-radius:3px; }
+.ui-languages button { min-width:34px; height:27px; border:0; background:transparent; color:#747b74; border-radius:2px; font:600 9px var(--font-geist-mono); }
+.ui-languages button.active { background:var(--green); color:white; }
 .hero { max-width:1280px; margin:auto; padding:82px 34px 58px; display:grid; grid-template-columns:1.4fr .75fr; column-gap:80px; align-items:end; }
 .eyebrow { grid-column:1/-1; font:600 11px var(--font-geist-mono); letter-spacing:.14em; color:var(--green); margin:0 0 18px; }
 .hero h1 { margin:0; font-size:clamp(48px,6.2vw,88px); line-height:.93; font-weight:500; letter-spacing:-.065em; }
@@ -206,6 +210,7 @@ footer p { margin:0; }
   .topbar,.hero,.workspace,.results { padding-left:18px; padding-right:18px; }
   .topbar { height:62px; }
   .status { display:none; }
+  .header-tools { gap:8px; }
   .hero { padding-top:44px; padding-bottom:38px; }
   .hero h1 { font-size:49px; }
   .input-card,.settings-card,.chart-card,.notes-card,.table-card,.mini-card { padding:20px; }
