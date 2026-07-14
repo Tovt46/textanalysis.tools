@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       top: body.top,
       tolerance: body.tolerance,
       keepStopwords: body.keepStopwords,
+      stopwordLists: body.stopwordLists,
     }));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Не удалось выполнить анализ";

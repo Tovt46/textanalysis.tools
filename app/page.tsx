@@ -7,15 +7,22 @@ type ZipfRow = { rank:number; term:string; actualCount:number; expectedCount:num
 type FocusRow = { term:string; count:number; per1000:number };
 type Analysis = {
   language:string; tokenCount:number; vocabularySize:number; fittedExponent:number; rSquared:number;
-  rows:ZipfRow[]; bigrams:{ term:string; count:number; share:number }[]; focusCoverage:FocusRow[]; notes:string[];
+  rows:ZipfRow[]; bigrams:{ term:string; count:number; share:number }[]; focusCoverage:FocusRow[]; stopwordCount:number; notes:string[];
 };
 type SavedResult = { result:Analysis; savedAt:string; label:string };
+type Lang = "ru"|"uk"|"en";
 
 const CACHE_KEY = "bow-zipf-baseline-v2";
+const STOPWORDS_KEY = "bow-zipf-stopwords-v1";
+const DEFAULT_STOPWORDS:Record<Lang,string> = {
+  ru:"а, без, бы, был, была, были, быть, в, вам, вас, вы, где, да, для, до, его, ее, ей, если, есть, еще, за, и, из, или, их, как, к, когда, ли, меня, мне, мы, на, над, не, него, нее, нет, ни, но, о, он, она, они, от, по, под, при, с, со, так, то, ты, у, уже, что, чтобы, это, я",
+  uk:"а, або, але, б, без, би, був, була, були, бути, в, вам, вас, ви, від, він, вона, вони, все, всіх, де, до, за, з, зі, й, і, із, його, її, їх, коли, ми, мене, мені, мною, на, над, не, ні, ним, нього, неї, о, по, про, під, при, та, так, ти, то, у, усе, це, цей, ця, ці, що, щоб, як",
+  en:"a, an, and, are, as, at, be, been, by, for, from, had, has, have, he, her, hers, him, his, i, if, in, into, is, it, its, me, my, of, on, or, our, ours, she, so, that, the, their, them, they, this, to, us, was, we, were, what, when, where, which, who, why, will, with, you, your, yours",
+};
 const SAMPLE = `Онлайн-расклад Таро помогает внимательнее посмотреть на отношения, чувства и возможные сценарии развития ситуации. Карты не принимают решение за вас, но могут подсветить скрытые эмоции и вопросы, которые стоит обсудить с партнёром. Сформулируйте ясный вопрос, выберите карты и прочитайте толкование спокойно — как повод для размышления, а не неизбежный прогноз.`;
 
 function Tip({ children }: { children:React.ReactNode }) {
-  return <span className="tip" tabIndex={0} aria-label={String(children)}>i<span>{children}</span></span>;
+  return <span className="tip" title={String(children)} aria-label={String(children)}>?</span>;
 }
 
 function Metric({ label, value, explanation }: { label:string; value:string; explanation:string }) {
@@ -52,6 +59,13 @@ function ZipfChart({ rows }: { rows:ZipfRow[] }) {
   return <canvas ref={ref} className="chart compact-chart" aria-label="Фактическая и ожидаемая частота слов" />;
 }
 
+function FrequencyComparisonTable({ title, a, b, totalA, totalB, open=false }: { title:string; a:{term:string;count:number}[]; b:{term:string;count:number}[]; totalA:number; totalB:number; open?:boolean }) {
+  const terms=[...new Set([...a.map(row=>row.term),...b.map(row=>row.term)])];
+  const rows=terms.map(term=>{const av=a.find(row=>row.term===term),bv=b.find(row=>row.term===term);const ar=av?(av.count/totalA)*1000:null,br=bv?(bv.count/totalB)*1000:null;return{term,av,bv,ar,br,weight:Math.max(ar||0,br||0)};}).sort((x,y)=>y.weight-x.weight).slice(0,30);
+  const cell=(item:{count:number}|undefined,rate:number|null)=><>{item?<><b>{item.count} раз</b><small>{rate?.toFixed(1)} на 1000</small></>:<><b>—</b><small>вне показанного top</small></>}</>;
+  return <details className="ab-frequency" open={open}><summary>{title}<span>{rows.length} строк</span></summary><div className="ab-table-scroll"><table className="ab-table"><thead><tr><th>Термин</th><th>Результат A</th><th>Результат B</th><th>Разница B − A</th></tr></thead><tbody>{rows.map(row=>{const delta=(row.br||0)-(row.ar||0);return <tr key={row.term}><td><b>{row.term}</b></td><td>{cell(row.av,row.ar)}</td><td>{cell(row.bv,row.br)}</td><td><span className={delta>0?"delta-up":delta<0?"delta-down":"delta-flat"}>{delta>0?"+":""}{delta.toFixed(1)}</span><small>на 1000</small></td></tr>;})}</tbody></table></div></details>;
+}
+
 function Comparison({ baseline, current, onClear }: { baseline:SavedResult; current:Analysis; onClear:()=>void }) {
   const over=(r:Analysis)=>r.rows.filter(row=>row.zone==="above").length;
   const metrics=[
@@ -75,6 +89,10 @@ function Comparison({ baseline, current, onClear }: { baseline:SavedResult; curr
         {terms.map(term=>{const a=get(baseline.result.focusCoverage,term),b=get(current.focusCoverage,term);return <div className="compare-row phrase-row" key={term}><span>«{term}»</span><strong>{a.count} {a.count===1?"раз":"раза"}<small>{a.per1000.toFixed(1)} на 1000</small></strong><strong>{b.count} {b.count===1?"раз":"раза"}<small>{b.per1000.toFixed(1)} на 1000</small></strong></div>;})}
       </div>
     </div>}
+    <div className="frequency-comparison"><div className="frequency-title"><h3>Частотные таблицы A/B</h3><p>Показываем фактическое число вхождений и частоту на 1000 слов. Если термин не попал в заданный top, вместо нуля стоит «вне показанного top».</p></div>
+      <FrequencyComparisonTable title="Слова" open a={baseline.result.rows.map(row=>({term:row.term,count:row.actualCount}))} b={current.rows.map(row=>({term:row.term,count:row.actualCount}))} totalA={baseline.result.tokenCount} totalB={current.tokenCount}/>
+      <FrequencyComparisonTable title="Фразы из двух слов" a={baseline.result.bigrams} b={current.bigrams} totalA={Math.max(1,baseline.result.tokenCount-1)} totalB={Math.max(1,current.tokenCount-1)}/>
+    </div>
   </section>;
 }
 
@@ -82,12 +100,16 @@ export default function Home() {
   const [sourceType,setSourceType]=useState<"text"|"url">("text"); const [source,setSource]=useState(SAMPLE);
   const [language,setLanguage]=useState("auto"); const [focus,setFocus]=useState("таро онлайн, отношения, чувства");
   const [top,setTop]=useState(20); const [tolerance,setTolerance]=useState(2); const [keepStopwords,setKeepStopwords]=useState(false);
+  const [stopwordEditorLang,setStopwordEditorLang]=useState<Lang>("ru"); const [stopwordLists,setStopwordLists]=useState<Record<Lang,string>>(DEFAULT_STOPWORDS);
   const [result,setResult]=useState<Analysis|null>(null); const [baseline,setBaseline]=useState<SavedResult|null>(null);
   const [loading,setLoading]=useState(false); const [error,setError]=useState("");
 
-  useEffect(()=>{const timer=window.setTimeout(()=>{try{const raw=localStorage.getItem(CACHE_KEY);if(raw)setBaseline(JSON.parse(raw));}catch{}},0);return()=>window.clearTimeout(timer);},[]);
+  useEffect(()=>{const timer=window.setTimeout(()=>{try{const raw=localStorage.getItem(CACHE_KEY);if(raw)setBaseline(JSON.parse(raw));const savedLists=localStorage.getItem(STOPWORDS_KEY);if(savedLists)setStopwordLists(JSON.parse(savedLists));}catch{}},0);return()=>window.clearTimeout(timer);},[]);
 
-  async function analyze(event?:FormEvent){event?.preventDefault();setLoading(true);setError("");try{const response=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sourceType,source,language,focus,top,tolerance,keepStopwords})});const data=await response.json();if(!response.ok)throw new Error(data.error||"Не удалось выполнить анализ");setResult(data);setTimeout(()=>document.getElementById("result")?.scrollIntoView({behavior:"smooth",block:"start"}),50);}catch(err){setError(err instanceof Error?err.message:"Неизвестная ошибка");}finally{setLoading(false);}}
+  const parsedStopwords=Object.fromEntries(Object.entries(stopwordLists).map(([lang,value])=>[lang,[...new Set(value.toLowerCase().split(/[\s,;]+/).map(word=>word.trim()).filter(Boolean))]]));
+  async function analyze(event?:FormEvent){event?.preventDefault();setLoading(true);setError("");try{const response=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sourceType,source,language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords})});const data=await response.json();if(!response.ok)throw new Error(data.error||"Не удалось выполнить анализ");setResult(data);setTimeout(()=>document.getElementById("result")?.scrollIntoView({behavior:"smooth",block:"start"}),50);}catch(err){setError(err instanceof Error?err.message:"Неизвестная ошибка");}finally{setLoading(false);}}
+  function updateStopwords(value:string){const next={...stopwordLists,[stopwordEditorLang]:value};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}
+  function resetStopwords(){const next={...stopwordLists,[stopwordEditorLang]:DEFAULT_STOPWORDS[stopwordEditorLang]};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}
   function saveA(){if(!result)return;const saved={result,savedAt:new Date().toISOString(),label:`Анализ · ${result.tokenCount} слов`};setBaseline(saved);localStorage.setItem(CACHE_KEY,JSON.stringify(saved));}
   function clearA(){setBaseline(null);localStorage.removeItem(CACHE_KEY);}
 
@@ -106,7 +128,8 @@ export default function Home() {
         <label className="field"><span>Язык <Tip>Нужен для правильного списка стоп-слов. В режиме «авто» язык определяется по буквам в тексте.</Tip></span><select value={language} onChange={e=>setLanguage(e.target.value)}><option value="auto">Определить автоматически</option><option value="ru">Русский</option><option value="uk">Украинский</option><option value="en">English</option></select><small>Обычно оставляйте «автоматически».</small></label>
         <label className="field"><span>Слов в подробной таблице <Tip>Определяет только длину скрытой подробной таблицы. На сам расчёт показателей не влияет.</Tip></span><input type="number" min="5" max="100" value={top} onChange={e=>setTop(Number(e.target.value))}/><small>20 достаточно для быстрой проверки.</small></label>
         <label className="field range-field"><span><span>Чувствительность <Tip>При ×2 слово помечается как частое, если встречается более чем вдвое чаще модели Ципфа. Меньше число — больше предупреждений.</Tip></span><b>×{tolerance.toFixed(1)}</b></span><input type="range" min="1.2" max="4" step="0.1" value={tolerance} onChange={e=>setTolerance(Number(e.target.value))}/><small>×2 — спокойный базовый режим.</small></label>
-        <label className="check"><input type="checkbox" checked={keepStopwords} onChange={e=>setKeepStopwords(e.target.checked)}/><span><b>Учитывать стоп-слова <Tip>Стоп-слова — частые служебные слова: «и», «в», «это», «the». Для SEO-лексики их обычно исключают.</Tip></b><small>Обычно оставляйте выключенным.</small></span></label>
+        <label className="check"><input type="checkbox" checked={keepStopwords} onChange={e=>setKeepStopwords(e.target.checked)}/><span><b>Учитывать стоп-слова <Tip>Если включить, список ниже не применяется и служебные слова остаются в анализе.</Tip></b><small>{keepStopwords?"Стоп-слова сейчас остаются в тексте.":"Стоп-слова исключаются по редактируемому списку."}</small></span></label>
+        <details className="stopword-editor"><summary>Редактировать стоп-слова <span>{parsedStopwords[stopwordEditorLang].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["ru","uk","en"] as Lang[]).map(lang=><button type="button" key={lang} className={stopwordEditorLang===lang?"active":""} onClick={()=>setStopwordEditorLang(lang)}>{lang.toUpperCase()}</button>)}</div><p>Удалите слово из списка или допишите новое через запятую. При автоопределении языка применяется соответствующий список.</p><textarea value={stopwordLists[stopwordEditorLang]} onChange={e=>updateStopwords(e.target.value)} aria-label={`Стоп-слова ${stopwordEditorLang}`}/><div className="stopword-actions"><small>{parsedStopwords[stopwordEditorLang].length} слов · сохраняются в браузере</small><button type="button" onClick={resetStopwords}>Вернуть стандартный список</button></div></div></details>
         <button className="analyze-button" disabled={loading||!source.trim()}><span>{loading?"Считаю…":baseline?"Анализировать как B":"Запустить анализ"}</span><b>→</b></button>
         {baseline&&<div className="cached-pill"><span>A</span><p><b>{baseline.label}</b><small>Сохранён в этом браузере</small></p><button type="button" onClick={clearA} aria-label="Удалить сохранённый результат">×</button></div>}
         {error&&<p className="error">{error}</p>}

@@ -13,6 +13,7 @@ export type AnalyzeInput = {
   top?: number;
   tolerance?: number;
   keepStopwords?: boolean;
+  stopwordLists?: Partial<Record<Lang, string[]>>;
 };
 
 function detectLanguage(text: string): Lang {
@@ -35,12 +36,12 @@ function cleanHtml(raw: string) {
     .trim();
 }
 
-function tokenize(text: string, lang: Lang, keepStopwords: boolean) {
+function tokenize(text: string, lang: Lang, keepStopwords: boolean, stopwords = STOPWORDS[lang]) {
   const matches = text.normalize("NFKC").toLowerCase().replaceAll("’", "'").match(/[a-zа-яёіїєґ0-9']+/gi) || [];
   return matches
     .map((token) => token.replace(/^'+|'+$/g, ""))
     .filter((token) => token.length >= 3 && !/^\d+$/.test(token))
-    .filter((token) => keepStopwords || !STOPWORDS[lang].has(token));
+    .filter((token) => keepStopwords || !stopwords.has(token));
 }
 
 function countTerms(tokens: string[], n = 1) {
@@ -55,7 +56,9 @@ function countTerms(tokens: string[], n = 1) {
 export function analyzeText(input: AnalyzeInput) {
   const plain = cleanHtml(input.text);
   const language = input.language === "auto" || !input.language ? detectLanguage(plain) : input.language;
-  const tokens = tokenize(plain, language, Boolean(input.keepStopwords));
+  const suppliedStopwords = input.stopwordLists?.[language];
+  const activeStopwords = suppliedStopwords ? new Set(suppliedStopwords.map((word) => word.trim().toLowerCase()).filter(Boolean)) : STOPWORDS[language];
+  const tokens = tokenize(plain, language, Boolean(input.keepStopwords), activeStopwords);
   if (tokens.length < 3) throw new Error("В источнике слишком мало текста для анализа");
   const unigramCounts = countTerms(tokens);
   const bigramCounts = countTerms(tokens, 2);
@@ -114,6 +117,7 @@ export function analyzeText(input: AnalyzeInput) {
     rows,
     bigrams: bigramCounts.slice(0, top).map(([term, count]) => ({ term, count, share: count / Math.max(tokens.length - 1, 1) })),
     focusCoverage,
+    stopwordCount: activeStopwords.size,
     notes,
   };
 }
