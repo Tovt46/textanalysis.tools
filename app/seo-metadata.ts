@@ -43,6 +43,7 @@ export function pageMetadata(lang:UiLang):Metadata {
       alternateLocale:Object.values(SEO_COPY).filter(item=>item.locale!==page.locale).map(item=>item.locale),
     },
     twitter:{ card:"summary", title:page.title, description:page.description },
+    verification:{ google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU" },
     icons:{ icon:"/favicon.svg", shortcut:"/favicon.svg" },
   };
 }
