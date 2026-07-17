@@ -21,7 +21,6 @@ const DEFAULT_STOPWORDS:Record<Lang,string> = {
   en:"a, an, and, are, as, at, be, been, by, for, from, had, has, have, he, her, hers, him, his, i, if, in, into, is, it, its, me, my, of, on, or, our, ours, she, so, that, the, their, them, they, this, to, us, was, we, were, what, when, where, which, who, why, will, with, you, your, yours",
 };
 const SAMPLE = `An online tarot reading can help you look more closely at relationships, feelings, and possible ways a situation may develop. The cards do not make decisions for you, but they can highlight hidden emotions and questions worth discussing with your partner. Ask a clear question, choose the cards, and read the interpretation calmly — as a prompt for reflection rather than an inevitable prediction.`;
-const UI_LANG_KEY = "bow-zipf-ui-language-v1";
 type T = (key:string, vars?:Record<string,string|number>)=>string;
 
 function Tip({ children }: { children:React.ReactNode }) {
@@ -108,8 +107,9 @@ function Comparison({ baseline, current, onClear, t, uiLang }: { baseline:SavedR
   </section>;
 }
 
-export default function Home() {
-  const [uiLang,setUiLang]=useState<UiLang>("ru");
+const LANGUAGE_ROUTES: Record<UiLang,string> = { ru:"/", en:"/en", uk:"/uk" };
+
+export default function BowApp({ uiLang }: { uiLang:UiLang }) {
   const [sourceType,setSourceType]=useState<"text"|"url">("text"); const [source,setSource]=useState(SAMPLE);
   const [language,setLanguage]=useState("en"); const [focus,setFocus]=useState("online tarot, relationships, feelings");
   const [top,setTop]=useState(20); const [tolerance,setTolerance]=useState(2); const [keepStopwords,setKeepStopwords]=useState(false);
@@ -118,12 +118,10 @@ export default function Home() {
   const [loading,setLoading]=useState(false); const [error,setError]=useState("");
   const t:T=useCallback((key,vars)=>translate(uiLang,key,vars),[uiLang]);
 
-  useEffect(()=>{const timer=window.setTimeout(()=>{try{const raw=localStorage.getItem(CACHE_KEY);if(raw)setBaseline(JSON.parse(raw));const savedLists=localStorage.getItem(STOPWORDS_KEY);if(savedLists)setStopwordLists(JSON.parse(savedLists));const savedUi=localStorage.getItem(UI_LANG_KEY);if(savedUi&&["ru","en","uk"].includes(savedUi)){setUiLang(savedUi as UiLang);document.documentElement.lang=savedUi;}}catch{}},0);return()=>window.clearTimeout(timer);},[]);
-  useEffect(()=>{document.documentElement.lang=uiLang;document.title=uiLang==="en"?"BOW / Zipf Lab — lexical comparison":uiLang==="uk"?"BOW / Zipf Lab — порівняння лексики":"BOW / Zipf Lab — сравнение лексики";},[uiLang]);
+  useEffect(()=>{const timer=window.setTimeout(()=>{try{const raw=localStorage.getItem(CACHE_KEY);if(raw)setBaseline(JSON.parse(raw));const savedLists=localStorage.getItem(STOPWORDS_KEY);if(savedLists)setStopwordLists(JSON.parse(savedLists));}catch{}},0);return()=>window.clearTimeout(timer);},[]);
 
   const parsedStopwords=Object.fromEntries(Object.entries(stopwordLists).map(([lang,value])=>[lang,[...new Set(value.toLowerCase().split(/[\s,;]+/).map(word=>word.trim()).filter(Boolean))]]));
   async function analyze(event?:FormEvent){event?.preventDefault();setLoading(true);setError("");try{const response=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sourceType,source,language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang})});const data=await response.json();if(!response.ok)throw new Error(data.error||t("failed"));setResult(data);if(language==="auto"&&["ru","uk","en"].includes(data.language))setStopwordEditorLang(data.language as Lang);setTimeout(()=>document.getElementById("result")?.scrollIntoView({behavior:"smooth",block:"start"}),50);}catch(err){setError(err instanceof Error?err.message:t("unknownError"));}finally{setLoading(false);}}
-  function changeUiLanguage(value:UiLang){setUiLang(value);localStorage.setItem(UI_LANG_KEY,value);}
   function changeLanguage(value:string){setLanguage(value);if(value!=="auto")setStopwordEditorLang(value as Lang);}
   function changeStopwordLanguage(value:Lang){setStopwordEditorLang(value);setLanguage(value);}
   function updateStopwords(value:string){const next={...stopwordLists,[stopwordEditorLang]:value};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}
@@ -132,7 +130,7 @@ export default function Home() {
   function clearA(){setBaseline(null);localStorage.removeItem(CACHE_KEY);}
 
   return <main>
-    <header className="topbar"><a className="brand" href="#top"><span className="brand-mark">B</span><span>BOW <i>/</i> ZIPF LAB</span></a><div className="header-tools"><span className="status"><b/>{t("status")}</span><div className="ui-languages" aria-label="Interface language">{(["ru","en","uk"] as UiLang[]).map(lang=><button key={lang} className={uiLang===lang?"active":""} onClick={()=>changeUiLanguage(lang)}>{lang.toUpperCase()}</button>)}</div></div></header>
+    <header className="topbar"><a className="brand" href="#top"><span className="brand-mark">B</span><span>BOW <i>/</i> ZIPF LAB</span></a><div className="header-tools"><span className="status"><b/>{t("status")}</span><nav className="ui-languages" aria-label="Interface language">{(["ru","en","uk"] as UiLang[]).map(lang=><a key={lang} href={LANGUAGE_ROUTES[lang]} className={uiLang===lang?"active":""} hrefLang={lang} lang={lang} aria-current={uiLang===lang?"page":undefined}>{lang.toUpperCase()}</a>)}</nav></div></header>
     <section className="hero reduced" id="top"><p className="eyebrow">{t("heroEye")}</p><h1>{t("heroLine")}<br/><em>{t("heroEm")}</em></h1><p className="hero-copy">{t("heroCopy")}</p></section>
 
     <form className="workspace" onSubmit={analyze}>
