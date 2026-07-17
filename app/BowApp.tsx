@@ -107,7 +107,7 @@ function Comparison({ baseline, current, onClear, t, uiLang }: { baseline:SavedR
   </section>;
 }
 
-const LANGUAGE_ROUTES: Record<UiLang,string> = { ru:"/", en:"/en", uk:"/uk" };
+const LANGUAGE_ROUTES: Record<UiLang,string> = { ru:"/ru", en:"/", uk:"/uk" };
 
 export default function BowApp({ uiLang }: { uiLang:UiLang }) {
   const [sourceType,setSourceType]=useState<"text"|"url">("text"); const [source,setSource]=useState(SAMPLE);

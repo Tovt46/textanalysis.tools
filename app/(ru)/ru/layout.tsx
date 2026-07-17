@@ -4,6 +4,6 @@ import "../../globals.css";
 const geistSans=Geist({variable:"--font-geist-sans",subsets:["latin","cyrillic"]});
 const geistMono=Geist_Mono({variable:"--font-geist-mono",subsets:["latin","cyrillic"]});
 
-export default function EnglishLayout({children}:{children:React.ReactNode}) {
-  return <html lang="en"><body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body></html>;
+export default function RussianLayout({children}:{children:React.ReactNode}) {
+  return <html lang="ru"><body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body></html>;
 }

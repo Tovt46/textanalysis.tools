@@ -5,13 +5,13 @@ export const SITE_URL = "https://bow-zipf-lab.tovt7.chatgpt.site";
 
 const SEO_COPY: Record<UiLang,{ path:string; title:string; description:string; locale:string }> = {
   ru: {
-    path: "/",
+    path: "/ru",
     title: "BOW-анализ текста и сравнение частот — Zipf Lab",
     description: "Сравнивайте два текста по частотности слов и биграммам. Анализируйте закон Ципфа, проценты, стоп-слова и контрольные фразы.",
     locale: "ru_RU",
   },
   en: {
-    path: "/en",
+    path: "/",
     title: "Bag-of-Words Text Analyzer & Comparison — Zipf Lab",
     description: "Compare two texts by word and bigram frequency. Analyze Zipf distribution, percentages, editable stop words, and tracked phrases.",
     locale: "en_US",
@@ -24,7 +24,7 @@ const SEO_COPY: Record<UiLang,{ path:string; title:string; description:string; l
   },
 };
 
-const languageAlternates = { ru:"/", en:"/en", uk:"/uk", "x-default":"/en" };
+const languageAlternates = { en:"/", ru:"/ru", uk:"/uk", "x-default":"/" };
 
 export function pageMetadata(lang:UiLang):Metadata {
   const page=SEO_COPY[lang];
