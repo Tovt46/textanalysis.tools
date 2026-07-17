@@ -114,6 +114,8 @@ textarea:focus,.url-input:focus,.field input:focus,.field select:focus { border-
 .compact-table { overflow:auto; }
 .compact-table table { min-width:570px; }
 .compact-table td { padding:10px 8px; }
+.frequency-value { display:flex; flex-direction:column; gap:3px; }
+.frequency-value small { color:#8a9089; font:9px var(--font-geist-mono); }
 .compare-section { max-width:1212px; margin:34px auto 90px; background:#e9ede6; border:1px solid #d2d8cf; padding:30px; }
 .compare-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; }
 .compare-head .eyebrow { margin-bottom:8px; }
