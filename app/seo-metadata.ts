@@ -6,20 +6,20 @@ export const SITE_URL = "https://bow-zipf-lab.tovt7.chatgpt.site";
 const SEO_COPY: Record<UiLang,{ path:string; title:string; description:string; locale:string }> = {
   ru: {
     path: "/ru",
-    title: "BOW-анализ текста и сравнение частот — Zipf Lab",
-    description: "Сравнивайте два текста по частотности слов и биграммам. Анализируйте закон Ципфа, проценты, стоп-слова и контрольные фразы.",
+    title: "Бесплатный Bag of Words SEO-анализатор | Zipf Lab",
+    description: "Анализируйте частотность и плотность ключевых слов, биграммы и стоп-слова. Сравнивайте два текста с помощью Bag of Words и закона Ципфа.",
     locale: "ru_RU",
   },
   en: {
     path: "/",
-    title: "Bag-of-Words Text Analyzer & Comparison — Zipf Lab",
-    description: "Compare two texts by word and bigram frequency. Analyze Zipf distribution, percentages, editable stop words, and tracked phrases.",
+    title: "Free Bag of Words SEO Analyzer & Comparison | Zipf Lab",
+    description: "Analyze keyword density, word and bigram frequency, and editable stop words. Compare two texts with Bag of Words and Zipf distribution.",
     locale: "en_US",
   },
   uk: {
     path: "/uk",
-    title: "BOW-аналіз тексту та порівняння частот — Zipf Lab",
-    description: "Порівнюйте два тексти за частотою слів і біграм. Аналізуйте закон Ципфа, відсотки, стоп-слова та контрольні фрази.",
+    title: "Безкоштовний Bag of Words SEO-аналізатор | Zipf Lab",
+    description: "Аналізуйте частотність і щільність ключових слів, біграми та стоп-слова. Порівнюйте два тексти за допомогою Bag of Words і закону Ципфа.",
     locale: "uk_UA",
   },
 };
