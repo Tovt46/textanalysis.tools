@@ -10,7 +10,7 @@ export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),
   title,
   description,
-  alternates:{canonical:path},
+  alternates:{canonical:path,languages:{en:path,ru:"/ru/bag-of-words-model",uk:"/uk/bag-of-words-model","x-default":path}},
   openGraph:{type:"article",url:path,siteName:"BOW / Zipf Lab",title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
@@ -32,7 +32,7 @@ export default function BagOfWordsModelPage(){
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
     <header className="topbar article-topbar">
       <Link className="brand" href="/"><span className="brand-mark">B</span><span>BOW <i>/</i> ZIPF LAB</span></Link>
-      <Link className="article-tool-link" href="/">Open free analyzer <span>→</span></Link>
+      <div className="header-tools"><nav className="ui-languages" aria-label="Article language"><Link className="active" href="/bag-of-words-model" hrefLang="en" lang="en" aria-current="page">EN</Link><Link href="/ru/bag-of-words-model" hrefLang="ru" lang="ru">RU</Link><Link href="/uk/bag-of-words-model" hrefLang="uk" lang="uk">UK</Link></nav><Link className="article-tool-link" href="/">Open free analyzer <span>→</span></Link></div>
     </header>
 
     <article>
