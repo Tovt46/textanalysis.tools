@@ -56,7 +56,10 @@ textarea:focus,.url-input:focus,.field input:focus,.field select:focus { border-
 .tooltip-popup::after { content:""; position:absolute; right:13px; top:100%; border:6px solid transparent; border-top-color:#17201c; }
 .tip-wrap:hover .tooltip-popup,.tip-wrap:focus-within .tooltip-popup,.tip-wrap[data-open="true"] .tooltip-popup { opacity:1; visibility:visible; transform:translateY(0); }
 .field input,.field select { height:46px; padding:0 12px; border:1px solid #d2d7ce; background:#fafbf7; border-radius:2px; outline:none; font-size:13px; color:var(--ink); }
+.field input:disabled,.field select:disabled,.check input:disabled,.stopword-editor button:disabled,.stopword-editor textarea:disabled { cursor:not-allowed; opacity:.58; }
 .field small,.check small { color:#858b84; font-size:11px; }
+.settings-lock { display:grid; grid-template-columns:26px 1fr; gap:10px; align-items:center; margin:0 0 18px; padding:11px 12px; background:#e2e8cf; color:#53633d; font-size:10px; line-height:1.45; }
+.settings-lock b { display:grid; place-items:center; width:24px; height:24px; border-radius:50%; background:var(--green); color:white; font:600 10px var(--font-geist-mono); }
 .wide { border-top:1px solid var(--line); padding-top:24px; }
 .range-field>span { display:flex; justify-content:space-between; }
 .range-field>span b { font:600 12px var(--font-geist-mono); color:var(--green); }

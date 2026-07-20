@@ -28,13 +28,28 @@ function detectLanguage(text: string): Lang {
 }
 
 function cleanHtml(raw: string) {
+  const namedEntities: Record<string, string> = {
+    amp: "&", apos: "'", bull: " • ", copy: " © ", gt: ">", hellip: "…",
+    laquo: "«", ldquo: "“", lsquo: "‘", lt: "<", mdash: "—", middot: " · ",
+    nbsp: " ", ndash: "–", quot: '"', raquo: "»", rdquo: "”", reg: " ® ",
+    rsquo: "’", trade: " ™ ",
+  };
+  const decodeEntity = (_match: string, entity: string) => {
+    if (entity.startsWith("#")) {
+      const hexadecimal = entity[1]?.toLowerCase() === "x";
+      const value = Number.parseInt(entity.slice(hexadecimal ? 2 : 1), hexadecimal ? 16 : 10);
+      if (Number.isInteger(value) && value > 0 && value <= 0x10ffff && !(value >= 0xd800 && value <= 0xdfff)) {
+        return String.fromCodePoint(value);
+      }
+      return " ";
+    }
+    return namedEntities[entity.toLowerCase()] ?? " ";
+  };
+
   return raw
     .replace(/<(script|style|noscript|svg|canvas)[^>]*>[\s\S]*?<\/\1>/gi, " ")
     .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;|&#160;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&(#(?:x[0-9a-f]+|\d+)|[a-z][a-z0-9]+);/gi, decodeEntity)
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -43,7 +58,7 @@ function tokenize(text: string, lang: Lang, keepStopwords: boolean, stopwords = 
   const matches = text.normalize("NFKC").toLowerCase().replaceAll("’", "'").match(/[a-zа-яёіїєґ0-9']+/gi) || [];
   return matches
     .map((token) => token.replace(/^'+|'+$/g, ""))
-    .filter((token) => token.length >= 3 && !/^\d+$/.test(token))
+    .filter((token) => token.length > 0 && !/^\d+$/.test(token))
     .filter((token) => keepStopwords || !stopwords.has(token));
 }
 
@@ -68,8 +83,6 @@ export function analyzeText(input: AnalyzeInput) {
   const bigramCounts = countTerms(tokens, 2);
   const top = Math.max(5, Math.min(Number(input.top) || 20, 100));
   const tolerance = Math.max(1.2, Math.min(Number(input.tolerance) || 2, 4));
-  const topCount = unigramCounts[0][1];
-
   const logRanks = unigramCounts.map((_, i) => Math.log(i + 1));
   const logCounts = unigramCounts.map(([, count]) => Math.log(count));
   const meanX = logRanks.reduce((a, b) => a + b, 0) / logRanks.length;
@@ -82,9 +95,9 @@ export function analyzeText(input: AnalyzeInput) {
   const residualVariance = logCounts.reduce((sum, y, i) => sum + (y - (intercept + slope * logRanks[i])) ** 2, 0);
   const rSquared = totalVariance ? Math.max(0, 1 - residualVariance / totalVariance) : 0;
 
-  const rows = unigramCounts.slice(0, top).map(([term, actualCount], index) => {
+  const allRows = unigramCounts.map(([term, actualCount], index) => {
     const rank = index + 1;
-    const expectedCount = topCount / rank;
+    const expectedCount = Math.exp(intercept + slope * Math.log(rank));
     const ratio = actualCount / expectedCount;
     let zone: "above" | "within" | "below" | "sparse-tail" = "within";
     if (expectedCount < 1) zone = "sparse-tail";
@@ -92,17 +105,27 @@ export function analyzeText(input: AnalyzeInput) {
     else if (ratio < 1 / tolerance) zone = "below";
     return { rank, term, actualCount, expectedCount, ratio, zone };
   });
+  const rows = allRows.slice(0, top);
 
   const focusTerms = (input.focus || "").split(",").map((term) => term.trim().toLowerCase()).filter(Boolean);
   const focusCoverage = focusTerms.map((term) => {
     const phraseTokens = tokenize(term, language, true);
-    const haystack = tokens.join(" ");
-    const needle = phraseTokens.join(" ");
-    const count = needle ? haystack.split(needle).length - 1 : 0;
+    let count = 0;
+    if (phraseTokens.length) {
+      for (let index = 0; index <= tokens.length - phraseTokens.length; index += 1) {
+        if (phraseTokens.every((token, offset) => tokens[index + offset] === token)) count += 1;
+      }
+    }
     return { term, count, per1000: tokens.length ? (count / tokens.length) * 1000 : 0 };
   });
 
-  const above = rows.filter((row) => row.zone === "above");
+  const zoneCounts = {
+    above: allRows.filter((row) => row.zone === "above").length,
+    within: allRows.filter((row) => row.zone === "within").length,
+    below: allRows.filter((row) => row.zone === "below").length,
+    sparseTail: allRows.filter((row) => row.zone === "sparse-tail").length,
+  };
+  const above = allRows.filter((row) => row.zone === "above");
   const missingFocus = focusCoverage.filter((row) => row.count === 0);
   const notes: string[] = [];
   if (tokens.length < 100) notes.push(translate(uiLanguage, "shortNote"));
@@ -118,10 +141,13 @@ export function analyzeText(input: AnalyzeInput) {
     vocabularySize: unigramCounts.length,
     fittedExponent: -slope,
     rSquared,
+    zoneCounts,
     rows,
     bigrams: bigramCounts.slice(0, top).map(([term, count]) => ({ term, count, share: count / Math.max(tokens.length - 1, 1) })),
     focusCoverage,
     stopwordCount: activeStopwords.size,
     notes,
+    _allUnigrams: unigramCounts.map(([term, count]) => ({ term, count })),
+    _allBigrams: bigramCounts.map(([term, count]) => ({ term, count })),
   };
 }

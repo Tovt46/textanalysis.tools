@@ -191,7 +191,7 @@ export async function normalizeAnalyzeBody(body:PublicAnalyzeBody):Promise<Analy
   };
 }
 
-export async function runPublicAnalysis(body:PublicAnalyzeBody){
+async function runCoreAnalysis(body:PublicAnalyzeBody){
   let result:ReturnType<typeof analyzeText>;
   try{result=analyzeText(await normalizeAnalyzeBody(body));}
   catch(error){
@@ -199,36 +199,60 @@ export async function runPublicAnalysis(body:PublicAnalyzeBody){
     const message=error instanceof Error?error.message:"The input could not be analyzed.";
     throw new PublicApiError(422,"INSUFFICIENT_TEXT",message);
   }
+  return result;
+}
+
+function toPublicAnalysis(result:ReturnType<typeof analyzeText>){
+  const {_allUnigrams,_allBigrams,...publicResult}=result;
+  void _allUnigrams;void _allBigrams;
   return {
-    ...result,
+    ...publicResult,
     rows:result.rows.map(row=>{
       const share=result.tokenCount?row.actualCount/result.tokenCount:0;
       return {...row,share,percentage:share*100,per1000:share*1000};
     }),
     bigrams:result.bigrams.map(row=>({...row,percentage:row.share*100,per1000:row.share*1000})),
+    focusCoverage:result.focusCoverage.map(row=>({...row,percentage:row.per1000/10})),
   };
 }
 
-export type AnalysisResult=Awaited<ReturnType<typeof runPublicAnalysis>>;
+export async function runPublicAnalysis(body:PublicAnalyzeBody){
+  return toPublicAnalysis(await runCoreAnalysis(body));
+}
 
-export function compareResults(a:AnalysisResult,b:AnalysisResult){
-  const terms=new Set([...a.rows.map(row=>row.term),...b.rows.map(row=>row.term)]);
-  const aRows=new Map(a.rows.map(row=>[row.term,row]));
-  const bRows=new Map(b.rows.map(row=>[row.term,row]));
-  const wordChanges=[...terms].map(term=>{
-    const countA=aRows.get(term)?.actualCount||0;
-    const countB=bRows.get(term)?.actualCount||0;
-    const shareA=a.tokenCount?countA/a.tokenCount:0;
-    const shareB=b.tokenCount?countB/b.tokenCount:0;
+export async function runComparisonAnalysis(body:PublicAnalyzeBody){
+  const core=await runCoreAnalysis(body);
+  return {result:toPublicAnalysis(core),unigrams:core._allUnigrams,bigrams:core._allBigrams};
+}
+
+export type AnalysisResult=Awaited<ReturnType<typeof runPublicAnalysis>>;
+export type ComparisonAnalysis=Awaited<ReturnType<typeof runComparisonAnalysis>>;
+
+function frequencyChanges(a:{term:string;count:number}[],b:{term:string;count:number}[],totalA:number,totalB:number){
+  const terms=new Set([...a.map(row=>row.term),...b.map(row=>row.term)]);
+  const aRows=new Map(a.map(row=>[row.term,row.count]));
+  const bRows=new Map(b.map(row=>[row.term,row.count]));
+  return [...terms].map(term=>{
+    const countA=aRows.get(term)||0;
+    const countB=bRows.get(term)||0;
+    const shareA=totalA?countA/totalA:0;
+    const shareB=totalB?countB/totalB:0;
     return {term,countA,countB,countDelta:countB-countA,shareA,shareB,shareDelta:shareB-shareA};
-  }).sort((x,y)=>Math.abs(y.shareDelta)-Math.abs(x.shareDelta)||x.term.localeCompare(y.term));
+  }).sort((x,y)=>Math.abs(y.shareDelta)-Math.abs(x.shareDelta)||x.term.localeCompare(y.term)).slice(0,1000);
+}
+
+export function compareResults(a:ComparisonAnalysis,b:ComparisonAnalysis){
+  const wordChanges=frequencyChanges(a.unigrams,b.unigrams,a.result.tokenCount,b.result.tokenCount);
+  const bigramChanges=frequencyChanges(a.bigrams,b.bigrams,Math.max(1,a.result.tokenCount-1),Math.max(1,b.result.tokenCount-1));
   return {
     metrics:{
-      tokenCount:{a:a.tokenCount,b:b.tokenCount,delta:b.tokenCount-a.tokenCount},
-      vocabularySize:{a:a.vocabularySize,b:b.vocabularySize,delta:b.vocabularySize-a.vocabularySize},
-      fittedExponent:{a:a.fittedExponent,b:b.fittedExponent,delta:b.fittedExponent-a.fittedExponent},
-      rSquared:{a:a.rSquared,b:b.rSquared,delta:b.rSquared-a.rSquared},
+      tokenCount:{a:a.result.tokenCount,b:b.result.tokenCount,delta:b.result.tokenCount-a.result.tokenCount},
+      vocabularySize:{a:a.result.vocabularySize,b:b.result.vocabularySize,delta:b.result.vocabularySize-a.result.vocabularySize},
+      fittedExponent:{a:a.result.fittedExponent,b:b.result.fittedExponent,delta:b.result.fittedExponent-a.result.fittedExponent},
+      rSquared:{a:a.result.rSquared,b:b.result.rSquared,delta:b.result.rSquared-a.result.rSquared},
+      aboveModel:{a:a.result.zoneCounts.above,b:b.result.zoneCounts.above,delta:b.result.zoneCounts.above-a.result.zoneCounts.above},
     },
     wordChanges,
+    bigramChanges,
   };
 }

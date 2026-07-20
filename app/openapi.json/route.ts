@@ -19,9 +19,10 @@ const analysisResult={
   type:"object",
   properties:{
     language:{type:"string",enum:["en","ru","uk"]},tokenCount:{type:"integer"},vocabularySize:{type:"integer"},fittedExponent:{type:"number"},rSquared:{type:"number"},
+    zoneCounts:{type:"object",properties:{above:{type:"integer"},within:{type:"integer"},below:{type:"integer"},sparseTail:{type:"integer"}},description:"Zone totals across the full vocabulary; independent of top."},
     rows:{type:"array",items:{type:"object",properties:{rank:{type:"integer"},term:{type:"string"},actualCount:{type:"integer"},share:{type:"number"},percentage:{type:"number"},per1000:{type:"number"},expectedCount:{type:"number"},ratio:{type:"number"},zone:{type:"string",enum:["above","within","below","sparse-tail"]}}}},
     bigrams:{type:"array",items:{type:"object",properties:{term:{type:"string"},count:{type:"integer"},share:{type:"number"},percentage:{type:"number"},per1000:{type:"number"}}}},
-    focusCoverage:{type:"array",items:{type:"object",properties:{term:{type:"string"},count:{type:"integer"},per1000:{type:"number"}}}},
+    focusCoverage:{type:"array",items:{type:"object",properties:{term:{type:"string"},count:{type:"integer"},percentage:{type:"number"},per1000:{type:"number"}}}},
     stopwordCount:{type:"integer"},notes:{type:"array",items:{type:"string"}},
   },
 };
