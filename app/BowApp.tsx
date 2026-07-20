@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import { LOCALES, translate, type UiLang } from "./i18n";
 
 type Zone = "above" | "within" | "below" | "sparse-tail";
@@ -23,7 +23,23 @@ const DEFAULT_STOPWORDS:Record<Lang,string> = {
 type T = (key:string, vars?:Record<string,string|number>)=>string;
 
 function Tip({ children }: { children:React.ReactNode }) {
-  return <span className="tip" title={String(children)} aria-label={String(children)}>?</span>;
+  const [open,setOpen]=useState(false);
+  const rootRef=useRef<HTMLSpanElement>(null);
+  const tooltipId=useId();
+
+  useEffect(()=>{
+    if(!open)return;
+    function closeOutside(event:PointerEvent){if(!rootRef.current?.contains(event.target as Node))setOpen(false);}
+    function closeOnEscape(event:KeyboardEvent){if(event.key==="Escape"){setOpen(false);rootRef.current?.querySelector("button")?.focus();}}
+    document.addEventListener("pointerdown",closeOutside);
+    document.addEventListener("keydown",closeOnEscape);
+    return()=>{document.removeEventListener("pointerdown",closeOutside);document.removeEventListener("keydown",closeOnEscape);};
+  },[open]);
+
+  return <span className="tip-wrap" data-open={open} ref={rootRef}>
+    <button type="button" className="tip" aria-label={String(children)} aria-describedby={tooltipId} aria-expanded={open} onClick={event=>{event.preventDefault();event.stopPropagation();setOpen(value=>!value);}}>?</button>
+    <span className="tooltip-popup" id={tooltipId} role="tooltip">{children}</span>
+  </span>;
 }
 
 function Metric({ label, value, explanation }: { label:string; value:string; explanation:string }) {

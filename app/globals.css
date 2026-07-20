@@ -49,7 +49,12 @@ textarea:focus,.url-input:focus,.field input:focus,.field select:focus { border-
 .url-input { height:58px; padding:0 18px; margin-bottom:16px; }
 .field { display:flex; flex-direction:column; gap:8px; margin-top:20px; }
 .field>span { font-size:12px; font-weight:600; }
-.tip { display:inline-grid; place-items:center; width:16px; height:16px; margin-left:5px; border:1px solid #aeb5ad; border-radius:50%; color:#747b74; font:600 9px var(--font-geist-mono); vertical-align:middle; cursor:help; }
+.tip-wrap { position:relative; display:inline-flex; margin-left:5px; vertical-align:middle; }
+.tip { display:grid; place-items:center; width:17px; height:17px; padding:0; border:1px solid #aeb5ad; background:transparent; border-radius:50%; color:#747b74; font:600 9px var(--font-geist-mono); cursor:help; }
+.tip:hover,.tip:focus-visible,.tip-wrap[data-open="true"] .tip { border-color:var(--green); background:#e7ecd4; color:var(--green); outline:none; }
+.tooltip-popup { position:absolute; right:-12px; bottom:calc(100% + 10px); z-index:60; width:min(260px,calc(100vw - 32px)); padding:12px 14px; border:1px solid #34453c; border-radius:3px; background:#17201c; color:#eef2e8; box-shadow:0 12px 30px #17201c2e; font:400 11px/1.55 var(--font-geist-sans); text-align:left; letter-spacing:0; text-transform:none; opacity:0; visibility:hidden; pointer-events:none; transform:translateY(4px); transition:opacity .14s ease,transform .14s ease,visibility .14s ease; }
+.tooltip-popup::after { content:""; position:absolute; right:13px; top:100%; border:6px solid transparent; border-top-color:#17201c; }
+.tip-wrap:hover .tooltip-popup,.tip-wrap:focus-within .tooltip-popup,.tip-wrap[data-open="true"] .tooltip-popup { opacity:1; visibility:visible; transform:translateY(0); }
 .field input,.field select { height:46px; padding:0 12px; border:1px solid #d2d7ce; background:#fafbf7; border-radius:2px; outline:none; font-size:13px; color:var(--ink); }
 .field small,.check small { color:#858b84; font-size:11px; }
 .wide { border-top:1px solid var(--line); padding-top:24px; }
