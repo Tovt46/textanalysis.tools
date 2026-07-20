@@ -136,7 +136,7 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
       <section className="input-card">
         <div className="section-head"><div><span>01</span><h2>{t("source")}</h2></div><div className="tabs"><button type="button" className={sourceType==="text"?"active":""} onClick={()=>{setSourceType("text");setSource("")}}>{t("text")}</button><button type="button" className={sourceType==="url"?"active":""} onClick={()=>{setSourceType("url");setSource("")}}>{t("url")}</button></div></div>
         {sourceType==="text"?<div className="textarea-wrap"><textarea value={source} onChange={e=>setSource(e.target.value)} placeholder={t("textPlaceholder")}/><span>{source.length.toLocaleString(LOCALES[uiLang])} {t("chars")}</span></div>:<input className="url-input" type="url" value={source} onChange={e=>setSource(e.target.value)} placeholder="https://example.com/page" required/>}
-        <label className="field wide"><span>{t("focus")} <Tip>{t("focusHelp")}</Tip></span><input value={focus} onChange={e=>setFocus(e.target.value)} placeholder="online tarot, relationships, feelings"/><small>{t("focusNote")}</small></label>
+        <label className="field wide"><span>{t("focus")} <Tip>{t("focusHelp")}</Tip></span><input value={focus} onChange={e=>setFocus(e.target.value)}/><small>{t("focusNote")}</small></label>
       </section>
       <aside className="settings-card">
         <div className="section-head simple"><div><span>02</span><h2>{t("settings")}</h2></div></div>
