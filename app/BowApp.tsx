@@ -167,6 +167,6 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
 
     {baseline&&result&&<Comparison baseline={baseline} current={result} onClear={clearA} t={t} uiLang={uiLang}/>} 
     {!result&&<section className="empty-state"><span>03</span><p>{t("empty")}</p></section>}
-    <footer><span>BOW ANALYZER</span><p>{t("footer")}</p><a href={uiLang==="en"?"/bag-of-words-model":`/${uiLang}/bag-of-words-model`}>{uiLang==="ru"?"Как работает модель Bag of Words →":uiLang==="uk"?"Як працює модель Bag of Words →":"How the Bag of Words model works →"}</a></footer>
+    <footer><span>BOW ANALYZER</span><p>{t("footer")}</p><a href={uiLang==="en"?"/bag-of-words-model":`/${uiLang}/bag-of-words-model`}>{uiLang==="ru"?"Как работает модель Bag of Words →":uiLang==="uk"?"Як працює модель Bag of Words →":"How the Bag of Words model works →"}</a><a href="/api-docs">API →</a></footer>
   </main>;
 }

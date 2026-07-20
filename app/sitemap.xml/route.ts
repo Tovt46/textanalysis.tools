@@ -21,6 +21,10 @@ const xml=`<?xml version="1.0" encoding="UTF-8"?>
     <lastmod>2026-07-20</lastmod>
   </url>
   <url>
+    <loc>https://bow-zipf-lab.tovt7.chatgpt.site/api-docs</loc>
+    <lastmod>2026-07-20</lastmod>
+  </url>
+  <url>
     <loc>https://bow-zipf-lab.tovt7.chatgpt.site/ru/bag-of-words-model</loc>
     <lastmod>2026-07-19</lastmod>
   </url>
