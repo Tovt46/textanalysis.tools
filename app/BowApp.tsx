@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import { LOCALES, translate, type UiLang } from "./i18n";
 import { SiteFooter,SiteHeader } from "./SiteChrome";
+import { analyzeText } from "./lib/analyze";
 
 type Zone = "above" | "within" | "below" | "sparse-tail";
 type ZipfRow = { rank:number; term:string; actualCount:number; expectedCount:number; ratio:number; zone:Zone };
@@ -147,7 +148,26 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
   }catch{}},0);return()=>window.clearTimeout(timer);},[]);
 
   const parsedStopwords=Object.fromEntries(Object.entries(stopwordLists).map(([lang,value])=>[lang,[...new Set(value.toLowerCase().split(/[\s,;]+/).map(word=>word.trim()).filter(Boolean))]])) as Record<Lang,string[]>;
-  async function analyze(event?:FormEvent){event?.preventDefault();setLoading(true);setError("");try{const response=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sourceType,source,language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang})});const data=await response.json();if(!response.ok)throw new Error(data.error||t("failed"));setResult(data);if(language==="auto"&&["ru","uk","en"].includes(data.language))setStopwordEditorLang(data.language as Lang);setTimeout(()=>document.getElementById("result")?.scrollIntoView({behavior:"smooth",block:"start"}),50);}catch(err){setError(err instanceof Error?err.message:t("unknownError"));}finally{setLoading(false);}}
+  async function analyze(event?:FormEvent){
+    event?.preventDefault();setLoading(true);setError("");
+    try{
+      await new Promise<void>(resolve=>window.setTimeout(resolve,0));
+      let data:Analysis;
+      if(sourceType==="text"){
+        const localResult=analyzeText({text:source,language:language as "auto"|Lang,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang});
+        const {_allUnigrams,_allBigrams,...visibleResult}=localResult;void _allUnigrams;void _allBigrams;
+        data=visibleResult;
+      }else{
+        const response=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({sourceType,source,language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang})});
+        const raw=await response.text();
+        let payload:unknown;
+        try{payload=JSON.parse(raw);}catch{throw new Error(response.status===403?t("requestBlocked"):t("invalidResponse"));}
+        if(!response.ok){const message=typeof payload==="object"&&payload&&"error" in payload?String((payload as {error:unknown}).error):t("failed");throw new Error(message);}
+        data=payload as Analysis;
+      }
+      setResult(data);if(language==="auto"&&["ru","uk","en"].includes(data.language))setStopwordEditorLang(data.language as Lang);setTimeout(()=>document.getElementById("result")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
+    }catch(err){setError(err instanceof Error?err.message:t("unknownError"));}finally{setLoading(false);}
+  }
   function changeLanguage(value:string){setLanguage(value);if(value!=="auto")setStopwordEditorLang(value as Lang);}
   function changeStopwordLanguage(value:Lang){setStopwordEditorLang(value);setLanguage(value);}
   function updateStopwords(value:string){const next={...stopwordLists,[stopwordEditorLang]:value};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}

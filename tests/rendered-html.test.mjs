@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -89,6 +90,13 @@ test("returns a client error for text that is too short", async () => {
   assert.equal(response.status, 422);
   const data = await response.json();
   assert.match(data.error, /too little text/i);
+});
+
+test("runs pasted-text analysis locally and handles non-JSON URL errors", async () => {
+  const source = await readFile(new URL("../app/BowApp.tsx", import.meta.url), "utf8");
+  assert.match(source, /if\(sourceType==="text"\)\{\s*const localResult=analyzeText/);
+  assert.match(source, /const raw=await response\.text\(\)/);
+  assert.doesNotMatch(source, /const data=await response\.json\(\)/);
 });
 
 test("serves a valid XML sitemap", async () => {
