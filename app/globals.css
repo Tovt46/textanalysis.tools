@@ -253,6 +253,10 @@ footer a { color:var(--green); text-decoration:none; }
 .comparison-grid span { color:#777e77; font:10px var(--font-geist-mono); }
 .comparison-head { background:#eceee7; }
 .question-list { display:grid; grid-template-columns:1fr 1fr; gap:10px 28px; padding-left:20px; }
+.article-sources { padding-top:28px; border-top:1px solid var(--line); }
+.article-sources h2 { font-size:24px; }
+.article-sources ul { margin:0; padding-left:20px; }
+.article-sources a { color:var(--green); text-underline-offset:3px; }
 .article-final-cta { padding:38px; background:#17201c; color:#fff; }
 .article-final-cta h2 { color:#fff; max-width:580px; }
 .article-final-cta>p:not(.eyebrow) { max-width:610px; color:#bec7c0!important; }

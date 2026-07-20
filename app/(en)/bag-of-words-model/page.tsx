@@ -133,6 +133,7 @@ export default function BagOfWordsModelPage(){
               <div><span>Training</span><p>No embedding training required</p><p>Requires a suitable text corpus</p></div>
             </div>
             <div className="article-callout subtle"><b>Important distinction</b><p><strong>Continuous Bag of Words (CBOW)</strong> is one of the Word2Vec training architectures. Despite the name, CBOW is not the same as the classic count-based Bag of Words representation described on this page.</p></div>
+            <p>For a deeper side-by-side breakdown, see <Link href="/bag-of-words-vs-word2vec">Bag of Words vs Word2Vec</Link>, including examples, selection criteria, and the difference between classic BoW and CBOW.</p>
           </section>
 
           <section id="seo">
