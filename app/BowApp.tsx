@@ -130,7 +130,7 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
   function clearA(){setBaseline(null);localStorage.removeItem(CACHE_KEY);}
 
   return <main>
-    <header className="topbar"><a className="brand" href="#top"><span className="brand-mark">B</span><span>BOW <i>/</i> ZIPF LAB</span></a><div className="header-tools"><span className="status"><b/>{t("status")}</span><nav className="ui-languages" aria-label="Interface language">{(["ru","en","uk"] as UiLang[]).map(lang=><a key={lang} href={LANGUAGE_ROUTES[lang]} className={uiLang===lang?"active":""} hrefLang={lang} lang={lang} aria-current={uiLang===lang?"page":undefined}>{lang.toUpperCase()}</a>)}</nav></div></header>
+    <header className="topbar"><a className="brand" href="#top"><span className="brand-mark" aria-hidden="true"/><span>BOW <i>/</i> ZIPF LAB</span></a><div className="header-tools"><span className="status"><b/>{t("status")}</span><nav className="ui-languages" aria-label="Interface language">{(["ru","en","uk"] as UiLang[]).map(lang=><a key={lang} href={LANGUAGE_ROUTES[lang]} className={uiLang===lang?"active":""} hrefLang={lang} lang={lang} aria-current={uiLang===lang?"page":undefined}>{lang.toUpperCase()}</a>)}</nav></div></header>
     <section className="hero reduced" id="top"><p className="eyebrow">{t("heroEye")}</p><h1>{t("heroLine")}<br/><em>{t("heroEm")}</em></h1><p className="hero-copy">{t("heroCopy")}</p></section>
 
     <form className="workspace" onSubmit={analyze}>

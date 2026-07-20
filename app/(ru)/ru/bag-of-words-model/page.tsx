@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_URL } from "../../../seo-metadata";
+import { SITE_ICONS, SITE_URL } from "../../../seo-metadata";
 
 const path="/ru/bag-of-words-model";
 const title="Модель Bag of Words: как она работает в NLP | Zipf Lab";
@@ -13,7 +13,8 @@ export const metadata:Metadata={
   openGraph:{type:"article",url:path,siteName:"BOW / Zipf Lab",title,description,locale:"ru_RU",alternateLocale:["en_US","uk_UA"]},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
-  icons:{icon:"/favicon.svg",shortcut:"/favicon.svg"},
+  icons:SITE_ICONS,
+  manifest:"/site.webmanifest",
 };
 
 const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"Модель Bag of Words: как она работает в NLP",description,inLanguage:"ru",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:"Zipf Lab"}};
@@ -22,7 +23,7 @@ export default function RussianBagOfWordsModelPage(){
   return <main className="article-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
     <header className="topbar article-topbar">
-      <Link className="brand" href="/ru"><span className="brand-mark">B</span><span>BOW <i>/</i> ZIPF LAB</span></Link>
+      <Link className="brand" href="/ru"><span className="brand-mark" aria-hidden="true"/><span>BOW <i>/</i> ZIPF LAB</span></Link>
       <div className="header-tools"><nav className="ui-languages" aria-label="Язык статьи"><Link href="/bag-of-words-model" hrefLang="en" lang="en">EN</Link><Link className="active" href={path} hrefLang="ru" lang="ru" aria-current="page">RU</Link><Link href="/uk/bag-of-words-model" hrefLang="uk" lang="uk">UK</Link></nav><Link className="article-tool-link" href="/ru">Открыть анализатор <span>→</span></Link></div>
     </header>
 

@@ -10,7 +10,7 @@ main { min-height:100vh; }
 .topbar { height:72px; max-width:1280px; margin:auto; padding:0 34px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
 .brand { color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:12px; font:650 13px var(--font-geist-mono); letter-spacing:.08em; }
 .brand i { color:#a0a69e; font-style:normal; margin:0 3px; }
-.brand-mark { width:30px; height:30px; display:grid; place-items:center; background:var(--green); color:white; border-radius:50%; font:700 14px Georgia,serif; }
+.brand-mark { width:32px; height:32px; flex:0 0 32px; display:block; background:url("/android-chrome-192x192.png") center/cover no-repeat; border:1px solid #d7d8d1; border-radius:5px; }
 .status { display:flex; align-items:center; gap:8px; color:var(--muted); font:500 11px var(--font-geist-mono); text-transform:uppercase; letter-spacing:.06em; }
 .status b { width:7px; height:7px; border-radius:50%; background:#7dab62; box-shadow:0 0 0 4px #e1e9d8; }
 .header-tools { display:flex; align-items:center; gap:20px; }
