@@ -10,3 +10,5 @@ The sitemap contains six canonical, indexable HTTPS URLs organized into two mult
 Every URL includes the complete English, Russian, Ukrainian, and `x-default` alternate set. English is the default language. Redirecting `/en` is intentionally excluded because only final canonical URLs belong in the sitemap.
 
 The sitemap is declared in `/robots.txt`. `lastmod` reflects the latest content deployment and should only change when page content changes.
+
+The XML response is formatted with explicit line breaks and two-space indentation so its source remains readable without adding an XSL presentation layer.
