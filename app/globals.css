@@ -7,12 +7,15 @@ body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--fo
 button,input,textarea,select { font:inherit; }
 button { cursor:pointer; }
 main { min-height:100vh; }
-.topbar { height:72px; max-width:1280px; margin:auto; padding:0 34px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
+.topbar { height:72px; max-width:1280px; margin:auto; padding:0 34px; display:flex; align-items:center; gap:24px; border-bottom:1px solid var(--line); }
 .brand { color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:12px; font:650 13px var(--font-geist-mono); letter-spacing:.08em; }
 .brand i { color:#a0a69e; font-style:normal; margin:0 3px; }
 .brand-mark { width:32px; height:32px; flex:0 0 32px; display:block; background:url("/android-chrome-192x192.png") center/cover no-repeat; border:1px solid #d7d8d1; border-radius:5px; }
 .status { display:flex; align-items:center; gap:8px; color:var(--muted); font:500 11px var(--font-geist-mono); text-transform:uppercase; letter-spacing:.06em; }
 .status b { width:7px; height:7px; border-radius:50%; background:#7dab62; box-shadow:0 0 0 4px #e1e9d8; }
+.site-nav { display:flex; align-items:center; gap:22px; margin-left:auto; }
+.site-nav a { padding:8px 0; border-bottom:1px solid transparent; color:#626a63; text-decoration:none; white-space:nowrap; font:550 11px var(--font-geist-mono); }
+.site-nav a:hover,.site-nav a.active { color:var(--green); border-bottom-color:var(--green); }
 .header-tools { display:flex; align-items:center; gap:20px; }
 .ui-languages { display:flex; gap:2px; padding:3px; background:#e7e9e3; border-radius:3px; }
 .ui-languages a { min-width:34px; height:27px; display:grid; place-items:center; background:transparent; color:#747b74; border-radius:2px; font:600 9px var(--font-geist-mono); text-decoration:none; }
@@ -22,6 +25,9 @@ main { min-height:100vh; }
 .hero h1 { margin:0; font-size:clamp(48px,6.2vw,88px); line-height:.93; font-weight:500; letter-spacing:-.065em; }
 .hero h1 em { color:var(--green); font-family:Georgia,serif; font-weight:400; }
 .hero-copy { margin:0 0 7px; font-size:17px; line-height:1.6; color:#59605a; max-width:440px; }
+.hero-aside { align-self:end; }
+.privacy-note { display:flex; align-items:center; gap:9px; width:max-content; max-width:100%; margin-top:17px; padding:9px 11px; background:#e7ecd4; color:#526052; font:500 10px var(--font-geist-mono); letter-spacing:.02em; }
+.privacy-note b { width:7px; height:7px; flex:0 0 7px; border-radius:50%; background:#6e9a55; box-shadow:0 0 0 3px #d3dfc5; }
 .hero.reduced { padding-top:62px; padding-bottom:46px; }
 .workspace,.results,.empty-state { max-width:1280px; margin:auto; padding-left:34px; padding-right:34px; }
 .workspace { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(280px,.72fr); gap:18px; }
@@ -272,6 +278,10 @@ footer a { color:var(--green); text-decoration:none; }
 .api-fields span { display:block; margin-top:5px; color:var(--green); font:10px var(--font-geist-mono); text-transform:uppercase; letter-spacing:.06em; }
 .api-fields p { margin:10px 0 0; color:#59605a; font-size:13px; line-height:1.55; }
 @media (max-width:850px) {
+  .topbar { height:auto; min-height:72px; flex-wrap:wrap; padding-top:12px; padding-bottom:12px; }
+  .site-nav { order:3; width:100%; margin-left:0; padding-top:8px; overflow-x:auto; border-top:1px solid var(--line); scrollbar-width:none; }
+  .site-nav::-webkit-scrollbar { display:none; }
+  .header-tools { margin-left:auto; }
   .hero { grid-template-columns:1fr; padding-top:58px; gap:28px; }
   .workspace,.analysis-grid { grid-template-columns:1fr; }
   .metrics-grid { grid-template-columns:1fr 1fr; }
@@ -288,8 +298,9 @@ footer a { color:var(--green); text-decoration:none; }
 }
 @media (max-width:560px) {
   .topbar,.hero,.workspace,.results { padding-left:18px; padding-right:18px; }
-  .topbar { height:62px; }
-  .status { display:none; }
+  .topbar { height:auto; min-height:62px; }
+  .site-nav { gap:18px; }
+  .site-nav a { font-size:10px; }
   .header-tools { gap:8px; }
   .hero { padding-top:44px; padding-bottom:38px; }
   .hero h1 { font-size:49px; }
