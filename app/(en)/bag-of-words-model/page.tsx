@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_ICONS, SITE_URL } from "../../seo-metadata";
+import { SiteFooter,SiteHeader } from "../../SiteChrome";
 
 const path="/bag-of-words-model";
 const title="Bag of Words Model: How It Works in NLP | BOW Analyzer";
@@ -31,10 +32,7 @@ const schema={
 export default function BagOfWordsModelPage(){
   return <main className="article-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
-    <header className="topbar article-topbar">
-      <Link className="brand" href="/"><span className="brand-mark" aria-hidden="true"/><span>BOW ANALYZER</span></Link>
-      <div className="header-tools"><nav className="ui-languages" aria-label="Article language"><Link className="active" href="/bag-of-words-model" hrefLang="en" lang="en" aria-current="page">EN</Link><Link href="/ru/bag-of-words-model" hrefLang="ru" lang="ru">RU</Link><Link href="/uk/bag-of-words-model" hrefLang="uk" lang="uk">UK</Link></nav><Link className="article-tool-link" href="/">Open free analyzer <span>→</span></Link></div>
-    </header>
+    <SiteHeader locale="en" active="guide" languagePaths={{en:"/bag-of-words-model",uk:"/uk/bag-of-words-model",ru:"/ru/bag-of-words-model"}}/>
 
     <article>
       <div className="article-hero">
@@ -156,6 +154,6 @@ export default function BagOfWordsModelPage(){
       </div>
     </article>
 
-    <footer className="article-footer"><span>BOW ANALYZER</span><p><Link href="/">Free Bag of Words SEO analyzer</Link></p></footer>
+    <SiteFooter locale="en"/>
   </main>;
 }

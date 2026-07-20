@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import { LOCALES, translate, type UiLang } from "./i18n";
+import { SiteFooter,SiteHeader } from "./SiteChrome";
 
 type Zone = "above" | "within" | "below" | "sparse-tail";
 type ZipfRow = { rank:number; term:string; actualCount:number; expectedCount:number; ratio:number; zone:Zone };
@@ -122,13 +123,6 @@ function Comparison({ baseline, current, onClear, t, uiLang }: { baseline:SavedR
   </section>;
 }
 
-const LANGUAGE_ROUTES: Record<UiLang,string> = { ru:"/ru", en:"/", uk:"/uk" };
-const HEADER_LABELS:Record<UiLang,{analyzer:string;guide:string;comparison:string}>={
-  en:{analyzer:"Analyzer",guide:"BOW guide",comparison:"BOW vs Word2Vec"},
-  ru:{analyzer:"Анализатор",guide:"Гайд по BOW",comparison:"BOW и Word2Vec"},
-  uk:{analyzer:"Аналізатор",guide:"Гайд по BOW",comparison:"BOW і Word2Vec"},
-};
-
 export default function BowApp({ uiLang }: { uiLang:UiLang }) {
   const [sourceType,setSourceType]=useState<"text"|"url">("text"); const [source,setSource]=useState("");
   const [language,setLanguage]=useState("en"); const [focus,setFocus]=useState("");
@@ -137,8 +131,6 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
   const [result,setResult]=useState<Analysis|null>(null); const [baseline,setBaseline]=useState<SavedResult|null>(null);
   const [loading,setLoading]=useState(false); const [error,setError]=useState("");
   const t:T=useCallback((key,vars)=>translate(uiLang,key,vars),[uiLang]);
-  const headerLabels=HEADER_LABELS[uiLang];
-  const guideHref=uiLang==="en"?"/bag-of-words-model":`/${uiLang}/bag-of-words-model`;
 
   useEffect(()=>{const timer=window.setTimeout(()=>{try{const raw=localStorage.getItem(CACHE_KEY);if(raw)setBaseline(JSON.parse(raw));const savedLists=localStorage.getItem(STOPWORDS_KEY);if(savedLists)setStopwordLists(JSON.parse(savedLists));}catch{}},0);return()=>window.clearTimeout(timer);},[]);
 
@@ -152,7 +144,7 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
   function clearA(){setBaseline(null);localStorage.removeItem(CACHE_KEY);}
 
   return <main>
-    <header className="topbar"><a className="brand" href="#top"><span className="brand-mark" aria-hidden="true"/><span>BOW ANALYZER</span></a><nav className="site-nav" aria-label="Main navigation"><a className="active" href={LANGUAGE_ROUTES[uiLang]} aria-current="page">{headerLabels.analyzer}</a><a href={guideHref}>{headerLabels.guide}</a><a href="/bag-of-words-vs-word2vec">{headerLabels.comparison}</a><a href="/api-docs">API</a></nav><div className="header-tools"><nav className="ui-languages" aria-label="Interface language">{(["ru","en","uk"] as UiLang[]).map(lang=><a key={lang} href={LANGUAGE_ROUTES[lang]} className={uiLang===lang?"active":""} hrefLang={lang} lang={lang} aria-current={uiLang===lang?"page":undefined}>{lang.toUpperCase()}</a>)}</nav></div></header>
+    <SiteHeader locale={uiLang} active="analyzer"/>
     <section className="hero reduced" id="top"><p className="eyebrow">{t("heroEye")}</p><h1>{t("heroLine")}<br/><em>{t("heroEm")}</em></h1><div className="hero-aside"><p className="hero-copy">{t("heroCopy")}</p><span className="privacy-note"><b/>{t("status")}</span></div></section>
 
     <form className="workspace" onSubmit={analyze}>
@@ -189,6 +181,6 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
 
     {baseline&&result&&<Comparison baseline={baseline} current={result} onClear={clearA} t={t} uiLang={uiLang}/>} 
     {!result&&<section className="empty-state"><span>03</span><p>{t("empty")}</p></section>}
-    <footer><span>BOW ANALYZER</span><p>{t("footer")}</p><a href={uiLang==="en"?"/bag-of-words-model":`/${uiLang}/bag-of-words-model`}>{uiLang==="ru"?"Как работает модель Bag of Words →":uiLang==="uk"?"Як працює модель Bag of Words →":"How the Bag of Words model works →"}</a><a href="/api-docs">API →</a></footer>
+    <SiteFooter locale={uiLang}/>
   </main>;
 }

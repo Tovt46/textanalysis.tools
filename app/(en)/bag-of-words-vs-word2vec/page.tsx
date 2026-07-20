@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_ICONS, SITE_URL } from "../../seo-metadata";
+import { SiteFooter,SiteHeader } from "../../SiteChrome";
 
 const path="/bag-of-words-vs-word2vec";
 const title="Bag of Words vs Word2Vec: Key Differences | BOW Analyzer";
@@ -34,10 +35,7 @@ export default function BagOfWordsVsWord2VecPage(){
   return <main className="article-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
 
-    <header className="topbar article-topbar">
-      <Link className="brand" href="/"><span className="brand-mark" aria-hidden="true"/><span>BOW ANALYZER</span></Link>
-      <div className="header-tools"><nav className="ui-languages" aria-label="Page language"><Link className="active" href={path} hrefLang="en" lang="en" aria-current="page">EN</Link></nav><Link className="article-tool-link" href="/">Open free analyzer <span>→</span></Link></div>
-    </header>
+    <SiteHeader locale="en" active="comparison"/>
 
     <article>
       <div className="article-hero">
@@ -159,6 +157,6 @@ export default function BagOfWordsVsWord2VecPage(){
       </div>
     </article>
 
-    <footer className="article-footer"><span>BOW ANALYZER</span><p><Link href="/bag-of-words-model">Bag of Words model guide</Link> · <Link href="/">Free SEO analyzer</Link></p></footer>
+    <SiteFooter locale="en"/>
   </main>;
 }

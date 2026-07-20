@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_ICONS,SITE_URL } from "../../seo-metadata";
+import { SiteFooter,SiteHeader } from "../../SiteChrome";
 
 const path="/api-docs";
 const title="Free Bag of Words API Documentation | BOW Analyzer";
@@ -24,7 +25,7 @@ const compareExample=`{
 }`;
 
 export default function ApiDocsPage(){return <main className="article-page">
-  <header className="topbar article-topbar"><Link className="brand" href="/"><span className="brand-mark" aria-hidden="true"/><span>BOW ANALYZER</span></Link><div className="header-tools"><a className="article-tool-link" href="/openapi.json">OpenAPI JSON <span>→</span></a></div></header>
+  <SiteHeader locale="en" active="api"/>
   <article>
     <div className="article-hero"><nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Free analyzer</Link><span>/</span><span>API documentation</span></nav><p className="eyebrow">PUBLIC API · NO API KEY</p><h1>Bag of Words API for agents and apps</h1><p className="article-deck">Send text or a public URL and receive structured JSON. Analyze one input or compare two versions. Requests are stateless: submitted content is processed and not stored.</p><div className="article-actions"><a className="primary-article-cta" href="#quickstart">Start with one request</a><a href="/openapi.json">Read OpenAPI specification →</a></div></div>
     <div className="article-layout"><aside className="article-toc" aria-label="On this page"><b>On this page</b><a href="#quickstart">Quickstart</a><a href="#analyze">Analyze endpoint</a><a href="#compare">Compare endpoint</a><a href="#response">Response fields</a><a href="#limits">Limits and safety</a><a href="#discovery">Agent discovery</a></aside>
@@ -39,5 +40,5 @@ export default function ApiDocsPage(){return <main className="article-page">
       </div>
     </div>
   </article>
-  <footer className="article-footer"><span>BOW ANALYZER</span><p><Link href="/">Analyzer</Link> · <a href="/openapi.json">OpenAPI</a> · <a href="/llms.txt">llms.txt</a></p></footer>
+  <SiteFooter locale="en"/>
 </main>;}
