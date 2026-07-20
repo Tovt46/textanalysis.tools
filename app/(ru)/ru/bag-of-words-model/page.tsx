@@ -3,27 +3,27 @@ import Link from "next/link";
 import { SITE_ICONS, SITE_URL } from "../../../seo-metadata";
 
 const path="/ru/bag-of-words-model";
-const title="Модель Bag of Words: как она работает в NLP | Zipf Lab";
+const title="Модель Bag of Words: как она работает в NLP | BOW Analyzer";
 const description="Разбираем модель Bag of Words: токенизацию, векторы, признаки, ограничения, отличия от Word2Vec и применение для SEO-анализа текста.";
 const languages={en:"/bag-of-words-model",ru:path,uk:"/uk/bag-of-words-model","x-default":"/bag-of-words-model"};
 
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
   alternates:{canonical:path,languages},
-  openGraph:{type:"article",url:path,siteName:"BOW / Zipf Lab",title,description,locale:"ru_RU",alternateLocale:["en_US","uk_UA"]},
+  openGraph:{type:"article",url:path,siteName:"BOW Analyzer",title,description,locale:"ru_RU",alternateLocale:["en_US","uk_UA"]},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
   icons:SITE_ICONS,
   manifest:"/site.webmanifest",
 };
 
-const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"Модель Bag of Words: как она работает в NLP",description,inLanguage:"ru",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:"Zipf Lab"}};
+const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"Модель Bag of Words: как она работает в NLP",description,inLanguage:"ru",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:"BOW Analyzer"}};
 
 export default function RussianBagOfWordsModelPage(){
   return <main className="article-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
     <header className="topbar article-topbar">
-      <Link className="brand" href="/ru"><span className="brand-mark" aria-hidden="true"/><span>BOW <i>/</i> ZIPF LAB</span></Link>
+      <Link className="brand" href="/ru"><span className="brand-mark" aria-hidden="true"/><span>BOW ANALYZER</span></Link>
       <div className="header-tools"><nav className="ui-languages" aria-label="Язык статьи"><Link href="/bag-of-words-model" hrefLang="en" lang="en">EN</Link><Link className="active" href={path} hrefLang="ru" lang="ru" aria-current="page">RU</Link><Link href="/uk/bag-of-words-model" hrefLang="uk" lang="uk">UK</Link></nav><Link className="article-tool-link" href="/ru">Открыть анализатор <span>→</span></Link></div>
     </header>
 
@@ -54,10 +54,10 @@ export default function RussianBagOfWordsModelPage(){
 
           <section id="seo"><p className="section-number">07</p><h2>Как использовать Bag of Words для SEO-анализа текста</h2><p>В SEO Bag of Words стоит воспринимать как диагностический инструмент, а не формулу ранжирования. Он показывает, какую лексику страница действительно подчёркивает, какие важные фразы отсутствуют и где повторы делают текст неестественным.</p><p>Практический анализ сравнивает частотность слов и биграмм, нормирует данные в процентах или вхождениях на 1 000 слов, позволяет редактировать стоп-слова и сопоставляет две версии рядом. Распределение Ципфа служит дополнительным ориентиром: показывает термины, которые встречаются заметно чаще или реже, чем предсказывает подобранная частотная кривая.</p><h3>На какие вопросы отвечает BoW-анализ</h3><ul className="question-list"><li>Какие слова доминируют после удаления стоп-слов?</li><li>Чем черновик отличается от конкурента или прошлой версии?</li><li>Есть ли в тексте контрольные фразы и какова их частота?</li><li>Какие биграммы описывают тему точнее отдельных слов?</li><li>Не искажает ли словарь повторяющийся шаблон, меню или блок?</li></ul><p>Одна частота не доказывает релевантность или качество. Поисковый интент, фактическая польза, структура, оригинальность и читаемость всё равно требуют редакторского решения. Ценность Bag of Words в том, что одну часть такого решения он делает измеримой и удобной для сравнения.</p></section>
 
-          <section className="article-final-cta"><p className="eyebrow">БЕСПЛАТНО · БЕЗ РЕГИСТРАЦИИ</p><h2>Попробуйте бесплатный Bag of Words-анализатор</h2><p>Вставьте текст или URL, отредактируйте стоп-слова, задайте контрольные фразы, посмотрите проценты и сравните результат A с результатом B.</p><Link href="/ru">Открыть BOW / Zipf Lab <span>→</span></Link></section>
+          <section className="article-final-cta"><p className="eyebrow">БЕСПЛАТНО · БЕЗ РЕГИСТРАЦИИ</p><h2>Попробуйте бесплатный Bag of Words-анализатор</h2><p>Вставьте текст или URL, отредактируйте стоп-слова, задайте контрольные фразы, посмотрите проценты и сравните результат A с результатом B.</p><Link href="/ru">Открыть бесплатный анализатор <span>→</span></Link></section>
         </div>
       </div>
     </article>
-    <footer className="article-footer"><span>BOW / ZIPF LAB</span><p><Link href="/ru">Бесплатный Bag of Words SEO-анализатор</Link></p></footer>
+    <footer className="article-footer"><span>BOW ANALYZER</span><p><Link href="/ru">Бесплатный Bag of Words SEO-анализатор</Link></p></footer>
   </main>;
 }

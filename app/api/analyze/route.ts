@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       }
       if (!/^https?:$/.test(url.protocol)) return Response.json({ error: translate(uiLanguage, "badProtocol") }, { status: 400 });
       const response = await fetch(url, {
-        headers: { "User-Agent": "BOW-Zipf-Lab/1.0" },
+        headers: { "User-Agent": "BOW-Analyzer/1.0" },
         signal: AbortSignal.timeout(12000),
       });
       if (!response.ok) return Response.json({ error: translate(uiLanguage, "pageStatus", { status: response.status }) }, { status: 422 });

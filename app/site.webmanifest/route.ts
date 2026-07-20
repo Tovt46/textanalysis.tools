@@ -1,6 +1,6 @@
 const manifest={
-  name:"BOW / Zipf Lab",
-  short_name:"Zipf Lab",
+  name:"Free Bag of Words Analyzer",
+  short_name:"BOW Analyzer",
   icons:[
     {src:"/android-chrome-192x192.png",sizes:"192x192",type:"image/png"},
     {src:"/android-chrome-512x512.png",sizes:"512x512",type:"image/png"},

@@ -16,19 +16,19 @@ export const SITE_ICONS:Metadata["icons"] = {
 const SEO_COPY: Record<UiLang,{ path:string; title:string; description:string; locale:string }> = {
   ru: {
     path: "/ru",
-    title: "Бесплатный Bag of Words SEO-анализатор | Zipf Lab",
+    title: "Бесплатный Bag of Words SEO-анализатор | BOW Analyzer",
     description: "Анализируйте частотность и плотность ключевых слов, биграммы и стоп-слова. Сравнивайте два текста с помощью Bag of Words и закона Ципфа.",
     locale: "ru_RU",
   },
   en: {
     path: "/",
-    title: "Free Bag of Words SEO Analyzer & Comparison | Zipf Lab",
+    title: "Free Bag of Words SEO Analyzer & Comparison | BOW Analyzer",
     description: "Analyze keyword density, word and bigram frequency, and editable stop words. Compare two texts with Bag of Words and Zipf distribution.",
     locale: "en_US",
   },
   uk: {
     path: "/uk",
-    title: "Безкоштовний Bag of Words SEO-аналізатор | Zipf Lab",
+    title: "Безкоштовний Bag of Words SEO-аналізатор | BOW Analyzer",
     description: "Аналізуйте частотність і щільність ключових слів, біграми та стоп-слова. Порівнюйте два тексти за допомогою Bag of Words і закону Ципфа.",
     locale: "uk_UA",
   },
@@ -46,7 +46,7 @@ export function pageMetadata(lang:UiLang):Metadata {
     openGraph:{
       type:"website",
       url:page.path,
-      siteName:"BOW / Zipf Lab",
+      siteName:"BOW Analyzer",
       title:page.title,
       description:page.description,
       locale:page.locale,

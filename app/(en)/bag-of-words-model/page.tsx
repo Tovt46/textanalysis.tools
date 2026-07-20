@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SITE_ICONS, SITE_URL } from "../../seo-metadata";
 
 const path="/bag-of-words-model";
-const title="Bag of Words Model: How It Works in NLP | Zipf Lab";
+const title="Bag of Words Model: How It Works in NLP | BOW Analyzer";
 const description="Learn how the Bag of Words model works in NLP, from tokenization and vectors to features, limitations, Word2Vec differences, and SEO text analysis.";
 
 export const metadata:Metadata={
@@ -11,7 +11,7 @@ export const metadata:Metadata={
   title,
   description,
   alternates:{canonical:path,languages:{en:path,ru:"/ru/bag-of-words-model",uk:"/uk/bag-of-words-model","x-default":path}},
-  openGraph:{type:"article",url:path,siteName:"BOW / Zipf Lab",title,description,locale:"en_US"},
+  openGraph:{type:"article",url:path,siteName:"BOW Analyzer",title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
   icons:SITE_ICONS,
@@ -25,14 +25,14 @@ const schema={
   description,
   inLanguage:"en",
   mainEntityOfPage:`${SITE_URL}${path}`,
-  publisher:{"@type":"Organization",name:"Zipf Lab"},
+  publisher:{"@type":"Organization",name:"BOW Analyzer"},
 };
 
 export default function BagOfWordsModelPage(){
   return <main className="article-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
     <header className="topbar article-topbar">
-      <Link className="brand" href="/"><span className="brand-mark" aria-hidden="true"/><span>BOW <i>/</i> ZIPF LAB</span></Link>
+      <Link className="brand" href="/"><span className="brand-mark" aria-hidden="true"/><span>BOW ANALYZER</span></Link>
       <div className="header-tools"><nav className="ui-languages" aria-label="Article language"><Link className="active" href="/bag-of-words-model" hrefLang="en" lang="en" aria-current="page">EN</Link><Link href="/ru/bag-of-words-model" hrefLang="ru" lang="ru">RU</Link><Link href="/uk/bag-of-words-model" hrefLang="uk" lang="uk">UK</Link></nav><Link className="article-tool-link" href="/">Open free analyzer <span>→</span></Link></div>
     </header>
 
@@ -150,12 +150,12 @@ export default function BagOfWordsModelPage(){
             <p className="eyebrow">FREE · NO SIGN-UP</p>
             <h2>Try the Free Bag of Words Analyzer</h2>
             <p>Paste text or analyze a webpage, edit stop-word lists, track phrases, review keyword percentages, and compare result A with result B.</p>
-            <Link href="/">Open BOW / Zipf Lab <span>→</span></Link>
+            <Link href="/">Open the free analyzer <span>→</span></Link>
           </section>
         </div>
       </div>
     </article>
 
-    <footer className="article-footer"><span>BOW / ZIPF LAB</span><p><Link href="/">Free Bag of Words SEO analyzer</Link></p></footer>
+    <footer className="article-footer"><span>BOW ANALYZER</span><p><Link href="/">Free Bag of Words SEO analyzer</Link></p></footer>
   </main>;
 }

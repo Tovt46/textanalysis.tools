@@ -3,18 +3,18 @@ import Link from "next/link";
 import { SITE_ICONS, SITE_URL } from "../../../seo-metadata";
 
 const path="/uk/bag-of-words-model";
-const title="Модель Bag of Words: як вона працює в NLP | Zipf Lab";
+const title="Модель Bag of Words: як вона працює в NLP | BOW Analyzer";
 const description="Пояснюємо модель Bag of Words: токенізацію, вектори, ознаки, обмеження, відмінності від Word2Vec і застосування для SEO-аналізу тексту.";
 const languages={en:"/bag-of-words-model",ru:"/ru/bag-of-words-model",uk:path,"x-default":"/bag-of-words-model"};
 
-export const metadata:Metadata={metadataBase:new URL(SITE_URL),title,description,alternates:{canonical:path,languages},openGraph:{type:"article",url:path,siteName:"BOW / Zipf Lab",title,description,locale:"uk_UA",alternateLocale:["en_US","ru_RU"]},twitter:{card:"summary",title,description},verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest"};
+export const metadata:Metadata={metadataBase:new URL(SITE_URL),title,description,alternates:{canonical:path,languages},openGraph:{type:"article",url:path,siteName:"BOW Analyzer",title,description,locale:"uk_UA",alternateLocale:["en_US","ru_RU"]},twitter:{card:"summary",title,description},verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest"};
 
-const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"Модель Bag of Words: як вона працює в NLP",description,inLanguage:"uk",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:"Zipf Lab"}};
+const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"Модель Bag of Words: як вона працює в NLP",description,inLanguage:"uk",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:"BOW Analyzer"}};
 
 export default function UkrainianBagOfWordsModelPage(){
   return <main className="article-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
-    <header className="topbar article-topbar"><Link className="brand" href="/uk"><span className="brand-mark" aria-hidden="true"/><span>BOW <i>/</i> ZIPF LAB</span></Link><div className="header-tools"><nav className="ui-languages" aria-label="Мова статті"><Link href="/bag-of-words-model" hrefLang="en" lang="en">EN</Link><Link href="/ru/bag-of-words-model" hrefLang="ru" lang="ru">RU</Link><Link className="active" href={path} hrefLang="uk" lang="uk" aria-current="page">UK</Link></nav><Link className="article-tool-link" href="/uk">Відкрити аналізатор <span>→</span></Link></div></header>
+    <header className="topbar article-topbar"><Link className="brand" href="/uk"><span className="brand-mark" aria-hidden="true"/><span>BOW ANALYZER</span></Link><div className="header-tools"><nav className="ui-languages" aria-label="Мова статті"><Link href="/bag-of-words-model" hrefLang="en" lang="en">EN</Link><Link href="/ru/bag-of-words-model" hrefLang="ru" lang="ru">RU</Link><Link className="active" href={path} hrefLang="uk" lang="uk" aria-current="page">UK</Link></nav><Link className="article-tool-link" href="/uk">Відкрити аналізатор <span>→</span></Link></div></header>
 
     <article>
       <div className="article-hero"><nav className="breadcrumbs" aria-label="Навігаційний ланцюжок"><Link href="/uk">Безкоштовний аналізатор</Link><span>/</span><span>Модель Bag of Words</span></nav><p className="eyebrow">ОСНОВИ NLP · ПРАКТИЧНИЙ ПОСІБНИК</p><h1>Модель Bag of Words: як вона працює в NLP</h1><p className="article-deck">Модель Bag of Words перетворює текст на просте числове представлення, підраховуючи слова. Вона прозора, швидко обчислюється й досі корисна для класифікації текстів, порівняння документів, аналізу частотності ключових слів і перевірки SEO-контенту.</p><div className="article-actions"><Link className="primary-article-cta" href="/uk">Спробувати безкоштовний Bag of Words-аналізатор</Link><a href="#how-it-works">Як працює модель ↓</a></div></div>
@@ -36,10 +36,10 @@ export default function UkrainianBagOfWordsModelPage(){
 
           <section id="seo"><p className="section-number">07</p><h2>Як використовувати Bag of Words для SEO-аналізу тексту</h2><p>У SEO Bag of Words варто сприймати як діагностичний інструмент, а не формулу ранжування. Він показує, яку лексику сторінка насправді підкреслює, яких важливих фраз бракує та де повтори роблять текст неприродним.</p><p>Практичний аналіз порівнює частотність слів і біграм, нормує дані у відсотках або входженнях на 1 000 слів, дає змогу редагувати стоп-слова й зіставляє дві версії поруч. Розподіл Ципфа слугує додатковим орієнтиром: показує терміни, що трапляються значно частіше або рідше, ніж передбачає підібрана частотна крива.</p><h3>На які запитання відповідає BoW-аналіз</h3><ul className="question-list"><li>Які слова домінують після видалення стоп-слів?</li><li>Чим чернетка відрізняється від конкурента або попередньої версії?</li><li>Чи є в тексті контрольні фрази та яка їхня частота?</li><li>Які біграми описують тему точніше за окремі слова?</li><li>Чи не спотворює лексику повторюваний шаблон, меню або блок?</li></ul><p>Сама частота не доводить релевантність або якість. Пошуковий намір, фактична користь, структура, оригінальність і читабельність усе одно потребують редакторського рішення. Цінність Bag of Words у тому, що одну частину такого рішення він робить вимірюваною та зручною для порівняння.</p></section>
 
-          <section className="article-final-cta"><p className="eyebrow">БЕЗКОШТОВНО · БЕЗ РЕЄСТРАЦІЇ</p><h2>Спробуйте безкоштовний Bag of Words-аналізатор</h2><p>Вставте текст або URL, відредагуйте стоп-слова, задайте контрольні фрази, перегляньте відсотки й порівняйте результат A з результатом B.</p><Link href="/uk">Відкрити BOW / Zipf Lab <span>→</span></Link></section>
+          <section className="article-final-cta"><p className="eyebrow">БЕЗКОШТОВНО · БЕЗ РЕЄСТРАЦІЇ</p><h2>Спробуйте безкоштовний Bag of Words-аналізатор</h2><p>Вставте текст або URL, відредагуйте стоп-слова, задайте контрольні фрази, перегляньте відсотки й порівняйте результат A з результатом B.</p><Link href="/uk">Відкрити безкоштовний аналізатор <span>→</span></Link></section>
         </div>
       </div>
     </article>
-    <footer className="article-footer"><span>BOW / ZIPF LAB</span><p><Link href="/uk">Безкоштовний Bag of Words SEO-аналізатор</Link></p></footer>
+    <footer className="article-footer"><span>BOW ANALYZER</span><p><Link href="/uk">Безкоштовний Bag of Words SEO-аналізатор</Link></p></footer>
   </main>;
 }

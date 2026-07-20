@@ -130,7 +130,7 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
   function clearA(){setBaseline(null);localStorage.removeItem(CACHE_KEY);}
 
   return <main>
-    <header className="topbar"><a className="brand" href="#top"><span className="brand-mark" aria-hidden="true"/><span>BOW <i>/</i> ZIPF LAB</span></a><div className="header-tools"><span className="status"><b/>{t("status")}</span><nav className="ui-languages" aria-label="Interface language">{(["ru","en","uk"] as UiLang[]).map(lang=><a key={lang} href={LANGUAGE_ROUTES[lang]} className={uiLang===lang?"active":""} hrefLang={lang} lang={lang} aria-current={uiLang===lang?"page":undefined}>{lang.toUpperCase()}</a>)}</nav></div></header>
+    <header className="topbar"><a className="brand" href="#top"><span className="brand-mark" aria-hidden="true"/><span>BOW ANALYZER</span></a><div className="header-tools"><span className="status"><b/>{t("status")}</span><nav className="ui-languages" aria-label="Interface language">{(["ru","en","uk"] as UiLang[]).map(lang=><a key={lang} href={LANGUAGE_ROUTES[lang]} className={uiLang===lang?"active":""} hrefLang={lang} lang={lang} aria-current={uiLang===lang?"page":undefined}>{lang.toUpperCase()}</a>)}</nav></div></header>
     <section className="hero reduced" id="top"><p className="eyebrow">{t("heroEye")}</p><h1>{t("heroLine")}<br/><em>{t("heroEm")}</em></h1><p className="hero-copy">{t("heroCopy")}</p></section>
 
     <form className="workspace" onSubmit={analyze}>
@@ -167,6 +167,6 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
 
     {baseline&&result&&<Comparison baseline={baseline} current={result} onClear={clearA} t={t} uiLang={uiLang}/>} 
     {!result&&<section className="empty-state"><span>03</span><p>{t("empty")}</p></section>}
-    <footer><span>BOW / ZIPF LAB</span><p>{t("footer")}</p><a href={uiLang==="en"?"/bag-of-words-model":`/${uiLang}/bag-of-words-model`}>{uiLang==="ru"?"Как работает модель Bag of Words →":uiLang==="uk"?"Як працює модель Bag of Words →":"How the Bag of Words model works →"}</a></footer>
+    <footer><span>BOW ANALYZER</span><p>{t("footer")}</p><a href={uiLang==="en"?"/bag-of-words-model":`/${uiLang}/bag-of-words-model`}>{uiLang==="ru"?"Как работает модель Bag of Words →":uiLang==="uk"?"Як працює модель Bag of Words →":"How the Bag of Words model works →"}</a></footer>
   </main>;
 }
