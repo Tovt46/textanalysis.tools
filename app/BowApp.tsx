@@ -20,7 +20,6 @@ const DEFAULT_STOPWORDS:Record<Lang,string> = {
   uk:"а, або, але, б, без, би, був, була, були, бути, в, вам, вас, ви, від, він, вона, вони, все, всіх, де, до, за, з, зі, й, і, із, його, її, їх, коли, ми, мене, мені, мною, на, над, не, ні, ним, нього, неї, о, по, про, під, при, та, так, ти, то, у, усе, це, цей, ця, ці, що, щоб, як",
   en:"a, an, and, are, as, at, be, been, by, for, from, had, has, have, he, her, hers, him, his, i, if, in, into, is, it, its, me, my, of, on, or, our, ours, she, so, that, the, their, them, they, this, to, us, was, we, were, what, when, where, which, who, why, will, with, you, your, yours",
 };
-const SAMPLE = `An online tarot reading can help you look more closely at relationships, feelings, and possible ways a situation may develop. The cards do not make decisions for you, but they can highlight hidden emotions and questions worth discussing with your partner. Ask a clear question, choose the cards, and read the interpretation calmly — as a prompt for reflection rather than an inevitable prediction.`;
 type T = (key:string, vars?:Record<string,string|number>)=>string;
 
 function Tip({ children }: { children:React.ReactNode }) {
@@ -110,8 +109,8 @@ function Comparison({ baseline, current, onClear, t, uiLang }: { baseline:SavedR
 const LANGUAGE_ROUTES: Record<UiLang,string> = { ru:"/ru", en:"/", uk:"/uk" };
 
 export default function BowApp({ uiLang }: { uiLang:UiLang }) {
-  const [sourceType,setSourceType]=useState<"text"|"url">("text"); const [source,setSource]=useState(SAMPLE);
-  const [language,setLanguage]=useState("en"); const [focus,setFocus]=useState("online tarot, relationships, feelings");
+  const [sourceType,setSourceType]=useState<"text"|"url">("text"); const [source,setSource]=useState("");
+  const [language,setLanguage]=useState("en"); const [focus,setFocus]=useState("");
   const [top,setTop]=useState(20); const [tolerance,setTolerance]=useState(2); const [keepStopwords,setKeepStopwords]=useState(false);
   const [stopwordEditorLang,setStopwordEditorLang]=useState<Lang>("en"); const [stopwordLists,setStopwordLists]=useState<Record<Lang,string>>(DEFAULT_STOPWORDS);
   const [result,setResult]=useState<Analysis|null>(null); const [baseline,setBaseline]=useState<SavedResult|null>(null);
@@ -135,7 +134,7 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
 
     <form className="workspace" onSubmit={analyze}>
       <section className="input-card">
-        <div className="section-head"><div><span>01</span><h2>{t("source")}</h2></div><div className="tabs"><button type="button" className={sourceType==="text"?"active":""} onClick={()=>{setSourceType("text");setSource(SAMPLE)}}>{t("text")}</button><button type="button" className={sourceType==="url"?"active":""} onClick={()=>{setSourceType("url");setSource("")}}>{t("url")}</button></div></div>
+        <div className="section-head"><div><span>01</span><h2>{t("source")}</h2></div><div className="tabs"><button type="button" className={sourceType==="text"?"active":""} onClick={()=>{setSourceType("text");setSource("")}}>{t("text")}</button><button type="button" className={sourceType==="url"?"active":""} onClick={()=>{setSourceType("url");setSource("")}}>{t("url")}</button></div></div>
         {sourceType==="text"?<div className="textarea-wrap"><textarea value={source} onChange={e=>setSource(e.target.value)} placeholder={t("textPlaceholder")}/><span>{source.length.toLocaleString(LOCALES[uiLang])} {t("chars")}</span></div>:<input className="url-input" type="url" value={source} onChange={e=>setSource(e.target.value)} placeholder="https://example.com/page" required/>}
         <label className="field wide"><span>{t("focus")} <Tip>{t("focusHelp")}</Tip></span><input value={focus} onChange={e=>setFocus(e.target.value)} placeholder="online tarot, relationships, feelings"/><small>{t("focusNote")}</small></label>
       </section>
