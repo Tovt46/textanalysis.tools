@@ -1,36 +1,38 @@
+import { SITE_URL } from "../seo-metadata";
+
 const xml=`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://bow-zipf-lab.tovt7.chatgpt.site/</loc>
-    <lastmod>2026-07-19</lastmod>
+    <loc>${SITE_URL}/</loc>
+    <lastmod>2026-07-22</lastmod>
   </url>
   <url>
-    <loc>https://bow-zipf-lab.tovt7.chatgpt.site/ru</loc>
-    <lastmod>2026-07-19</lastmod>
+    <loc>${SITE_URL}/ru</loc>
+    <lastmod>2026-07-22</lastmod>
   </url>
   <url>
-    <loc>https://bow-zipf-lab.tovt7.chatgpt.site/uk</loc>
-    <lastmod>2026-07-19</lastmod>
+    <loc>${SITE_URL}/uk</loc>
+    <lastmod>2026-07-22</lastmod>
   </url>
   <url>
-    <loc>https://bow-zipf-lab.tovt7.chatgpt.site/bag-of-words-model</loc>
-    <lastmod>2026-07-20</lastmod>
+    <loc>${SITE_URL}/bag-of-words-model</loc>
+    <lastmod>2026-07-22</lastmod>
   </url>
   <url>
-    <loc>https://bow-zipf-lab.tovt7.chatgpt.site/bag-of-words-vs-word2vec</loc>
-    <lastmod>2026-07-20</lastmod>
+    <loc>${SITE_URL}/bag-of-words-vs-word2vec</loc>
+    <lastmod>2026-07-22</lastmod>
   </url>
   <url>
-    <loc>https://bow-zipf-lab.tovt7.chatgpt.site/api-docs</loc>
-    <lastmod>2026-07-20</lastmod>
+    <loc>${SITE_URL}/api-docs</loc>
+    <lastmod>2026-07-22</lastmod>
   </url>
   <url>
-    <loc>https://bow-zipf-lab.tovt7.chatgpt.site/ru/bag-of-words-model</loc>
-    <lastmod>2026-07-19</lastmod>
+    <loc>${SITE_URL}/ru/bag-of-words-model</loc>
+    <lastmod>2026-07-22</lastmod>
   </url>
   <url>
-    <loc>https://bow-zipf-lab.tovt7.chatgpt.site/uk/bag-of-words-model</loc>
-    <lastmod>2026-07-19</lastmod>
+    <loc>${SITE_URL}/uk/bag-of-words-model</loc>
+    <lastmod>2026-07-22</lastmod>
   </url>
 </urlset>
 `;
