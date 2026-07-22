@@ -18,6 +18,9 @@ Requests use application/json. Supported languages are English, Russian, and Ukr
 - Free analyzer: ${SITE_URL}/
 - Text analysis tools: ${SITE_URL}/tools
 - Word frequency counter: ${SITE_URL}/tools/word-frequency-counter
+- Keyword density checker: ${SITE_URL}/tools/keyword-density-checker
+- How to calculate word frequency: ${SITE_URL}/how-to-calculate-word-frequency
+- Keyword density formula and limitations: ${SITE_URL}/keyword-density-formula
 - Bag of Words model guide: ${SITE_URL}/bag-of-words-model
 - Bag of Words vs Word2Vec: ${SITE_URL}/bag-of-words-vs-word2vec
 `;

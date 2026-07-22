@@ -109,6 +109,9 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/word-frequency-counter<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/keyword-density-checker<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/how-to-calculate-word-frequency<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/keyword-density-formula<\/loc>/);
 });
 
 test("renders the word frequency tool as a canonical English search page", async () => {
@@ -143,4 +146,60 @@ test("browser analytics remains opt-in and tracks core product actions", async (
   assert.match(bow,/comparison_completed/);
   assert.match(frequency,/url_analysis_started/);
   assert.match(frequency,/analysis_error/);
+});
+
+test("renders the keyword density checker with canonical metadata and useful content", async () => {
+  const response=await request("/tools/keyword-density-checker",{headers:{accept:"text/html"}});
+  assert.equal(response.status,200);
+  const html=await response.text();
+  assert.match(html,/<title>Free Keyword Density Checker for Text &amp; URLs<\/title>/i);
+  assert.match(html,/rel="canonical" href="https:\/\/textanalysis\.tools\/tools\/keyword-density-checker"/i);
+  assert.match(html,/<h1>Keyword Density Checker<\/h1>/i);
+  assert.match(html,/Density is a measurement, not a ranking score/i);
+  assert.match(html,/one-word keywords, bigrams, and trigrams/i);
+});
+
+test("keyword density uses total words and counts exact tracked phrases", async () => {
+  const response=await post("/api/keyword-density",{
+    source:"keyword density is useful keyword density checks keyword density",
+    language:"en",
+    keepStopwords:true,
+    trackedKeywords:"keyword density",
+  });
+  assert.equal(response.status,200);
+  const data=await response.json();
+  assert.equal(data.result.wordCount,9);
+  assert.equal(data.result.trackedKeywords[0].count,3);
+  const phrase=data.result.bigrams.find(row=>row.term==="keyword density");
+  assert.equal(phrase.count,3);
+  assert.equal(phrase.percentage,(3/9)*100);
+  assert.equal(phrase.per1000,(3/9)*1000);
+});
+
+test("keyword density stop-word filtering preserves real phrase adjacency", async () => {
+  const response=await post("/api/keyword-density",{
+    source:"seo and content seo and content",
+    language:"en",
+    keepStopwords:false,
+  });
+  assert.equal(response.status,200);
+  const data=await response.json();
+  assert.equal(data.result.unigrams.some(row=>row.term==="and"),false);
+  assert.equal(data.result.bigrams.some(row=>row.term==="seo content"),false);
+  assert.equal(data.result.bigrams.find(row=>row.term==="seo and").count,2);
+  assert.equal(data.result.bigrams.find(row=>row.term==="and content").count,2);
+});
+
+test("renders both educational pages with unique canonical titles", async () => {
+  const [frequency,density]=await Promise.all([
+    request("/how-to-calculate-word-frequency",{headers:{accept:"text/html"}}),
+    request("/keyword-density-formula",{headers:{accept:"text/html"}}),
+  ]);
+  assert.equal(frequency.status,200);assert.equal(density.status,200);
+  const [frequencyHtml,densityHtml]=await Promise.all([frequency.text(),density.text()]);
+  assert.match(frequencyHtml,/<title>How to Calculate Word Frequency: Formula &amp; Example<\/title>/i);
+  assert.match(frequencyHtml,/rel="canonical" href="https:\/\/textanalysis\.tools\/how-to-calculate-word-frequency"/i);
+  assert.match(densityHtml,/<title>Keyword Density: Formula, Examples &amp; Limitations<\/title>/i);
+  assert.match(densityHtml,/rel="canonical" href="https:\/\/textanalysis\.tools\/keyword-density-formula"/i);
+  assert.match(densityHtml,/developers\.google\.com\/search\/docs\/essentials\/spam-policies#keyword-stuffing/i);
 });

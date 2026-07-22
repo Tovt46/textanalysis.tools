@@ -72,13 +72,21 @@ function countTerms(tokens: string[], n = 1) {
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 }
 
-function prepareTokens(input: AnalyzeInput) {
+function prepareRawTokens(input: AnalyzeInput) {
   const plain = cleanHtml(input.text);
   const language = input.language === "auto" || !input.language ? detectLanguage(plain) : input.language;
   const suppliedStopwords = input.stopwordLists?.[language];
   const activeStopwords = suppliedStopwords ? new Set(suppliedStopwords.map((word) => word.trim().toLowerCase()).filter(Boolean)) : STOPWORDS[language];
-  const tokens = tokenize(plain, language, Boolean(input.keepStopwords), activeStopwords);
-  return { language, tokens, stopwordCount:activeStopwords.size };
+  const rawTokens = tokenize(plain, language, true, activeStopwords);
+  return { language, rawTokens, activeStopwords, stopwordCount:activeStopwords.size };
+}
+
+function prepareTokens(input: AnalyzeInput) {
+  const prepared=prepareRawTokens(input);
+  const tokens=input.keepStopwords
+    ?prepared.rawTokens
+    :prepared.rawTokens.filter(token=>!prepared.activeStopwords.has(token));
+  return { language:prepared.language, tokens, stopwordCount:prepared.stopwordCount };
 }
 
 export function analyzeWordFrequency(input:AnalyzeInput){
@@ -93,6 +101,50 @@ export function analyzeWordFrequency(input:AnalyzeInput){
       const share=tokens.length?count/tokens.length:0;
       return {term,count,percentage:share*100,per1000:share*1000};
     }),
+  };
+}
+
+function densityRows(counts:[string,number][],wordCount:number,n:number){
+  return counts.map(([term,count])=>{
+    const share=wordCount?count/wordCount:0;
+    return {term,count,n,percentage:share*100,per1000:share*1000};
+  });
+}
+
+function exactPhraseCount(tokens:string[],phraseTokens:string[]){
+  let count=0;
+  if(!phraseTokens.length)return count;
+  for(let index=0;index<=tokens.length-phraseTokens.length;index+=1){
+    if(phraseTokens.every((token,offset)=>tokens[index+offset]===token))count+=1;
+  }
+  return count;
+}
+
+export function analyzeKeywordDensity(input:AnalyzeInput,trackedInput=""){
+  const {language,rawTokens,activeStopwords,stopwordCount}=prepareRawTokens(input);
+  const keepStopwords=Boolean(input.keepStopwords);
+  const unigramCounts=countTerms(rawTokens).filter(([term])=>keepStopwords||!activeStopwords.has(term));
+  const meaningfulPhrase=([term]:[string,number])=>keepStopwords||term.split(" ").some(token=>!activeStopwords.has(token));
+  const bigramCounts=countTerms(rawTokens,2).filter(meaningfulPhrase);
+  const trigramCounts=countTerms(rawTokens,3).filter(meaningfulPhrase);
+  const wordCount=rawTokens.length;
+  const trackedTerms=[...new Set(trackedInput.split(/[\n,;]+/).map(term=>term.trim()).filter(Boolean))].slice(0,100);
+  const trackedKeywords=trackedTerms.map(term=>{
+    const phraseTokens=tokenize(term,language,true,activeStopwords);
+    const count=exactPhraseCount(rawTokens,phraseTokens);
+    const share=wordCount?count/wordCount:0;
+    return {term:phraseTokens.join(" ")||term.toLowerCase(),count,n:phraseTokens.length,percentage:share*100,per1000:share*1000};
+  });
+  return {
+    language,
+    wordCount,
+    vocabularySize:unigramCounts.length,
+    stopwordCount,
+    keepStopwords,
+    trackedKeywords,
+    unigrams:densityRows(unigramCounts,wordCount,1),
+    bigrams:densityRows(bigramCounts,wordCount,2),
+    trigrams:densityRows(trigramCounts,wordCount,3),
   };
 }
 

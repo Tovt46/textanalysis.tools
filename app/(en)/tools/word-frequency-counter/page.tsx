@@ -43,7 +43,7 @@ export default function WordFrequencyCounterPage(){
         <p className="section-number">NEXT STEPS</p>
         <h2>Go beyond a single frequency table</h2>
         <p>Use the main analyzer when you need bigrams, tracked phrases, Zipf distribution, or an A/B comparison. Read the Bag of Words guide to understand how word counts become document features.</p>
-        <div><Link href="/">Open the Bag of Words analyzer <span>→</span></Link><Link href="/bag-of-words-model">Read the Bag of Words guide <span>→</span></Link><Link href="/api-docs">Use the analysis API <span>→</span></Link></div>
+        <div><Link href="/how-to-calculate-word-frequency">Read the frequency guide <span>→</span></Link><Link href="/tools/keyword-density-checker">Check keyword density <span>→</span></Link><Link href="/">Open the Bag of Words analyzer <span>→</span></Link></div>
       </section>
     </article>
     <SiteFooter locale="en"/>

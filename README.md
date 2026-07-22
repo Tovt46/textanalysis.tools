@@ -12,6 +12,8 @@ comparison.
 - saved result A and side-by-side A/B comparison
 - counts, percentages, and occurrences per 1,000 words
 - dedicated searchable word-frequency table with CSV and JSON export
+- keyword-density tables for unigrams, bigrams, and trigrams
+- exact tracked phrases and in-browser A/B density comparison
 - Bag-of-Words and Zipf distribution metrics
 - stateless JSON API for text and public URLs
 - OpenAPI schema, `llms.txt`, sitemap, and multilingual SEO metadata
@@ -49,6 +51,9 @@ test suite.
 - `/api-docs` — public API documentation
 - `/tools` — focused text-analysis tools
 - `/tools/word-frequency-counter` — searchable word counts for text and URLs
+- `/tools/keyword-density-checker` — 1–3-word density tables and A/B comparison
+- `/how-to-calculate-word-frequency` — formulas and worked frequency example
+- `/keyword-density-formula` — density formulas, examples, and limitations
 - `/openapi.json` — OpenAPI 3.1 schema
 - `/llms.txt` — machine-readable agent guidance
 

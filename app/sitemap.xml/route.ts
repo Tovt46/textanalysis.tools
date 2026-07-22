@@ -35,6 +35,18 @@ const xml=`<?xml version="1.0" encoding="UTF-8"?>
     <lastmod>2026-07-22</lastmod>
   </url>
   <url>
+    <loc>${SITE_URL}/tools/keyword-density-checker</loc>
+    <lastmod>2026-07-22</lastmod>
+  </url>
+  <url>
+    <loc>${SITE_URL}/how-to-calculate-word-frequency</loc>
+    <lastmod>2026-07-22</lastmod>
+  </url>
+  <url>
+    <loc>${SITE_URL}/keyword-density-formula</loc>
+    <lastmod>2026-07-22</lastmod>
+  </url>
+  <url>
     <loc>${SITE_URL}/ru/bag-of-words-model</loc>
     <lastmod>2026-07-22</lastmod>
   </url>
