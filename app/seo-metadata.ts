@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { UiLang } from "./i18n";
 
-export const SITE_URL = "https://bow-zipf-lab.tovt7.chatgpt.site";
+export const SITE_URL = "https://textanalysis.tools";
 
 export const SITE_ICONS:Metadata["icons"] = {
   icon:[

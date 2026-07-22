@@ -27,8 +27,8 @@ test("renders the English analyzer with production SEO metadata", async () => {
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /<title>Free Bag of Words SEO Analyzer &amp; Comparison \| BOW Analyzer<\/title>/i);
-  assert.match(html, /rel="canonical" href="https:\/\/bow-zipf-lab\.tovt7\.chatgpt\.site\/"/i);
-  assert.match(html, /property="og:image" content="https:\/\/bow-zipf-lab\.tovt7\.chatgpt\.site\/social-card\.png"/i);
+  assert.match(html, /rel="canonical" href="https:\/\/textanalysis\.tools\/"/i);
+  assert.match(html, /property="og:image" content="https:\/\/textanalysis\.tools\/social-card\.png"/i);
   assert.match(html, /Free Bag of Words SEO analyzer/i);
 });
 
@@ -106,5 +106,5 @@ test("serves a valid XML sitemap", async () => {
   const xml = await response.text();
   assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
   assert.match(xml, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/);
-  assert.match(xml, /<loc>https:\/\/bow-zipf-lab\.tovt7\.chatgpt\.site\/uk<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk<\/loc>/);
 });
