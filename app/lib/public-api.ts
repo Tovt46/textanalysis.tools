@@ -31,7 +31,7 @@ export function apiOptions(){
 
 export function apiErrorResponse(error:unknown){
   if(error instanceof PublicApiError){
-    const headers=error.retryAfter?{"Retry-After":String(error.retryAfter)}:{};
+    const headers:Record<string,string>=error.retryAfter?{"Retry-After":String(error.retryAfter)}:{};
     return apiJson({apiVersion:API_VERSION,error:{code:error.code,message:error.message}},error.status,headers);
   }
   const message=error instanceof Error?error.message:"Analysis failed";

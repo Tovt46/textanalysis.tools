@@ -1,6 +1,19 @@
-import { analyzeText } from "../../lib/analyze";
+import { analyzeText, type AnalyzeInput } from "../../lib/analyze";
 import { translate, type UiLang } from "../../i18n";
 import { fetchRemoteText,MAX_TEXT_CHARS } from "../../lib/public-api";
+
+function readStopwordLists(value: unknown): AnalyzeInput["stopwordLists"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const source = value as Record<string, unknown>;
+  const output: NonNullable<AnalyzeInput["stopwordLists"]> = {};
+  for (const language of ["en", "uk", "ru"] as const) {
+    const words = source[language];
+    if (Array.isArray(words) && words.length <= 1000 && words.every((word) => typeof word === "string")) {
+      output[language] = words;
+    }
+  }
+  return output;
+}
 
 export async function POST(request: Request) {
   let body: Record<string, unknown>;
@@ -10,7 +23,14 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
   try {
-    const uiLanguage: UiLang = ["ru", "en", "uk"].includes(body.uiLanguage) ? body.uiLanguage : "ru";
+    const uiLanguageValue = body.uiLanguage;
+    const uiLanguage: UiLang = uiLanguageValue === "en" || uiLanguageValue === "uk" || uiLanguageValue === "ru"
+      ? uiLanguageValue
+      : "ru";
+    const languageValue = body.language;
+    const language: AnalyzeInput["language"] = languageValue === "en" || languageValue === "uk" || languageValue === "ru" || languageValue === "auto"
+      ? languageValue
+      : "auto";
     let text = String(body.source || "").trim();
     if (!text) return Response.json({ error: translate(uiLanguage, "addSource") }, { status: 400 });
 
@@ -24,12 +44,12 @@ export async function POST(request: Request) {
 
     const result = analyzeText({
       text,
-      language: body.language,
-      focus: body.focus,
-      top: body.top,
-      tolerance: body.tolerance,
-      keepStopwords: body.keepStopwords,
-      stopwordLists: body.stopwordLists,
+      language,
+      focus: typeof body.focus === "string" ? body.focus : "",
+      top: typeof body.top === "number" ? body.top : undefined,
+      tolerance: typeof body.tolerance === "number" ? body.tolerance : undefined,
+      keepStopwords: body.keepStopwords === true,
+      stopwordLists: readStopwordLists(body.stopwordLists),
       uiLanguage,
     });
     const {_allUnigrams,_allBigrams,...publicResult}=result;
