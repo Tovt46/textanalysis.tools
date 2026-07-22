@@ -11,6 +11,7 @@ comparison.
 - editable language-specific stopword lists
 - saved result A and side-by-side A/B comparison
 - counts, percentages, and occurrences per 1,000 words
+- dedicated searchable word-frequency table with CSV and JSON export
 - Bag-of-Words and Zipf distribution metrics
 - stateless JSON API for text and public URLs
 - OpenAPI schema, `llms.txt`, sitemap, and multilingual SEO metadata
@@ -46,6 +47,8 @@ test suite.
 - `/bag-of-words-model` — Bag-of-Words guide
 - `/bag-of-words-vs-word2vec` — Bag-of-Words and Word2Vec comparison
 - `/api-docs` — public API documentation
+- `/tools` — focused text-analysis tools
+- `/tools/word-frequency-counter` — searchable word counts for text and URLs
 - `/openapi.json` — OpenAPI 3.1 schema
 - `/llms.txt` — machine-readable agent guidance
 
@@ -64,3 +67,10 @@ curl -X POST http://localhost:3000/api/v1/analyze \
 
 See `/api-docs` and `/openapi.json` for the complete request and response
 formats.
+
+## Analytics
+
+GA4 is optional and disabled unless environment variables are configured. The
+event taxonomy, setup variables, Search Console sitemap checklist, and monthly
+`impressions → clicks → analyses` report definition are documented in
+[`ANALYTICS.md`](./ANALYTICS.md).

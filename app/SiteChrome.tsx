@@ -1,27 +1,29 @@
 import type { UiLang } from "./i18n";
 
-type ActiveNav="analyzer"|"guide"|"comparison"|"api";
+type ActiveNav="analyzer"|"tools"|"guide"|"comparison"|"api";
 type LanguagePaths=Record<UiLang,string>;
 
 const ROOT_LANGUAGE_PATHS:LanguagePaths={en:"/",uk:"/uk",ru:"/ru"};
 
 const LABELS:Record<UiLang,{
   analyzer:string;
+  tools:string;
   guide:string;
   comparison:string;
   navigation:string;
   languages:string;
   privacy:string;
 }>={
-  en:{analyzer:"Analyzer",guide:"BOW guide",comparison:"BOW vs Word2Vec",navigation:"Main navigation",languages:"Language",privacy:"Text is processed without server storage."},
-  uk:{analyzer:"Аналізатор",guide:"Гайд по BOW",comparison:"BOW і Word2Vec",navigation:"Головна навігація",languages:"Мова",privacy:"Текст обробляється без збереження на сервері."},
-  ru:{analyzer:"Анализатор",guide:"Гайд по BOW",comparison:"BOW и Word2Vec",navigation:"Главная навигация",languages:"Язык",privacy:"Текст обрабатывается без сохранения на сервере."},
+  en:{analyzer:"Analyzer",tools:"Tools",guide:"BOW guide",comparison:"BOW vs Word2Vec",navigation:"Main navigation",languages:"Language",privacy:"Text is processed without server storage."},
+  uk:{analyzer:"Аналізатор",tools:"Інструменти",guide:"Гайд по BOW",comparison:"BOW і Word2Vec",navigation:"Головна навігація",languages:"Мова",privacy:"Текст обробляється без збереження на сервері."},
+  ru:{analyzer:"Анализатор",tools:"Инструменты",guide:"Гайд по BOW",comparison:"BOW и Word2Vec",navigation:"Главная навигация",languages:"Язык",privacy:"Текст обрабатывается без сохранения на сервере."},
 };
 
 function navItems(locale:UiLang){
   const labels=LABELS[locale];
   return [
     {key:"analyzer" as const,href:ROOT_LANGUAGE_PATHS[locale],label:labels.analyzer},
+    {key:"tools" as const,href:"/tools",label:labels.tools},
     {key:"guide" as const,href:locale==="en"?"/bag-of-words-model":`/${locale}/bag-of-words-model`,label:labels.guide},
     {key:"comparison" as const,href:"/bag-of-words-vs-word2vec",label:labels.comparison},
     {key:"api" as const,href:"/api-docs",label:"API"},

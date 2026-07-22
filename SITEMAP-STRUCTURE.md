@@ -1,15 +1,17 @@
 # Sitemap structure
 
-Public sitemap: `https://bow-zipf-lab.tovt7.chatgpt.site/sitemap.xml`
+Public sitemap: `https://textanalysis.tools/sitemap.xml`
 
-The sitemap contains eight canonical, indexable HTTPS URLs:
+The sitemap contains ten canonical, indexable HTTPS URLs:
 
 - Analyzer: `/`, `/ru`, `/uk`
 - Bag of Words guide: `/bag-of-words-model`, `/ru/bag-of-words-model`, `/uk/bag-of-words-model`
 - English comparison guide: `/bag-of-words-vs-word2vec`
 - English API documentation: `/api-docs`
+- English tools directory: `/tools`
+- English word-frequency tool: `/tools/word-frequency-counter`
 
-English is the default language. Redirecting `/en` is intentionally excluded because only final canonical URLs belong in the sitemap. The complete English, Russian, Ukrainian, and `x-default` alternate sets are declared in each page's HTML head rather than duplicated in the sitemap.
+English is the default language. Redirecting `/en` is intentionally excluded because only final canonical URLs belong in the sitemap. Multilingual pages declare complete English, Russian, Ukrainian, and `x-default` alternate sets in their HTML head. English-only tool pages declare only `en` and `x-default`; nonexistent translations are not advertised with hreflang.
 
 The sitemap is declared in `/robots.txt`. `lastmod` reflects the latest content deployment and should only change when page content changes.
 

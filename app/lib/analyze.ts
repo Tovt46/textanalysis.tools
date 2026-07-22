@@ -1,11 +1,12 @@
 import { translate, type UiLang } from "../i18n";
+import { DEFAULT_STOPWORD_LISTS, type TextLanguage } from "./stopwords";
 
-type Lang = "en" | "ru" | "uk";
+type Lang = TextLanguage;
 
 const STOPWORDS: Record<Lang, Set<string>> = {
-  en: new Set("a an and are as at be been by for from had has have he her hers him his i if in into is it its me my of on or our ours she so that the their them they this to us was we were what when where which who why will with you your yours".split(" ")),
-  ru: new Set("а без бы был была были быть в вам вас вы где да для до его ее ей если есть еще за и из или их как к когда ли меня мне мы на над не него нее нет ни но о он она они от по под при с со так то ты у уже что чтобы это я".split(" ")),
-  uk: new Set("а або але б без би був була були бути в вам вас ви від він вона вони все всіх де до за з зі й і із його її їх коли ми мене мені мною на над не ні ним нього неї о по про під при та так ти то у усе це цей ця ці що щоб як".split(" ")),
+  en: new Set(DEFAULT_STOPWORD_LISTS.en),
+  ru: new Set(DEFAULT_STOPWORD_LISTS.ru),
+  uk: new Set(DEFAULT_STOPWORD_LISTS.uk),
 };
 
 export type AnalyzeInput = {
@@ -71,13 +72,33 @@ function countTerms(tokens: string[], n = 1) {
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 }
 
-export function analyzeText(input: AnalyzeInput) {
-  const uiLanguage = input.uiLanguage || "ru";
+function prepareTokens(input: AnalyzeInput) {
   const plain = cleanHtml(input.text);
   const language = input.language === "auto" || !input.language ? detectLanguage(plain) : input.language;
   const suppliedStopwords = input.stopwordLists?.[language];
   const activeStopwords = suppliedStopwords ? new Set(suppliedStopwords.map((word) => word.trim().toLowerCase()).filter(Boolean)) : STOPWORDS[language];
   const tokens = tokenize(plain, language, Boolean(input.keepStopwords), activeStopwords);
+  return { language, tokens, stopwordCount:activeStopwords.size };
+}
+
+export function analyzeWordFrequency(input:AnalyzeInput){
+  const {language,tokens,stopwordCount}=prepareTokens(input);
+  const counts=countTerms(tokens);
+  return {
+    language,
+    tokenCount:tokens.length,
+    vocabularySize:counts.length,
+    stopwordCount,
+    rows:counts.map(([term,count])=>{
+      const share=tokens.length?count/tokens.length:0;
+      return {term,count,percentage:share*100,per1000:share*1000};
+    }),
+  };
+}
+
+export function analyzeText(input: AnalyzeInput) {
+  const uiLanguage = input.uiLanguage || "ru";
+  const {language,tokens,stopwordCount}=prepareTokens(input);
   if (tokens.length < 3) throw new Error(translate(uiLanguage, "tooLittle"));
   const unigramCounts = countTerms(tokens);
   const bigramCounts = countTerms(tokens, 2);
@@ -145,7 +166,7 @@ export function analyzeText(input: AnalyzeInput) {
     rows,
     bigrams: bigramCounts.slice(0, top).map(([term, count]) => ({ term, count, share: count / Math.max(tokens.length - 1, 1) })),
     focusCoverage,
-    stopwordCount: activeStopwords.size,
+    stopwordCount,
     notes,
     _allUnigrams: unigramCounts.map(([term, count]) => ({ term, count })),
     _allBigrams: bigramCounts.map(([term, count]) => ({ term, count })),

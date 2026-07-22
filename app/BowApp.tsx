@@ -4,6 +4,8 @@ import { FormEvent, useCallback, useEffect, useId, useRef, useState } from "reac
 import { LOCALES, translate, type UiLang } from "./i18n";
 import { SiteFooter,SiteHeader } from "./SiteChrome";
 import { analyzeText } from "./lib/analyze";
+import { DEFAULT_STOPWORD_TEXT,parseStopwordText,type TextLanguage } from "./lib/stopwords";
+import { trackEvent } from "./lib/analytics";
 
 type Zone = "above" | "within" | "below" | "sparse-tail";
 type ZipfRow = { rank:number; term:string; actualCount:number; expectedCount:number; ratio:number; zone:Zone };
@@ -13,17 +15,12 @@ type Analysis = {
   zoneCounts:{above:number;within:number;below:number;sparseTail:number};
   rows:ZipfRow[]; bigrams:{ term:string; count:number; share:number }[]; focusCoverage:FocusRow[]; stopwordCount:number; notes:string[];
 };
-type Lang = "ru"|"uk"|"en";
+type Lang = TextLanguage;
 type AnalysisSettings = { language:string; focus:string; top:number; tolerance:number; keepStopwords:boolean; stopwordLists:Record<Lang,string[]> };
 type SavedResult = { version:3; result:Analysis; settings:AnalysisSettings; savedAt:string; label:string };
 
 const CACHE_KEY = "bow-zipf-baseline-v3";
 const STOPWORDS_KEY = "bow-zipf-stopwords-v1";
-const DEFAULT_STOPWORDS:Record<Lang,string> = {
-  ru:"а, без, бы, был, была, были, быть, в, вам, вас, вы, где, да, для, до, его, ее, ей, если, есть, еще, за, и, из, или, их, как, к, когда, ли, меня, мне, мы, на, над, не, него, нее, нет, ни, но, о, он, она, они, от, по, под, при, с, со, так, то, ты, у, уже, что, чтобы, это, я",
-  uk:"а, або, але, б, без, би, був, була, були, бути, в, вам, вас, ви, від, він, вона, вони, все, всіх, де, до, за, з, зі, й, і, із, його, її, їх, коли, ми, мене, мені, мною, на, над, не, ні, ним, нього, неї, о, по, про, під, при, та, так, ти, то, у, усе, це, цей, ця, ці, що, щоб, як",
-  en:"a, an, and, are, as, at, be, been, by, for, from, had, has, have, he, her, hers, him, his, i, if, in, into, is, it, its, me, my, of, on, or, our, ours, she, so, that, the, their, them, they, this, to, us, was, we, were, what, when, where, which, who, why, will, with, you, your, yours",
-};
 type T = (key:string, vars?:Record<string,string|number>)=>string;
 
 function Tip({ children }: { children:React.ReactNode }) {
@@ -129,7 +126,7 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
   const [sourceType,setSourceType]=useState<"text"|"url">("text"); const [source,setSource]=useState("");
   const [language,setLanguage]=useState("en"); const [focus,setFocus]=useState("");
   const [top,setTop]=useState(20); const [tolerance,setTolerance]=useState(2); const [keepStopwords,setKeepStopwords]=useState(false);
-  const [stopwordEditorLang,setStopwordEditorLang]=useState<Lang>("en"); const [stopwordLists,setStopwordLists]=useState<Record<Lang,string>>(DEFAULT_STOPWORDS);
+  const [stopwordEditorLang,setStopwordEditorLang]=useState<Lang>("en"); const [stopwordLists,setStopwordLists]=useState<Record<Lang,string>>(DEFAULT_STOPWORD_TEXT);
   const [result,setResult]=useState<Analysis|null>(null); const [baseline,setBaseline]=useState<SavedResult|null>(null);
   const [loading,setLoading]=useState(false); const [error,setError]=useState("");
   const t:T=useCallback((key,vars)=>translate(uiLang,key,vars),[uiLang]);
@@ -147,9 +144,11 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
     }
   }catch{}},0);return()=>window.clearTimeout(timer);},[]);
 
-  const parsedStopwords=Object.fromEntries(Object.entries(stopwordLists).map(([lang,value])=>[lang,[...new Set(value.toLowerCase().split(/[\s,;]+/).map(word=>word.trim()).filter(Boolean))]])) as Record<Lang,string[]>;
+  const parsedStopwords=Object.fromEntries(Object.entries(stopwordLists).map(([lang,value])=>[lang,parseStopwordText(value)])) as Record<Lang,string[]>;
   async function analyze(event?:FormEvent){
     event?.preventDefault();setLoading(true);setError("");
+    trackEvent("analysis_started",{tool:"bow_analyzer",source_type:sourceType,text_language:language});
+    if(sourceType==="url")trackEvent("url_analysis_started",{tool:"bow_analyzer",text_language:language});
     try{
       await new Promise<void>(resolve=>window.setTimeout(resolve,0));
       let data:Analysis;
@@ -165,14 +164,14 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
         if(!response.ok){const message=typeof payload==="object"&&payload&&"error" in payload?String((payload as {error:unknown}).error):t("failed");throw new Error(message);}
         data=payload as Analysis;
       }
-      setResult(data);if(language==="auto"&&["ru","uk","en"].includes(data.language))setStopwordEditorLang(data.language as Lang);setTimeout(()=>document.getElementById("result")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
-    }catch(err){setError(err instanceof Error?err.message:t("unknownError"));}finally{setLoading(false);}
+      setResult(data);trackEvent("analysis_completed",{tool:"bow_analyzer",source_type:sourceType,text_language:data.language,word_count:data.tokenCount});if(baseline)trackEvent("comparison_completed",{tool:"bow_analyzer",source_type:sourceType});if(language==="auto"&&["ru","uk","en"].includes(data.language))setStopwordEditorLang(data.language as Lang);setTimeout(()=>document.getElementById("result")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
+    }catch(err){const message=err instanceof Error?err.message:t("unknownError");setError(message);trackEvent("analysis_error",{tool:"bow_analyzer",source_type:sourceType,error_message:message.slice(0,100)});}finally{setLoading(false);}
   }
-  function changeLanguage(value:string){setLanguage(value);if(value!=="auto")setStopwordEditorLang(value as Lang);}
-  function changeStopwordLanguage(value:Lang){setStopwordEditorLang(value);setLanguage(value);}
+  function changeLanguage(value:string){setLanguage(value);trackEvent("language_changed",{tool:"bow_analyzer",text_language:value});if(value!=="auto")setStopwordEditorLang(value as Lang);}
+  function changeStopwordLanguage(value:Lang){setStopwordEditorLang(value);setLanguage(value);trackEvent("language_changed",{tool:"bow_analyzer",text_language:value,control:"stopword_editor"});}
   function updateStopwords(value:string){const next={...stopwordLists,[stopwordEditorLang]:value};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}
-  function resetStopwords(){const next={...stopwordLists,[stopwordEditorLang]:DEFAULT_STOPWORDS[stopwordEditorLang]};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}
-  function saveA(){if(!result)return;const settings:AnalysisSettings={language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords};const saved:SavedResult={version:3,result,settings,savedAt:new Date().toISOString(),label:t("analysisLabel",{count:result.tokenCount})};try{localStorage.setItem(CACHE_KEY,JSON.stringify(saved));}catch{setError(t("cacheFailed"));return;}setBaseline(saved);setResult(null);setSource("");window.scrollTo({top:0,behavior:"smooth"});}
+  function resetStopwords(){const next={...stopwordLists,[stopwordEditorLang]:DEFAULT_STOPWORD_TEXT[stopwordEditorLang]};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}
+  function saveA(){if(!result)return;const settings:AnalysisSettings={language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords};const saved:SavedResult={version:3,result,settings,savedAt:new Date().toISOString(),label:t("analysisLabel",{count:result.tokenCount})};try{localStorage.setItem(CACHE_KEY,JSON.stringify(saved));}catch{setError(t("cacheFailed"));return;}trackEvent("comparison_result_saved",{tool:"bow_analyzer",word_count:result.tokenCount});setBaseline(saved);setResult(null);setSource("");window.scrollTo({top:0,behavior:"smooth"});}
   function clearA(){setBaseline(null);localStorage.removeItem(CACHE_KEY);}
 
   return <main>

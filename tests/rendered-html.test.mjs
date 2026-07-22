@@ -107,4 +107,40 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
   assert.match(xml, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/word-frequency-counter<\/loc>/);
+});
+
+test("renders the word frequency tool as a canonical English search page", async () => {
+  const response = await request("/tools/word-frequency-counter", { headers: { accept: "text/html" } });
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /<title>Free Word Frequency Counter for Text &amp; URLs<\/title>/i);
+  assert.match(html, /rel="canonical" href="https:\/\/textanalysis\.tools\/tools\/word-frequency-counter"/i);
+  assert.match(html, /<h1>Word Frequency Counter<\/h1>/i);
+  assert.match(html, /Export CSV/i);
+  assert.doesNotMatch(html, /hrefLang="ru" href="https:\/\/textanalysis\.tools\/ru\/tools/i);
+});
+
+test("word frequency endpoint handles short text and returns the full vocabulary", async () => {
+  const terms=Array.from({length:130},(_,index)=>`term${String(index).padStart(3,"0")}`);
+  const response=await post("/api/word-frequency",{source:[...terms,"term000","term000"].join(" "),language:"en",keepStopwords:true});
+  assert.equal(response.status,200);
+  const data=await response.json();
+  assert.equal(data.result.tokenCount,132);
+  assert.equal(data.result.rows.length,130);
+  assert.deepEqual(data.result.rows[0],{term:"term000",count:3,percentage:(3/132)*100,per1000:(3/132)*1000});
+});
+
+test("browser analytics remains opt-in and tracks core product actions", async () => {
+  const [analytics,bow,frequency]=await Promise.all([
+    readFile(new URL("../app/Analytics.tsx",import.meta.url),"utf8"),
+    readFile(new URL("../app/BowApp.tsx",import.meta.url),"utf8"),
+    readFile(new URL("../app/WordFrequencyTool.tsx",import.meta.url),"utf8"),
+  ]);
+  assert.match(analytics,/NEXT_PUBLIC_GA_MEASUREMENT_ID/);
+  assert.match(bow,/comparison_result_saved/);
+  assert.match(bow,/comparison_completed/);
+  assert.match(frequency,/url_analysis_started/);
+  assert.match(frequency,/analysis_error/);
 });

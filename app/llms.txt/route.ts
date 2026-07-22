@@ -16,6 +16,8 @@ Requests use application/json. Supported languages are English, Russian, and Ukr
 ## Main pages
 
 - Free analyzer: ${SITE_URL}/
+- Text analysis tools: ${SITE_URL}/tools
+- Word frequency counter: ${SITE_URL}/tools/word-frequency-counter
 - Bag of Words model guide: ${SITE_URL}/bag-of-words-model
 - Bag of Words vs Word2Vec: ${SITE_URL}/bag-of-words-vs-word2vec
 `;

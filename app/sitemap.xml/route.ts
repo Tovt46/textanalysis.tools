@@ -27,6 +27,14 @@ const xml=`<?xml version="1.0" encoding="UTF-8"?>
     <lastmod>2026-07-22</lastmod>
   </url>
   <url>
+    <loc>${SITE_URL}/tools</loc>
+    <lastmod>2026-07-22</lastmod>
+  </url>
+  <url>
+    <loc>${SITE_URL}/tools/word-frequency-counter</loc>
+    <lastmod>2026-07-22</lastmod>
+  </url>
+  <url>
     <loc>${SITE_URL}/ru/bag-of-words-model</loc>
     <lastmod>2026-07-22</lastmod>
   </url>

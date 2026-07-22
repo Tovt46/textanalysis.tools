@@ -1,4 +1,5 @@
 import { API_VERSION,apiErrorResponse,apiJson,apiOptions,enforceRateLimit,readJsonBody,runPublicAnalysis } from "../../../lib/public-api";
+import { sendServerAnalyticsEvent } from "../../../lib/server-analytics";
 
 export function OPTIONS(){return apiOptions();}
 
@@ -11,6 +12,7 @@ export async function POST(request:Request){
     enforceRateLimit(request);
     const body=await readJsonBody(request);
     const result=await runPublicAnalysis(body);
+    await sendServerAnalyticsEvent("api_analysis",{operation:"analyze",source_type:body.sourceType==="url"?"url":"text",text_language:result.language});
     return apiJson({apiVersion:API_VERSION,storage:"none",result});
-  }catch(error){return apiErrorResponse(error);}
+  }catch(error){await sendServerAnalyticsEvent("api_error",{operation:"analyze"});return apiErrorResponse(error);}
 }
