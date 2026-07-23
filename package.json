@@ -42,9 +42,7 @@
     "wrangler": "4.113.0"
   },
   "overrides": {
-    "@esbuild-kit/core-utils": {
-      "esbuild": "0.25.12"
-    },
+    "esbuild": "0.28.1",
     "postcss": "8.5.22",
     "sharp": "0.35.3"
   },
