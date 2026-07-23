@@ -13,6 +13,7 @@ bigrams, focus phrases, Zipf distribution, and side-by-side text comparison.
 - dedicated searchable word-frequency table with CSV and JSON export
 - keyword-density tables for unigrams, bigrams, and trigrams
 - exact tracked phrases and in-browser A/B density comparison
+- standalone text and webpage comparison with normalized word and bigram changes
 - Bag-of-Words and Zipf distribution metrics
 - stateless JSON API for text and public URLs
 - OpenAPI schema, `llms.txt`, sitemap, and multilingual SEO metadata
@@ -52,6 +53,7 @@ test suite.
 - `/tools` — focused text-analysis tools
 - `/tools/word-frequency-counter` — searchable word counts for text and URLs
 - `/tools/keyword-density-checker` — 1–3-word density tables and A/B comparison
+- `/tools/text-analysis-comparison` — normalized A/B word and bigram changes
 - `/how-to-calculate-word-frequency` — formulas and worked frequency example
 - `/keyword-density-formula` — density formulas, examples, and limitations
 - `/openapi.json` — OpenAPI 3.1 schema

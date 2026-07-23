@@ -53,6 +53,7 @@ const COPY:Record<UiLang,HomeCopy>={
       {name:"Word Frequency Counter",description:"Count every word, search and sort the full vocabulary, edit stop words, and export CSV or JSON."},
       {name:"Keyword Density Checker",description:"Measure words, bigrams, and trigrams, track exact phrases, and compare density changes between two results."},
       {name:"Bag of Words Analyzer",description:"Review vocabulary, bigrams, tracked phrases, and Zipf distribution, then compare result A with result B."},
+      {name:"Text Analysis Comparison",description:"Compare two texts or webpages by word count, vocabulary, normalized word frequency, bigrams, and Zipf diagnostics."},
     ],
     methodEye:"WHY THIS TOOLKIT",
     methodTitle:"Useful numbers, with the method left visible",
@@ -94,6 +95,7 @@ const COPY:Record<UiLang,HomeCopy>={
       {name:"Счётчик частотности слов",description:"Посчитайте все слова, найдите нужный термин, отсортируйте словарь и экспортируйте CSV или JSON."},
       {name:"Анализатор плотности ключей",description:"Измерьте слова, биграммы и триграммы, проверьте точные фразы и сравните изменения между результатами."},
       {name:"Bag of Words-анализатор",description:"Проверьте лексику, биграммы, контрольные фразы и распределение Ципфа, затем сравните результаты A и B."},
+      {name:"Сравнение двух текстов",description:"Сопоставьте два текста или URL по объёму, словарю, нормализованной частотности, биграммам и показателям Ципфа."},
     ],
     methodEye:"ПОЧЕМУ ЭТОТ НАБОР",
     methodTitle:"Полезные цифры с понятной методикой",
@@ -135,6 +137,7 @@ const COPY:Record<UiLang,HomeCopy>={
       {name:"Лічильник частотності слів",description:"Порахуйте всі слова, знайдіть потрібний термін, відсортуйте словник і експортуйте CSV або JSON."},
       {name:"Аналізатор щільності ключів",description:"Виміряйте слова, біграми й триграми, перевірте точні фрази та порівняйте зміни між результатами."},
       {name:"Bag of Words-аналізатор",description:"Перевірте лексику, біграми, контрольні фрази й розподіл Ципфа, а потім порівняйте результати A і B."},
+      {name:"Порівняння двох текстів",description:"Зіставте два тексти або URL за обсягом, словником, нормалізованою частотністю, біграмами й показниками Ципфа."},
     ],
     methodEye:"ЧОМУ ЦЕЙ НАБІР",
     methodTitle:"Корисні числа з прозорою методикою",
@@ -160,11 +163,12 @@ const COPY:Record<UiLang,HomeCopy>={
 
 const HOME_PATHS:Record<UiLang,string>={en:"/",ru:"/ru",uk:"/uk"};
 const TOOL_PATHS=["/tools/word-frequency-counter","/tools/keyword-density-checker"] as const;
+const COMPARISON_PATH="/tools/text-analysis-comparison";
 const GUIDE_PATHS=["/how-to-calculate-word-frequency","/keyword-density-formula","/bag-of-words-model"] as const;
 
 export default function HomePage({locale}:{locale:UiLang}){
   const copy=COPY[locale];
-  const toolPaths=[...TOOL_PATHS,BOW_LANGUAGE_PATHS[locale]];
+  const toolPaths=[...TOOL_PATHS,BOW_LANGUAGE_PATHS[locale],COMPARISON_PATH];
   const guidePaths=[GUIDE_PATHS[0],GUIDE_PATHS[1],locale==="en"?GUIDE_PATHS[2]:`/${locale}/bag-of-words-model`];
   return <main className="home-page">
     <SiteHeader locale={locale} active="home" languagePaths={HOME_PATHS}/>
@@ -177,10 +181,10 @@ export default function HomePage({locale}:{locale:UiLang}){
         <span className="privacy-note"><b/>{copy.privacy}</span>
       </div>
     </section>
-    <section className="home-stats" aria-label="Product facts"><div><strong>3</strong><span>{copy.live}</span></div><div><strong>3</strong><span>{copy.languages}</span></div><div><strong>0</strong><span>{copy.storage}</span></div></section>
+    <section className="home-stats" aria-label="Product facts"><div><strong>4</strong><span>{copy.live}</span></div><div><strong>3</strong><span>{copy.languages}</span></div><div><strong>0</strong><span>{copy.storage}</span></div></section>
     <section className="home-section home-tools" id="available-tools" aria-labelledby="home-tools-title">
       <div className="home-section-heading"><p className="section-number">{copy.available}</p><h2 id="home-tools-title">{copy.choose}</h2><p>{copy.chooseCopy}</p></div>
-      <div className="home-tool-grid">{copy.tools.map((tool,index)=><Link className={`home-tool-card tool-${index+1}`} href={toolPaths[index]} key={tool.name}><div className="home-tool-card-top"><span>0{index+1} · LIVE</span>{locale!=="en"&&index<2?<small>{copy.english}</small>:null}</div><h3>{tool.name}</h3><p>{tool.description}</p><strong>{copy.open}<b>→</b></strong></Link>)}</div>
+      <div className="home-tool-grid">{copy.tools.map((tool,index)=><Link className={`home-tool-card tool-${index+1}`} href={toolPaths[index]} key={tool.name}><div className="home-tool-card-top"><span>0{index+1} · LIVE</span>{locale!=="en"&&index!==2?<small>{copy.english}</small>:null}</div><h3>{tool.name}</h3><p>{tool.description}</p><strong>{copy.open}<b>→</b></strong></Link>)}</div>
     </section>
     <section className="home-method">
       <div className="home-section-heading"><p className="section-number">{copy.methodEye}</p><h2>{copy.methodTitle}</h2></div>

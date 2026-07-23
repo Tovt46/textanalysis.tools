@@ -33,6 +33,8 @@ test("renders the English product homepage with live tools and production SEO me
   assert.match(html, /Word Frequency Counter/i);
   assert.match(html, /Keyword Density Checker/i);
   assert.match(html, /Bag of Words Analyzer/i);
+  assert.match(html, /Text Analysis Comparison/i);
+  assert.match(html, />4<\/strong><span>live tools/i);
   assert.doesNotMatch(html, /<textarea/i);
 });
 
@@ -134,6 +136,7 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk\/tools\/bag-of-words-analyzer<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/word-frequency-counter<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/keyword-density-checker<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/text-analysis-comparison<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/how-to-calculate-word-frequency<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/keyword-density-formula<\/loc>/);
 });
@@ -206,6 +209,27 @@ test("renders the keyword density checker with canonical metadata and useful con
   assert.match(html,/<h1>Keyword Density Checker<\/h1>/i);
   assert.match(html,/Density is a measurement, not a ranking score/i);
   assert.match(html,/one-word keywords, bigrams, and trigrams/i);
+});
+
+test("renders the standalone text comparison with canonical metadata and two inputs", async () => {
+  const response=await request("/tools/text-analysis-comparison",{headers:{accept:"text/html"}});
+  assert.equal(response.status,200);
+  const html=await response.text();
+  assert.match(html,/<title>Free Text Comparison Tool for Word Frequency Changes<\/title>/i);
+  assert.match(html,/rel="canonical" href="https:\/\/textanalysis\.tools\/tools\/text-analysis-comparison"/i);
+  assert.match(html,/<h1>Compare two texts word by word<\/h1>/i);
+  assert.match(html,/aria-label="Original text"/i);
+  assert.match(html,/aria-label="Updated text"/i);
+  assert.match(html,/Frequency change is not semantic similarity or content quality/i);
+  assert.doesNotMatch(html,/hrefLang="ru" href="https:\/\/textanalysis\.tools\/ru\/tools\/text-analysis-comparison/i);
+});
+
+test("standalone comparison keeps pasted text local and reuses the public API for URLs", async () => {
+  const source=await readFile(new URL("../app/TextComparisonTool.tsx",import.meta.url),"utf8");
+  assert.match(source,/if\(sourceTypeA==="text"&&sourceTypeB==="text"\)\{/);
+  assert.match(source,/comparison:compareAnalysisResults\(/);
+  assert.match(source,/fetch\("\/api\/v1\/compare"/);
+  assert.doesNotMatch(source,/trackEvent/);
 });
 
 test("keyword density uses total words and counts exact tracked phrases", async () => {

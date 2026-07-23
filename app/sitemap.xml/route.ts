@@ -51,6 +51,10 @@ const xml=`<?xml version="1.0" encoding="UTF-8"?>
     <lastmod>2026-07-23</lastmod>
   </url>
   <url>
+    <loc>${SITE_URL}/tools/text-analysis-comparison</loc>
+    <lastmod>2026-07-23</lastmod>
+  </url>
+  <url>
     <loc>${SITE_URL}/how-to-calculate-word-frequency</loc>
     <lastmod>2026-07-23</lastmod>
   </url>
