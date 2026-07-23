@@ -94,7 +94,7 @@ export default function WordFrequencyTool(){
         await new Promise<void>(resolve=>window.setTimeout(resolve,0));
         next=analyzeWordFrequency({text:source,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:"en"});
       }else{
-        const response=await fetch("/api/word-frequency",{
+        const response=await fetch("/api/v1/word-frequency",{
           method:"POST",
           headers:{"Content-Type":"application/json","Accept":"application/json"},
           body:JSON.stringify({sourceType,source,language,keepStopwords,stopwordLists:parsedStopwords}),

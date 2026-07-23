@@ -27,15 +27,59 @@ const analysisResult={
   },
 };
 
+const frequencyRow={
+  type:"object",
+  required:["term","count","percentage","per1000"],
+  properties:{term:{type:"string"},count:{type:"integer"},percentage:{type:"number"},per1000:{type:"number"}},
+};
+
+const wordFrequencyResult={
+  type:"object",
+  required:["language","tokenCount","vocabularySize","stopwordCount","rows"],
+  properties:{
+    language:{type:"string",enum:["en","ru","uk"]},
+    tokenCount:{type:"integer",description:"Words remaining after the selected stop-word rule."},
+    vocabularySize:{type:"integer"},
+    stopwordCount:{type:"integer"},
+    rows:{type:"array",items:frequencyRow,description:"The complete vocabulary ordered by descending count."},
+  },
+};
+
+const densityRow={
+  type:"object",
+  required:["term","count","n","percentage","per1000"],
+  properties:{term:{type:"string"},count:{type:"integer"},n:{type:"integer",minimum:1,maximum:3},percentage:{type:"number"},per1000:{type:"number"}},
+};
+
+const keywordDensityResult={
+  type:"object",
+  required:["language","wordCount","vocabularySize","stopwordCount","keepStopwords","trackedKeywords","unigrams","bigrams","trigrams"],
+  properties:{
+    language:{type:"string",enum:["en","ru","uk"]},
+    wordCount:{type:"integer",description:"Total normalized words used as the density denominator."},
+    vocabularySize:{type:"integer"},
+    stopwordCount:{type:"integer"},
+    keepStopwords:{type:"boolean"},
+    trackedKeywords:{type:"array",items:densityRow},
+    unigrams:{type:"array",items:densityRow},
+    bigrams:{type:"array",items:densityRow},
+    trigrams:{type:"array",items:densityRow},
+  },
+};
+
 const document={
   openapi:"3.1.0",
-  info:{title:"Text Analysis Tools API",version:"1.0.0",description:"Stateless Bag of Words, keyword-frequency, bigram, focus-phrase, and Zipf-distribution analysis for text and public webpages. Submitted content is not stored."},
+  info:{title:"Text Analysis Tools API",version:"1.0.0",description:"Stateless Bag of Words, word-frequency, keyword-density, n-gram, focus-phrase, Zipf-distribution, and comparison analysis for text and public webpages. Submitted content is not stored."},
   servers:[{url:SITE_URL}],
   components:{schemas:{
     AnalyzeInput:sourceSchema,
     AnalysisResult:analysisResult,
     AnalyzeResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/AnalysisResult"}}},
     CompareResponse:{type:"object",required:["apiVersion","storage","resultA","resultB","comparison"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},resultA:{$ref:"#/components/schemas/AnalysisResult"},resultB:{$ref:"#/components/schemas/AnalysisResult"},comparison:{type:"object"}}},
+    WordFrequencyResult:wordFrequencyResult,
+    WordFrequencyResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/WordFrequencyResult"}}},
+    KeywordDensityResult:keywordDensityResult,
+    KeywordDensityResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/KeywordDensityResult"}}},
   }},
   paths:{
     "/api/v1/analyze":{
@@ -75,6 +119,38 @@ const document={
         },
         responses:{
           "200":{description:"Both analyses and their differences",content:{"application/json":{schema:{$ref:"#/components/schemas/CompareResponse"}}}},
+          "400":{description:"Invalid input"},
+          "413":{description:"Input too large"},
+          "429":{description:"Rate limited"},
+        },
+      },
+    },
+    "/api/v1/word-frequency":{
+      post:{
+        operationId:"countWordFrequency",
+        summary:"Return the complete word-frequency table",
+        requestBody:{required:true,content:{"application/json":{schema:{$ref:"#/components/schemas/AnalyzeInput"}}}},
+        responses:{
+          "200":{description:"Frequency analysis completed",content:{"application/json":{schema:{$ref:"#/components/schemas/WordFrequencyResponse"}}}},
+          "400":{description:"Invalid input"},
+          "413":{description:"Input too large"},
+          "429":{description:"Rate limited"},
+        },
+      },
+    },
+    "/api/v1/keyword-density":{
+      post:{
+        operationId:"analyzeKeywordDensity",
+        summary:"Return unigram, bigram, trigram, and tracked-phrase density",
+        requestBody:{
+          required:true,
+          content:{"application/json":{schema:{allOf:[
+            {$ref:"#/components/schemas/AnalyzeInput"},
+            {type:"object",properties:{trackedKeywords:{type:"string",description:"Comma, semicolon, or newline-separated exact phrases.",maxLength:20000}}},
+          ]}}},
+        },
+        responses:{
+          "200":{description:"Density analysis completed",content:{"application/json":{schema:{$ref:"#/components/schemas/KeywordDensityResponse"}}}},
           "400":{description:"Invalid input"},
           "413":{description:"Input too large"},
           "429":{description:"Rate limited"},

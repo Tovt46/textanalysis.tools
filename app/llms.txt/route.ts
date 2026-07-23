@@ -10,6 +10,8 @@ const content=`# Text Analysis Tools
 - Human-readable API documentation: ${SITE_URL}/api-docs
 - Analyze one input: POST ${SITE_URL}/api/v1/analyze
 - Compare two inputs: POST ${SITE_URL}/api/v1/compare
+- Count the complete vocabulary: POST ${SITE_URL}/api/v1/word-frequency
+- Measure unigram, bigram, trigram, and tracked-phrase density: POST ${SITE_URL}/api/v1/keyword-density
 
 Requests use application/json. Supported languages are English, Russian, and Ukrainian. The API is public, rate-limited, and requires no API key. Use it for analysis, not for claims about search-engine rankings.
 

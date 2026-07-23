@@ -1,3 +1,5 @@
-export function GET(request:Request) {
-  return Response.redirect(new URL("/",request.url),308);
+import { SITE_URL } from "../seo-metadata";
+
+export function GET() {
+  return Response.redirect(new URL("/",SITE_URL),308);
 }

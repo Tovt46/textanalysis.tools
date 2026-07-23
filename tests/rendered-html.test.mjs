@@ -36,6 +36,12 @@ test("renders the English product homepage with live tools and production SEO me
   assert.doesNotMatch(html, /<textarea/i);
 });
 
+test("redirects /en to the canonical public origin", async () => {
+  const response=await request("/en",{redirect:"manual"});
+  assert.equal(response.status,308);
+  assert.equal(response.headers.get("location"),"https://textanalysis.tools/");
+});
+
 test("renders the Bag of Words analyzer on its dedicated multilingual route", async () => {
   const response = await request("/tools/bag-of-words-analyzer", { headers: { accept: "text/html" } });
   assert.equal(response.status, 200);
@@ -153,6 +159,31 @@ test("word frequency endpoint handles short text and returns the full vocabulary
   assert.deepEqual(data.result.rows[0],{term:"term000",count:3,percentage:(3/132)*100,per1000:(3/132)*1000});
 });
 
+test("versioned word frequency endpoint is self-describing and supports CORS", async () => {
+  const [descriptor,preflight,response]=await Promise.all([
+    request("/api/v1/word-frequency"),
+    request("/api/v1/word-frequency",{
+      method:"OPTIONS",
+      headers:{
+        origin:"https://example.com",
+        "access-control-request-method":"POST",
+        "access-control-request-headers":"content-type",
+      },
+    }),
+    post("/api/v1/word-frequency",{source:"alpha beta alpha",language:"en",keepStopwords:true}),
+  ]);
+  assert.equal(descriptor.status,200);
+  assert.equal((await descriptor.json()).operation,"word-frequency");
+  assert.equal(preflight.status,204);
+  assert.equal(preflight.headers.get("access-control-allow-origin"),"*");
+  assert.match(preflight.headers.get("access-control-allow-methods"),/POST/);
+  assert.equal(response.status,200);
+  const data=await response.json();
+  assert.equal(data.apiVersion,"1.0");
+  assert.equal(data.storage,"none");
+  assert.deepEqual(data.result.rows[0],{term:"alpha",count:2,percentage:(2/3)*100,per1000:(2/3)*1000});
+});
+
 test("browser analytics remains opt-in and tracks core product actions", async () => {
   const [analytics,bow,frequency]=await Promise.all([
     readFile(new URL("../app/Analytics.tsx",import.meta.url),"utf8"),
@@ -206,6 +237,51 @@ test("keyword density stop-word filtering preserves real phrase adjacency", asyn
   assert.equal(data.result.bigrams.some(row=>row.term==="seo content"),false);
   assert.equal(data.result.bigrams.find(row=>row.term==="seo and").count,2);
   assert.equal(data.result.bigrams.find(row=>row.term==="and content").count,2);
+});
+
+test("versioned keyword density endpoint is documented and supports CORS", async () => {
+  const preflight=await request("/api/v1/keyword-density",{
+    method:"OPTIONS",
+    headers:{
+      origin:"https://example.com",
+      "access-control-request-method":"POST",
+      "access-control-request-headers":"content-type",
+    },
+  });
+  assert.equal(preflight.status,204);
+  assert.equal(preflight.headers.get("access-control-allow-origin"),"*");
+
+  const response=await post("/api/v1/keyword-density",{
+    source:"keyword density keyword density",
+    language:"en",
+    keepStopwords:true,
+    trackedKeywords:"keyword density",
+  });
+  assert.equal(response.status,200);
+  const data=await response.json();
+  assert.equal(data.apiVersion,"1.0");
+  assert.equal(data.result.trackedKeywords[0].count,2);
+
+  const openapi=await request("/openapi.json");
+  assert.equal(openapi.status,200);
+  const document=await openapi.json();
+  assert.ok(document.paths["/api/v1/word-frequency"]);
+  assert.ok(document.paths["/api/v1/keyword-density"]);
+  assert.ok(document.components.schemas.WordFrequencyResponse);
+  assert.ok(document.components.schemas.KeywordDensityResponse);
+});
+
+test("rate limits the legacy URL-analysis endpoint", async () => {
+  const headers={"content-type":"application/json","x-forwarded-for":"198.51.100.77"};
+  for(let attempt=0;attempt<30;attempt+=1){
+    const response=await request("/api/analyze",{method:"POST",headers,body:"{"});
+    assert.equal(response.status,400);
+  }
+  const limited=await request("/api/analyze",{method:"POST",headers,body:"{"});
+  assert.equal(limited.status,429);
+  assert.equal(limited.headers.get("retry-after"),"60");
+  const data=await limited.json();
+  assert.equal(data.error.code,"RATE_LIMITED");
 });
 
 test("renders both educational pages with unique canonical titles", async () => {

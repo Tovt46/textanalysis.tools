@@ -113,7 +113,7 @@ export default function KeywordDensityTool(){
         await new Promise<void>(resolve=>window.setTimeout(resolve,0));
         next=analyzeKeywordDensity({text:source,language:settings.language,keepStopwords:settings.keepStopwords,stopwordLists:settings.stopwordLists,uiLanguage:"en"},settings.trackedKeywords);
       }else{
-        const response=await fetch("/api/keyword-density",{
+        const response=await fetch("/api/v1/keyword-density",{
           method:"POST",
           headers:{"Content-Type":"application/json","Accept":"application/json"},
           body:JSON.stringify({sourceType,source,language:settings.language,keepStopwords:settings.keepStopwords,stopwordLists:settings.stopwordLists,trackedKeywords:settings.trackedKeywords}),

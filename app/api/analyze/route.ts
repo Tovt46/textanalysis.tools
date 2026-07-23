@@ -1,6 +1,6 @@
 import { analyzeText, type AnalyzeInput } from "../../lib/analyze";
 import { translate, type UiLang } from "../../i18n";
-import { fetchRemoteText,MAX_TEXT_CHARS } from "../../lib/public-api";
+import { apiErrorResponse,enforceRateLimit,fetchRemoteText,MAX_TEXT_CHARS } from "../../lib/public-api";
 
 function readStopwordLists(value: unknown): AnalyzeInput["stopwordLists"] {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
@@ -16,6 +16,11 @@ function readStopwordLists(value: unknown): AnalyzeInput["stopwordLists"] {
 }
 
 export async function POST(request: Request) {
+  try {
+    enforceRateLimit(request);
+  } catch (error) {
+    return apiErrorResponse(error);
+  }
   let body: Record<string, unknown>;
   try {
     body = await request.json() as Record<string, unknown>;

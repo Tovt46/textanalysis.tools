@@ -61,6 +61,8 @@ test suite.
 
 - `POST /api/v1/analyze` analyzes one text or public URL.
 - `POST /api/v1/compare` analyzes and compares two inputs.
+- `POST /api/v1/word-frequency` returns the complete vocabulary table.
+- `POST /api/v1/keyword-density` returns unigram, bigram, trigram, and tracked-phrase density.
 
 Example:
 
@@ -72,6 +74,21 @@ curl -X POST http://localhost:3000/api/v1/analyze \
 
 See `/api-docs` and `/openapi.json` for the complete request and response
 formats.
+
+## Production smoke check
+
+After each deployment and CDN purge, run:
+
+```bash
+npm run smoke:production
+```
+
+The smoke check verifies the uncached homepage contract, canonical `/en`
+redirect, versioned API operations, CORS preflight responses, and current
+JavaScript assets. Set `SMOKE_BASE_URL` to test another environment. Set
+`SMOKE_CANONICAL_ORIGIN` only when that environment uses a different canonical
+domain. Set `EXPECT_GA_MEASUREMENT_ID` when the deployment is expected to load
+GA4.
 
 ## Analytics
 
