@@ -1,8 +1,7 @@
-# textanalysis.tools
+# Text Analysis Tools
 
-A multilingual text-analysis toolkit for word frequency, keyword density,
-Bag-of-Words, bigrams, focus phrases, Zipf distribution, and side-by-side text
-comparison.
+A multilingual toolkit for word frequency, keyword density, Bag of Words,
+bigrams, focus phrases, Zipf distribution, and side-by-side text comparison.
 
 ## Features
 
@@ -43,9 +42,10 @@ test suite.
 
 ## Main routes
 
-- `/` — English analyzer
-- `/uk` — Ukrainian analyzer
-- `/ru` — Russian analyzer
+- `/`, `/uk`, `/ru` — localized product homepages
+- `/tools/bag-of-words-analyzer` — English Bag of Words analyzer
+- `/uk/tools/bag-of-words-analyzer` — Ukrainian Bag of Words analyzer
+- `/ru/tools/bag-of-words-analyzer` — Russian Bag of Words analyzer
 - `/bag-of-words-model` — Bag-of-Words guide
 - `/bag-of-words-vs-word2vec` — Bag-of-Words and Word2Vec comparison
 - `/api-docs` — public API documentation

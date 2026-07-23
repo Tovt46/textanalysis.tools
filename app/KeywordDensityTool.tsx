@@ -177,7 +177,7 @@ export default function KeywordDensityTool(){
 
   return <>
     <section className="tool-hero density-hero">
-      <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Analyzer</Link><span>/</span><Link href="/tools">Tools</Link><span>/</span><span>Keyword density checker</span></nav>
+      <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/tools">Tools</Link><span>/</span><span>Keyword density checker</span></nav>
       <p className="eyebrow">FREE SEO TEXT TOOL · 1–3 WORD PHRASES</p>
       <h1>Keyword Density Checker</h1>
       <p>Measure exact keyword and phrase frequency in text or a webpage. Review one-word terms, bigrams, and trigrams, track important phrases, or compare a draft with another page.</p>

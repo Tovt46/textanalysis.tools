@@ -4,7 +4,7 @@ import { sendServerAnalyticsEvent } from "../../../lib/server-analytics";
 export function OPTIONS(){return apiOptions();}
 
 export function GET(){
-  return apiJson({apiVersion:API_VERSION,name:"BOW Analyzer API",operation:"compare",method:"POST",documentation:"/api-docs",openapi:"/openapi.json"});
+  return apiJson({apiVersion:API_VERSION,name:"Text Analysis Tools API",operation:"compare",method:"POST",documentation:"/api-docs",openapi:"/openapi.json"});
 }
 
 export async function POST(request:Request){

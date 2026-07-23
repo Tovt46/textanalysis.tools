@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import BowApp from "../../BowApp";
-import { pageMetadata } from "../../seo-metadata";
+import HomePage from "../../HomePage";
+import { homeMetadata } from "../../seo-metadata";
 
-export const metadata:Metadata=pageMetadata("uk");
+export const metadata:Metadata=homeMetadata("uk");
 
-export default function UkrainianPage(){return <BowApp uiLang="uk"/>;}
+export default function UkrainianPage(){return <HomePage locale="uk"/>;}

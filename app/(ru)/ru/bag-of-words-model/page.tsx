@@ -1,24 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_ICONS, SITE_URL } from "../../../seo-metadata";
+import { SITE_ICONS, SITE_NAME, SITE_URL } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
 
 const path="/ru/bag-of-words-model";
-const title="Модель Bag of Words: как она работает в NLP | BOW Analyzer";
+const title="Модель Bag of Words: как она работает в NLP | Text Analysis Tools";
 const description="Разбираем модель Bag of Words: токенизацию, векторы, признаки, ограничения, отличия от Word2Vec и применение для SEO-анализа текста.";
 const languages={en:"/bag-of-words-model",ru:path,uk:"/uk/bag-of-words-model","x-default":"/bag-of-words-model"};
 
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
   alternates:{canonical:path,languages},
-  openGraph:{type:"article",url:path,siteName:"BOW Analyzer",title,description,locale:"ru_RU",alternateLocale:["en_US","uk_UA"]},
+  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"ru_RU",alternateLocale:["en_US","uk_UA"]},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
   icons:SITE_ICONS,
   manifest:"/site.webmanifest",
 };
 
-const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"Модель Bag of Words: как она работает в NLP",description,inLanguage:"ru",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:"BOW Analyzer"}};
+const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"Модель Bag of Words: как она работает в NLP",description,inLanguage:"ru",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:SITE_NAME}};
 
 export default function RussianBagOfWordsModelPage(){
   return <main className="article-page">
@@ -27,11 +27,11 @@ export default function RussianBagOfWordsModelPage(){
 
     <article>
       <div className="article-hero">
-        <nav className="breadcrumbs" aria-label="Навигационная цепочка"><Link href="/ru">Бесплатный анализатор</Link><span>/</span><span>Модель Bag of Words</span></nav>
+        <nav className="breadcrumbs" aria-label="Навигационная цепочка"><Link href="/ru">Главная</Link><span>/</span><span>Модель Bag of Words</span></nav>
         <p className="eyebrow">ОСНОВЫ NLP · ПРАКТИЧЕСКОЕ РУКОВОДСТВО</p>
         <h1>Модель Bag of Words: как она работает в NLP</h1>
         <p className="article-deck">Модель Bag of Words превращает текст в простое числовое представление, подсчитывая слова. Она прозрачна, быстро вычисляется и до сих пор полезна для классификации текстов, сравнения документов, анализа частотности ключевых слов и проверки SEO-контента.</p>
-        <div className="article-actions"><Link className="primary-article-cta" href="/ru">Попробовать бесплатный Bag of Words-анализатор</Link><a href="#how-it-works">Как работает модель ↓</a></div>
+        <div className="article-actions"><Link className="primary-article-cta" href="/ru/tools/bag-of-words-analyzer">Попробовать бесплатный Bag of Words-анализатор</Link><a href="#how-it-works">Как работает модель ↓</a></div>
       </div>
 
       <div className="article-layout">
@@ -52,7 +52,7 @@ export default function RussianBagOfWordsModelPage(){
 
           <section id="seo"><p className="section-number">07</p><h2>Как использовать Bag of Words для SEO-анализа текста</h2><p>В SEO Bag of Words стоит воспринимать как диагностический инструмент, а не формулу ранжирования. Он показывает, какую лексику страница действительно подчёркивает, какие важные фразы отсутствуют и где повторы делают текст неестественным.</p><p>Практический анализ сравнивает частотность слов и биграмм, нормирует данные в процентах или вхождениях на 1 000 слов, позволяет редактировать стоп-слова и сопоставляет две версии рядом. Распределение Ципфа служит дополнительным ориентиром: показывает термины, которые встречаются заметно чаще или реже, чем предсказывает подобранная частотная кривая.</p><h3>На какие вопросы отвечает BoW-анализ</h3><ul className="question-list"><li>Какие слова доминируют после удаления стоп-слов?</li><li>Чем черновик отличается от конкурента или прошлой версии?</li><li>Есть ли в тексте контрольные фразы и какова их частота?</li><li>Какие биграммы описывают тему точнее отдельных слов?</li><li>Не искажает ли словарь повторяющийся шаблон, меню или блок?</li></ul><p>Одна частота не доказывает релевантность или качество. Поисковый интент, фактическая польза, структура, оригинальность и читаемость всё равно требуют редакторского решения. Ценность Bag of Words в том, что одну часть такого решения он делает измеримой и удобной для сравнения.</p></section>
 
-          <section className="article-final-cta"><p className="eyebrow">БЕСПЛАТНО · БЕЗ РЕГИСТРАЦИИ</p><h2>Попробуйте бесплатный Bag of Words-анализатор</h2><p>Вставьте текст или URL, отредактируйте стоп-слова, задайте контрольные фразы, посмотрите проценты и сравните результат A с результатом B.</p><Link href="/ru">Открыть бесплатный анализатор <span>→</span></Link></section>
+          <section className="article-final-cta"><p className="eyebrow">БЕСПЛАТНО · БЕЗ РЕГИСТРАЦИИ</p><h2>Попробуйте бесплатный Bag of Words-анализатор</h2><p>Вставьте текст или URL, отредактируйте стоп-слова, задайте контрольные фразы, посмотрите проценты и сравните результат A с результатом B.</p><Link href="/ru/tools/bag-of-words-analyzer">Открыть бесплатный анализатор <span>→</span></Link></section>
         </div>
       </div>
     </article>

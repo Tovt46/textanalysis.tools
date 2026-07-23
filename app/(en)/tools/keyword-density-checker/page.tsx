@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import KeywordDensityTool from "../../../KeywordDensityTool";
-import { SITE_ICONS,SITE_URL } from "../../../seo-metadata";
+import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
 
 const path="/tools/keyword-density-checker";
@@ -11,7 +11,7 @@ const description="Check keyword density for words, bigrams, and trigrams in tex
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
   alternates:{canonical:path,languages:{en:path,"x-default":path}},
-  openGraph:{type:"website",url:path,siteName:"BOW Analyzer",title,description,locale:"en_US"},
+  openGraph:{type:"website",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest",
 };
@@ -41,7 +41,7 @@ export default function KeywordDensityCheckerPage(){
         <div className="article-callout subtle"><b>No universal ideal percentage</b><p>Use density to investigate a page, compare versions, and find accidental repetition. Do not keep adding a phrase until it reaches a preset number.</p></div>
         <p>For the full reasoning, examples, and editorial workflow, read <Link href="/keyword-density-formula">Keyword density: formula and limitations</Link>. You can also review Google’s <a href="https://developers.google.com/search/docs/essentials/spam-policies#keyword-stuffing" rel="noreferrer">keyword-stuffing policy</a> and <a href="https://developers.google.com/search/docs/fundamentals/seo-starter-guide" rel="noreferrer">SEO Starter Guide</a>.</p>
       </section>
-      <section className="tool-next-links"><p className="section-number">RELATED TOOLS</p><h2>Use frequency data in context</h2><p>Open the simpler word-frequency table for a single vocabulary list, or use the main analyzer for tracked phrases, Zipf distribution, and a broader Bag of Words comparison.</p><div><Link href="/tools/word-frequency-counter">Word Frequency Counter <span>→</span></Link><Link href="/">Bag of Words Analyzer <span>→</span></Link><Link href="/keyword-density-formula">Read the density guide <span>→</span></Link></div></section>
+      <section className="tool-next-links"><p className="section-number">RELATED TOOLS</p><h2>Use frequency data in context</h2><p>Open the simpler word-frequency table for a single vocabulary list, or use the main analyzer for tracked phrases, Zipf distribution, and a broader Bag of Words comparison.</p><div><Link href="/tools/word-frequency-counter">Word Frequency Counter <span>→</span></Link><Link href="/tools/bag-of-words-analyzer">Bag of Words Analyzer <span>→</span></Link><Link href="/keyword-density-formula">Read the density guide <span>→</span></Link></div></section>
     </article>
     <SiteFooter locale="en"/>
   </main>;

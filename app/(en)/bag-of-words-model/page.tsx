@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_ICONS, SITE_URL } from "../../seo-metadata";
+import { SITE_ICONS, SITE_NAME, SITE_URL } from "../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../SiteChrome";
 
 const path="/bag-of-words-model";
-const title="Bag of Words Model: How It Works in NLP | BOW Analyzer";
+const title="Bag of Words Model: How It Works in NLP | Text Analysis Tools";
 const description="Learn how the Bag of Words model works in NLP, from tokenization and vectors to features, limitations, Word2Vec differences, and SEO text analysis.";
 
 export const metadata:Metadata={
@@ -12,7 +12,7 @@ export const metadata:Metadata={
   title,
   description,
   alternates:{canonical:path,languages:{en:path,ru:"/ru/bag-of-words-model",uk:"/uk/bag-of-words-model","x-default":path}},
-  openGraph:{type:"article",url:path,siteName:"BOW Analyzer",title,description,locale:"en_US"},
+  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
   icons:SITE_ICONS,
@@ -26,7 +26,7 @@ const schema={
   description,
   inLanguage:"en",
   mainEntityOfPage:`${SITE_URL}${path}`,
-  publisher:{"@type":"Organization",name:"BOW Analyzer"},
+  publisher:{"@type":"Organization",name:SITE_NAME},
 };
 
 export default function BagOfWordsModelPage(){
@@ -36,11 +36,11 @@ export default function BagOfWordsModelPage(){
 
     <article>
       <div className="article-hero">
-        <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Free analyzer</Link><span>/</span><span>Bag of Words model</span></nav>
+        <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><span>Bag of Words model</span></nav>
         <p className="eyebrow">NLP FUNDAMENTALS · PRACTICAL GUIDE</p>
         <h1>Bag of Words Model: How It Works in NLP</h1>
         <p className="article-deck">The Bag of Words model turns text into a simple numerical representation by counting words. It is easy to inspect, quick to compute, and still useful for text classification, document comparison, keyword-frequency analysis, and SEO content review.</p>
-        <div className="article-actions"><Link className="primary-article-cta" href="/">Try the free Bag of Words analyzer</Link><a href="#how-it-works">See how the model works ↓</a></div>
+        <div className="article-actions"><Link className="primary-article-cta" href="/tools/bag-of-words-analyzer">Try the free Bag of Words analyzer</Link><a href="#how-it-works">See how the model works ↓</a></div>
       </div>
 
       <div className="article-layout">
@@ -148,7 +148,7 @@ export default function BagOfWordsModelPage(){
             <p className="eyebrow">FREE · NO SIGN-UP</p>
             <h2>Try the Free Bag of Words Analyzer</h2>
             <p>Paste text or analyze a webpage, edit stop-word lists, track phrases, review keyword percentages, and compare result A with result B.</p>
-            <Link href="/">Open the free analyzer <span>→</span></Link>
+            <Link href="/tools/bag-of-words-analyzer">Open the free analyzer <span>→</span></Link>
           </section>
         </div>
       </div>

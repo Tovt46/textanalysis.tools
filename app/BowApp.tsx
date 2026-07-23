@@ -175,7 +175,7 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
   function clearA(){setBaseline(null);localStorage.removeItem(CACHE_KEY);}
 
   return <main>
-    <SiteHeader locale={uiLang} active="analyzer"/>
+    <SiteHeader locale={uiLang} active="tools" languagePaths={{en:"/tools/bag-of-words-analyzer",ru:"/ru/tools/bag-of-words-analyzer",uk:"/uk/tools/bag-of-words-analyzer"}}/>
     <section className="hero reduced" id="top"><p className="eyebrow">{t("heroEye")}</p><h1>{t("heroLine")}<br/><em>{t("heroEm")}</em></h1><div className="hero-aside"><p className="hero-copy">{t("heroCopy")}</p><span className="privacy-note"><b/>{t("status")}</span></div></section>
 
     <form className="workspace" onSubmit={analyze}>

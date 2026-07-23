@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import WordFrequencyTool from "../../../WordFrequencyTool";
-import { SITE_ICONS,SITE_URL } from "../../../seo-metadata";
+import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
 
 const path="/tools/word-frequency-counter";
@@ -11,7 +11,7 @@ const description="Count word frequency in text or a webpage. Search and sort co
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
   alternates:{canonical:path,languages:{en:path,"x-default":path}},
-  openGraph:{type:"website",url:path,siteName:"BOW Analyzer",title,description,locale:"en_US"},
+  openGraph:{type:"website",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest",
 };
@@ -43,7 +43,7 @@ export default function WordFrequencyCounterPage(){
         <p className="section-number">NEXT STEPS</p>
         <h2>Go beyond a single frequency table</h2>
         <p>Use the main analyzer when you need bigrams, tracked phrases, Zipf distribution, or an A/B comparison. Read the Bag of Words guide to understand how word counts become document features.</p>
-        <div><Link href="/how-to-calculate-word-frequency">Read the frequency guide <span>→</span></Link><Link href="/tools/keyword-density-checker">Check keyword density <span>→</span></Link><Link href="/">Open the Bag of Words analyzer <span>→</span></Link></div>
+        <div><Link href="/how-to-calculate-word-frequency">Read the frequency guide <span>→</span></Link><Link href="/tools/keyword-density-checker">Check keyword density <span>→</span></Link><Link href="/tools/bag-of-words-analyzer">Open the Bag of Words analyzer <span>→</span></Link></div>
       </section>
     </article>
     <SiteFooter locale="en"/>

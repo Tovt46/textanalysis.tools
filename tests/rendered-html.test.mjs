@@ -22,14 +22,29 @@ function post(path, body) {
   });
 }
 
-test("renders the English analyzer with production SEO metadata", async () => {
+test("renders the English product homepage with live tools and production SEO metadata", async () => {
   const response = await request("/", { headers: { accept: "text/html" } });
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /<title>Free Bag of Words SEO Analyzer &amp; Comparison \| BOW Analyzer<\/title>/i);
+  assert.match(html, /<title>Free Text Analysis Tools for Words, Keywords &amp; Comparison<\/title>/i);
   assert.match(html, /rel="canonical" href="https:\/\/textanalysis\.tools\/"/i);
-  assert.match(html, /property="og:image" content="https:\/\/textanalysis\.tools\/social-card\.png"/i);
+  assert.match(html, /property="og:image" content="https:\/\/textanalysis\.tools\/og\.png"/i);
+  assert.match(html, /<h1>Free text analysis tools\./i);
+  assert.match(html, /Word Frequency Counter/i);
+  assert.match(html, /Keyword Density Checker/i);
+  assert.match(html, /Bag of Words Analyzer/i);
+  assert.doesNotMatch(html, /<textarea/i);
+});
+
+test("renders the Bag of Words analyzer on its dedicated multilingual route", async () => {
+  const response = await request("/tools/bag-of-words-analyzer", { headers: { accept: "text/html" } });
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /<title>Free Bag of Words SEO Analyzer &amp; Comparison<\/title>/i);
+  assert.match(html, /rel="canonical" href="https:\/\/textanalysis\.tools\/tools\/bag-of-words-analyzer"/i);
+  assert.match(html, /hrefLang="ru" href="https:\/\/textanalysis\.tools\/ru\/tools\/bag-of-words-analyzer"/i);
   assert.match(html, /Free Bag of Words SEO analyzer/i);
+  assert.match(html, /<textarea/i);
 });
 
 test("counts tracked phrases as exact token sequences and allows overlaps", async () => {
@@ -108,6 +123,9 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/bag-of-words-analyzer<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/ru\/tools\/bag-of-words-analyzer<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk\/tools\/bag-of-words-analyzer<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/word-frequency-counter<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/keyword-density-checker<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/how-to-calculate-word-frequency<\/loc>/);

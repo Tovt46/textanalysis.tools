@@ -29,7 +29,7 @@ const analysisResult={
 
 const document={
   openapi:"3.1.0",
-  info:{title:"BOW Analyzer API",version:"1.0.0",description:"Stateless Bag of Words, keyword-frequency, bigram, focus-phrase, and Zipf-distribution analysis for text and public webpages. Submitted content is not stored."},
+  info:{title:"Text Analysis Tools API",version:"1.0.0",description:"Stateless Bag of Words, keyword-frequency, bigram, focus-phrase, and Zipf-distribution analysis for text and public webpages. Submitted content is not stored."},
   servers:[{url:SITE_URL}],
   components:{schemas:{
     AnalyzeInput:sourceSchema,

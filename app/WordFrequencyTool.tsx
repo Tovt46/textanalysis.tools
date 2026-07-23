@@ -146,7 +146,7 @@ export default function WordFrequencyTool(){
 
   return <>
     <section className="tool-hero">
-      <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Analyzer</Link><span>/</span><Link href="/tools">Tools</Link><span>/</span><span>Word frequency counter</span></nav>
+      <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/tools">Tools</Link><span>/</span><span>Word frequency counter</span></nav>
       <p className="eyebrow">FREE TEXT ANALYSIS TOOL · EN / UKR / RU</p>
       <h1>Word Frequency Counter</h1>
       <p>Count every word in text or a webpage. See exact occurrences, percentage of analyzed words, and normalized frequency per 1,000 words—then search, sort, or export the full table.</p>

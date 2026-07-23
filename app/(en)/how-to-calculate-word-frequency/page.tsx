@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_ICONS,SITE_URL } from "../../seo-metadata";
+import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../SiteChrome";
 
 const path="/how-to-calculate-word-frequency";
@@ -10,18 +10,18 @@ const description="Learn how to calculate word frequency with counts, percentage
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
   alternates:{canonical:path,languages:{en:path,"x-default":path}},
-  openGraph:{type:"article",url:path,siteName:"BOW Analyzer",title,description,locale:"en_US"},
+  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest",
 };
 
-const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"How to Calculate Word Frequency",description,inLanguage:"en",datePublished:"2026-07-22",dateModified:"2026-07-22",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:"BOW Analyzer"}};
+const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"How to Calculate Word Frequency",description,inLanguage:"en",datePublished:"2026-07-22",dateModified:"2026-07-23",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:SITE_NAME}};
 
 export default function WordFrequencyGuidePage(){
   return <main className="article-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
     <SiteHeader locale="en" active="tools" languagePaths={{en:path,uk:"/uk",ru:"/ru"}}/>
     <article>
-      <div className="article-hero"><nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Analyzer</Link><span>/</span><Link href="/tools">Tools</Link><span>/</span><span>Calculate word frequency</span></nav><p className="eyebrow">TEXT ANALYSIS · WORKED EXAMPLE</p><h1>How to Calculate Word Frequency</h1><p className="article-deck">Word frequency starts with a simple count, but percentages and per-1,000 rates make the result more useful. This guide shows each formula, explains the preprocessing choices that change the answer, and works through a short example.</p><p className="article-meta">Published July 22, 2026 · 8 minute read</p><div className="article-actions"><Link className="primary-article-cta" href="/tools/word-frequency-counter">Count words in your text</Link><a href="#formula">See the formulas ↓</a></div></div>
+      <div className="article-hero"><nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/tools">Tools</Link><span>/</span><span>Calculate word frequency</span></nav><p className="eyebrow">TEXT ANALYSIS · WORKED EXAMPLE</p><h1>How to Calculate Word Frequency</h1><p className="article-deck">Word frequency starts with a simple count, but percentages and per-1,000 rates make the result more useful. This guide shows each formula, explains the preprocessing choices that change the answer, and works through a short example.</p><p className="article-meta">Published July 22, 2026 · 8 minute read</p><div className="article-actions"><Link className="primary-article-cta" href="/tools/word-frequency-counter">Count words in your text</Link><a href="#formula">See the formulas ↓</a></div></div>
       <div className="article-layout">
         <aside className="article-toc" aria-label="On this page"><b>On this page</b><a href="#definition">What word frequency means</a><a href="#formula">Frequency formulas</a><a href="#example">Worked example</a><a href="#preprocessing">Tokenization and stop words</a><a href="#compare">Comparing different lengths</a><a href="#uses">Practical uses</a></aside>
         <div className="article-body">

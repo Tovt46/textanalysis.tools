@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_ICONS, SITE_URL } from "../../seo-metadata";
+import { SITE_ICONS, SITE_NAME, SITE_URL } from "../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../SiteChrome";
 
 const path="/bag-of-words-vs-word2vec";
-const title="Bag of Words vs Word2Vec: Key Differences | BOW Analyzer";
+const title="Bag of Words vs Word2Vec: Key Differences | Text Analysis Tools";
 const description="Compare Bag of Words vs Word2Vec: sparse counts, dense word vectors, context, training, use cases, examples, and which NLP method to choose.";
 
 export const metadata:Metadata={
@@ -12,7 +12,7 @@ export const metadata:Metadata={
   title,
   description,
   alternates:{canonical:path},
-  openGraph:{type:"article",url:path,siteName:"BOW Analyzer",title,description,locale:"en_US"},
+  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
   icons:SITE_ICONS,
@@ -26,24 +26,24 @@ const schema={
   description,
   inLanguage:"en",
   datePublished:"2026-07-20",
-  dateModified:"2026-07-20",
+  dateModified:"2026-07-23",
   mainEntityOfPage:`${SITE_URL}${path}`,
-  publisher:{"@type":"Organization",name:"BOW Analyzer"},
+  publisher:{"@type":"Organization",name:SITE_NAME},
 };
 
 export default function BagOfWordsVsWord2VecPage(){
   return <main className="article-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
 
-    <SiteHeader locale="en" active="comparison"/>
+    <SiteHeader locale="en" active="guide"/>
 
     <article>
       <div className="article-hero">
-        <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Free analyzer</Link><span>/</span><Link href="/bag-of-words-model">Bag of Words model</Link><span>/</span><span>BoW vs Word2Vec</span></nav>
+        <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/bag-of-words-model">Bag of Words model</Link><span>/</span><span>BoW vs Word2Vec</span></nav>
         <p className="eyebrow">NLP COMPARISON · PRACTICAL GUIDE</p>
         <h1>Bag of Words vs Word2Vec: What’s the Difference?</h1>
         <p className="article-deck"><strong>Bag of Words</strong> represents a document with visible word counts. <strong>Word2Vec</strong> learns a dense vector for each word from its surrounding context. One is simple and directly interpretable; the other captures semantic relationships between words.</p>
-        <div className="article-actions"><a className="primary-article-cta" href="#comparison">Compare the methods</a><Link href="/">Analyze word frequencies free →</Link></div>
+        <div className="article-actions"><a className="primary-article-cta" href="#comparison">Compare the methods</a><Link href="/tools/bag-of-words-analyzer">Analyze word frequencies free →</Link></div>
       </div>
 
       <div className="article-layout">
@@ -133,7 +133,7 @@ export default function BagOfWordsVsWord2VecPage(){
             <h2>Bag of Words vs Word2Vec for SEO analysis</h2>
             <p>For an editor reviewing a page, Bag of Words is usually the more actionable diagnostic. It can show exact word counts, keyword percentages, bigram frequency, editable stop-word results, and differences between version A and version B. Those outputs are visible and traceable to the source text.</p>
             <p>Word2Vec can support semantic similarity or vocabulary-expansion experiments, but an embedding distance is not a Google ranking score. Neither repeating terms to match a Bag of Words profile nor adding synonyms because their vectors are close guarantees relevance. Search intent, accuracy, originality, internal structure, and usefulness still require editorial judgment.</p>
-            <p>Use the free <Link href="/">Bag of Words analyzer</Link> when you need the transparent part: word and bigram frequency, percentages, tracked phrases, Zipf diagnostics, and two-text comparison.</p>
+            <p>Use the free <Link href="/tools/bag-of-words-analyzer">Bag of Words analyzer</Link> when you need the transparent part: word and bigram frequency, percentages, tracked phrases, Zipf diagnostics, and two-text comparison.</p>
           </section>
 
           <section id="faq">
@@ -152,7 +152,7 @@ export default function BagOfWordsVsWord2VecPage(){
             <ul><li><a href="https://research.google/pubs/efficient-estimation-of-word-representations-in-vector-space/" rel="noreferrer">Mikolov et al., Efficient Estimation of Word Representations in Vector Space</a></li><li><a href="https://www.tensorflow.org/text/tutorials/word2vec" rel="noreferrer">TensorFlow: Word2Vec tutorial</a></li><li><a href="https://scikit-learn.org/stable/modules/feature_extraction.html#text-feature-extraction" rel="noreferrer">scikit-learn: text feature extraction and Bag of Words</a></li></ul>
           </section>
 
-          <section className="article-final-cta"><p className="eyebrow">FREE · NO SIGN-UP</p><h2>Compare the vocabulary of two texts</h2><p>Paste two versions, review exact counts and percentages, edit stop words, and see which words or phrases changed.</p><Link href="/">Open the free analyzer <span>→</span></Link></section>
+          <section className="article-final-cta"><p className="eyebrow">FREE · NO SIGN-UP</p><h2>Compare the vocabulary of two texts</h2><p>Paste two versions, review exact counts and percentages, edit stop words, and see which words or phrases changed.</p><Link href="/tools/bag-of-words-analyzer">Open the free analyzer <span>→</span></Link></section>
         </div>
       </div>
     </article>

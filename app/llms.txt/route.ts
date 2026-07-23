@@ -1,8 +1,8 @@
 import { SITE_URL } from "../seo-metadata";
 
-const content=`# BOW Analyzer
+const content=`# Text Analysis Tools
 
-> Free, stateless Bag of Words analysis for text and public webpages. Measures word and bigram frequency, percentages, focus-phrase coverage, vocabulary size, and Zipf-distribution diagnostics. Compares two inputs without storing submitted content.
+> Free, transparent tools for word frequency, keyword density, Bag of Words analysis, and text comparison. Pasted text is processed without server storage.
 
 ## Agent API
 
@@ -15,8 +15,9 @@ Requests use application/json. Supported languages are English, Russian, and Ukr
 
 ## Main pages
 
-- Free analyzer: ${SITE_URL}/
+- Product homepage: ${SITE_URL}/
 - Text analysis tools: ${SITE_URL}/tools
+- Bag of Words analyzer: ${SITE_URL}/tools/bag-of-words-analyzer
 - Word frequency counter: ${SITE_URL}/tools/word-frequency-counter
 - Keyword density checker: ${SITE_URL}/tools/keyword-density-checker
 - How to calculate word frequency: ${SITE_URL}/how-to-calculate-word-frequency

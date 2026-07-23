@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { UiLang } from "./i18n";
 
 export const SITE_URL = "https://textanalysis.tools";
+export const SITE_NAME = "Text Analysis Tools";
 
 export const SITE_ICONS:Metadata["icons"] = {
   icon:[
@@ -13,49 +14,83 @@ export const SITE_ICONS:Metadata["icons"] = {
   apple:[{url:"/apple-touch-icon.png",sizes:"180x180",type:"image/png"}],
 };
 
-const SEO_COPY: Record<UiLang,{ path:string; title:string; description:string; locale:string }> = {
+const HOME_COPY: Record<UiLang,{ path:string; title:string; description:string; locale:string }> = {
   ru: {
     path: "/ru",
-    title: "Бесплатный Bag of Words SEO-анализатор | BOW Analyzer",
-    description: "Анализируйте частотность и плотность ключевых слов, биграммы и стоп-слова. Сравнивайте два текста с помощью Bag of Words и закона Ципфа.",
+    title: "Бесплатные инструменты анализа текста | Text Analysis Tools",
+    description: "Анализируйте частотность слов, плотность ключевых фраз и различия между текстами. Прозрачные расчёты, работа без регистрации и хранения текста.",
     locale: "ru_RU",
   },
   en: {
     path: "/",
-    title: "Free Bag of Words SEO Analyzer & Comparison | BOW Analyzer",
-    description: "Analyze keyword density, word and bigram frequency, and editable stop words. Compare two texts with Bag of Words and Zipf distribution.",
+    title: "Free Text Analysis Tools for Words, Keywords & Comparison",
+    description: "Analyze word frequency, keyword density, Bag of Words, and text differences with transparent browser-based tools. No sign-up and no server storage.",
     locale: "en_US",
   },
   uk: {
     path: "/uk",
-    title: "Безкоштовний Bag of Words SEO-аналізатор | BOW Analyzer",
-    description: "Аналізуйте частотність і щільність ключових слів, біграми та стоп-слова. Порівнюйте два тексти за допомогою Bag of Words і закону Ципфа.",
+    title: "Безкоштовні інструменти аналізу тексту | Text Analysis Tools",
+    description: "Аналізуйте частотність слів, щільність ключових фраз і відмінності між текстами. Прозорі розрахунки без реєстрації та зберігання тексту.",
     locale: "uk_UA",
   },
 };
 
-const languageAlternates = { en:"/", ru:"/ru", uk:"/uk", "x-default":"/" };
+const BOW_COPY: Record<UiLang,{ path:string; title:string; description:string; locale:string }> = {
+  ru: {
+    path:"/ru/tools/bag-of-words-analyzer",
+    title:"Бесплатный Bag of Words SEO-анализатор | Text Analysis Tools",
+    description:"Анализируйте частотность и плотность ключевых слов, биграммы и стоп-слова. Сравнивайте два текста с помощью Bag of Words и закона Ципфа.",
+    locale:"ru_RU",
+  },
+  en: {
+    path:"/tools/bag-of-words-analyzer",
+    title:"Free Bag of Words SEO Analyzer & Comparison",
+    description:"Analyze keyword density, word and bigram frequency, and editable stop words. Compare two texts with Bag of Words and Zipf distribution.",
+    locale:"en_US",
+  },
+  uk: {
+    path:"/uk/tools/bag-of-words-analyzer",
+    title:"Безкоштовний Bag of Words SEO-аналізатор | Text Analysis Tools",
+    description:"Аналізуйте частотність і щільність ключових слів, біграми та стоп-слова. Порівнюйте два тексти за допомогою Bag of Words і закону Ципфа.",
+    locale:"uk_UA",
+  },
+};
 
-export function pageMetadata(lang:UiLang):Metadata {
-  const page=SEO_COPY[lang];
+const homeLanguageAlternates = { en:"/", ru:"/ru", uk:"/uk", "x-default":"/" };
+export const BOW_LANGUAGE_PATHS = {
+  en:"/tools/bag-of-words-analyzer",
+  ru:"/ru/tools/bag-of-words-analyzer",
+  uk:"/uk/tools/bag-of-words-analyzer",
+} satisfies Record<UiLang,string>;
+const bowLanguageAlternates = { ...BOW_LANGUAGE_PATHS, "x-default":BOW_LANGUAGE_PATHS.en };
+
+function metadata(page:{path:string;title:string;description:string;locale:string},languages:Record<string,string>,imageAlt:string):Metadata {
   return {
     metadataBase:new URL(SITE_URL),
     title:page.title,
     description:page.description,
-    alternates:{ canonical:page.path, languages:languageAlternates },
+    alternates:{ canonical:page.path, languages },
     openGraph:{
       type:"website",
       url:page.path,
-      siteName:"BOW Analyzer",
+      siteName:SITE_NAME,
       title:page.title,
       description:page.description,
       locale:page.locale,
-      alternateLocale:Object.values(SEO_COPY).filter(item=>item.locale!==page.locale).map(item=>item.locale),
-      images:[{url:"/social-card.png",width:1200,height:630,alt:"Bag of Words frequency distribution and Zipf curve"}],
+      alternateLocale:["en_US","ru_RU","uk_UA"].filter(locale=>locale!==page.locale),
+      images:[{url:"/og.png",width:1200,height:630,alt:imageAlt}],
     },
-    twitter:{ card:"summary_large_image", title:page.title, description:page.description, images:["/social-card.png"] },
+    twitter:{ card:"summary_large_image", title:page.title, description:page.description, images:["/og.png"] },
     verification:{ google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU" },
     icons:SITE_ICONS,
     manifest:"/site.webmanifest",
   };
+}
+
+export function homeMetadata(lang:UiLang):Metadata {
+  return metadata(HOME_COPY[lang],homeLanguageAlternates,"Text Analysis Tools for word frequency, keyword density, and text comparison");
+}
+
+export function bowMetadata(lang:UiLang):Metadata {
+  return metadata(BOW_COPY[lang],bowLanguageAlternates,"Bag of Words frequency analysis and text comparison");
 }
