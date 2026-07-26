@@ -116,30 +116,19 @@ SMOKE_BASE_URL=http://127.0.0.1:3000 npm run smoke:production
 
 ## GitHub auto deploy to Hostinger
 
-Workflow: `.github/workflows/hostinger-github-auto-deploy.yml`  
-Runs on every push to `main` and:
+Production uses Hostinger's native GitHub integration. The Hostinger Web App is
+connected to this repository and automatically builds and deploys every push to
+`main` with Next.js and Node.js 22.x.
 
-- installs dependencies
-- runs `npm run test` (build + rendered page smoke checks)
-- builds the app for Hostinger (`npm run build:hostinger`)
-- sends build artifacts to Hostinger via SSH
-- installs production dependencies on Hostinger and restarts the app via PM2
+No repository SSH secrets, deploy key, PM2 workflow, Cloudflare token, or custom
+GitHub Actions deployment job is required. Build status and logs are available
+in hPanel under `Websites → textanalysis.tools → Deployments`.
 
-Set these GitHub repository secrets:
+Before pushing production changes, run:
 
-- `HOSTINGER_HOST` — SSH host/IP
-- `HOSTINGER_USER` — SSH user
-- `HOSTINGER_DEPLOY_PATH` — directory on server (for example `/home/user/apps/textanalysis`)
-- `HOSTINGER_SSH_KEY` — private SSH key for deploy user
-- `HOSTINGER_SSH_PORT` — usually `22` (optional)
-- `HOSTINGER_NODE_PORT` — app port on server (default `3000`) (optional)
-- `HOSTINGER_PM2_PROCESS_NAME` — PM2 process name (default `textanalysis-tools`) (optional)
-
-On the Hostinger side, make sure:
-
-- Node.js 22.x is available in the deployment directory
-- PM2 is installed and allowed to run `npm run start:hostinger`
-- the user has write access to `HOSTINGER_DEPLOY_PATH`
+```bash
+npm run test
+```
 
 ## Analytics
 
