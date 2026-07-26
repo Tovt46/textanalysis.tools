@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import {writeFile} from "node:fs/promises";
-import packageInfo from "../package.json";
+import packageInfo from "../packages/cli/package.json";
 import {booleanOption,CliUsageError,parseCliArgs} from "./arguments";
 import {runOperation} from "./operations";
 import {renderCliOutput} from "./output";

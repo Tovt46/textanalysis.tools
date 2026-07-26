@@ -5,7 +5,7 @@ import {join} from "node:path";
 import {spawn} from "node:child_process";
 import test from "node:test";
 
-const CLI_PATH=new URL("../dist/textanalysis.mjs",import.meta.url);
+const CLI_PATH=new URL("../packages/cli/dist/textanalysis.mjs",import.meta.url);
 
 function runCli(args,{input}={}){
   return new Promise((resolve,reject)=>{
