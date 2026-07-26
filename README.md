@@ -37,6 +37,19 @@ The local-first CLI exposes the same eight analysis operations as the website.
 It accepts UTF-8 files, public HTTP(S) URLs, inline text, or piped stdin and can
 write terminal tables, JSON, or CSV.
 
+Install the published CLI globally:
+
+```bash
+npm install --global textanalysis-tools
+textanalysis --help
+```
+
+Or run a command without installing it:
+
+```bash
+npx --yes textanalysis-tools frequency article.txt
+```
+
 Build and run it inside the repository:
 
 ```bash
@@ -47,7 +60,7 @@ npm run cli -- tfidf draft.txt competitor.txt --output tfidf.json --format json
 npm run cli -- similarity draft.txt competitor.txt --method tfidf
 ```
 
-To install the `textanalysis` executable locally:
+To link the development build as the `textanalysis` executable:
 
 ```bash
 npm run cli:build

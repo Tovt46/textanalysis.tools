@@ -3,12 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "bin": {
-    "textanalysis": "./dist/textanalysis.mjs"
+    "textanalysis": "./packages/cli/dist/textanalysis.mjs"
   },
-  "files": [
-    "dist/textanalysis.mjs",
-    "README.md"
-  ],
   "engines": {
     "node": ">=22.13.0"
   },
@@ -17,8 +13,8 @@
     "dev:hostinger": "next dev",
     "build": "next build",
     "build:hostinger": "next build",
-    "cli": "npm run cli:build --silent && node dist/textanalysis.mjs",
-    "cli:build": "esbuild cli/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/textanalysis.mjs",
+    "cli": "npm run cli:build --silent && node packages/cli/dist/textanalysis.mjs",
+    "cli:build": "esbuild cli/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=packages/cli/dist/textanalysis.mjs",
     "start": "next start",
     "start:hostinger": "next start",
     "test": "npm run cli:build && npm run build:hostinger && node scripts/run-rendered-tests.mjs",

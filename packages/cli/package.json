@@ -1,0 +1,38 @@
+{
+  "name": "textanalysis-tools",
+  "version": "0.1.0",
+  "description": "Local-first word frequency, keyword density, Bag of Words, TF-IDF, n-gram, comparison, and text similarity CLI.",
+  "type": "module",
+  "bin": {
+    "textanalysis": "dist/textanalysis.mjs"
+  },
+  "files": [
+    "dist/textanalysis.mjs"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tovt46/textanalysis.tools.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://textanalysis.tools/",
+  "bugs": {
+    "url": "https://github.com/Tovt46/textanalysis.tools/issues"
+  },
+  "keywords": [
+    "text-analysis",
+    "word-frequency",
+    "keyword-density",
+    "bag-of-words",
+    "tf-idf",
+    "ngrams",
+    "text-similarity",
+    "cli"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
