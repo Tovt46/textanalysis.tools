@@ -44,8 +44,10 @@ async function jsonPost(path,body){
 function assertDeploySafeCache(response,label){
   const cacheControl=response.headers.get("cache-control")||"";
   const maxAge=cacheControl.match(/s-maxage=(\d+)/i);
+  const staleWindow=cacheControl.match(/stale-while-revalidate=(\d+)/i);
   assert.ok(maxAge,`${label} is missing a shared-cache TTL: ${cacheControl||"(missing)"}`);
   assert.ok(Number(maxAge[1])<=300,`${label} CDN TTL is too long: ${cacheControl}`);
+  assert.ok(!staleWindow||Number(staleWindow[1])<=300,`${label} stale cache window is too long: ${cacheControl}`);
 }
 
 function scriptsFromHtml(html){
