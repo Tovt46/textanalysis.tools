@@ -49,3 +49,7 @@ Common options include `--language auto|en|ru|uk`, `--keep-stopwords`,
 
 Full documentation and the web tools are available at
 [textanalysis.tools](https://textanalysis.tools/).
+
+## License
+
+The npm CLI package is available under the [MIT License](./LICENSE).
