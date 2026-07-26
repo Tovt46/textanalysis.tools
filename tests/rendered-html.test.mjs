@@ -163,6 +163,7 @@ test("serves a valid XML sitemap", async () => {
 test("renders the word frequency tool as a canonical English search page", async () => {
   const response = await request("/tools/word-frequency-counter", { headers: { accept: "text/html" } });
   assert.equal(response.status, 200);
+  assert.match(response.headers.get("cache-control")||"",/s-maxage=300(?:\D|$)/i);
   const html = await response.text();
   assert.match(html, /<title>Free Word Frequency Counter for Text &amp; URLs<\/title>/i);
   assert.match(html, /rel="canonical" href="https:\/\/textanalysis\.tools\/tools\/word-frequency-counter"/i);
