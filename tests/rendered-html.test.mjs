@@ -490,6 +490,24 @@ test("versioned similarity endpoint supports tf-idf and returns overlap diagnost
   assert.ok(data.result.topTerms.length>0);
 });
 
+test("tf-idf similarity uses weighted vectors instead of raw term frequency",async()=>{
+  const payload={
+    a:{source:"common common common alpha alpha alpha",language:"en",keepStopwords:true},
+    b:{source:"common common common beta beta beta",language:"en",keepStopwords:true},
+    top:50,
+  };
+  const [bowResponse,tfidfResponse]=await Promise.all([
+    post("/api/v1/similarity",{...payload,method:"bow"}),
+    post("/api/v1/similarity",{...payload,method:"tf-idf"}),
+  ]);
+  assert.equal(bowResponse.status,200);
+  assert.equal(tfidfResponse.status,200);
+  const bow=await bowResponse.json();
+  const tfidf=await tfidfResponse.json();
+  assert.ok(tfidf.result.cosine<bow.result.cosine);
+  assert.ok(tfidf.result.documents[0].rows.some((row)=>row.term==="alpha"&&row.idf>1));
+});
+
 test("rate limits the legacy URL-analysis endpoint", async () => {
   const headers={"content-type":"application/json","x-forwarded-for":"198.51.100.77"};
   for(let attempt=0;attempt<30;attempt+=1){

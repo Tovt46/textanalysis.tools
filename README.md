@@ -31,11 +31,42 @@ npm run dev
 
 The local development URL is printed in the terminal.
 
+## Command-line interface
+
+The local-first CLI exposes the same eight analysis operations as the website.
+It accepts UTF-8 files, public HTTP(S) URLs, inline text, or piped stdin and can
+write terminal tables, JSON, or CSV.
+
+Build and run it inside the repository:
+
+```bash
+npm run cli -- frequency article.txt
+cat article.txt | npm run cli -- density --keywords "text analysis,SEO" --format json
+npm run cli -- ngram https://example.com/article --size 3 --format csv
+npm run cli -- tfidf draft.txt competitor.txt --output tfidf.json --format json
+npm run cli -- similarity draft.txt competitor.txt --method tfidf
+```
+
+To install the `textanalysis` executable locally:
+
+```bash
+npm run cli:build
+npm link
+textanalysis --help
+```
+
+Available commands are `analyze`, `frequency`, `density`, `compare`, `ngram`,
+`bow`, `tfidf`, and `similarity`. Analysis is performed locally by default;
+only URL inputs are downloaded. Use `--language auto|en|ru|uk`,
+`--keep-stopwords`, `--stopwords <file>`, `--top <number>`, and
+`--format table|json|csv` to control common behavior.
+
 ## Validation
 
 ```bash
 npm test
 npm run lint
+npm run test:cli
 ```
 
 `npm test` creates a production build and runs the rendered-page and analyzer
@@ -61,6 +92,7 @@ npm run start:hostinger
 - `/tools/word-frequency-counter` — searchable word counts for text and URLs
 - `/tools/keyword-density-checker` — 1–3-word density tables and A/B comparison
 - `/tools/text-analysis-comparison` — normalized A/B word and bigram changes
+- `/tools/ngram-analyzer` — recurring phrase analysis for 1–10-word n-grams
 - `/tools/bag-of-words-generator` — full Bag-of-Words vector with counts and frequencies
 - `/tools/tf-idf-calculator` — corpus-aware TF-IDF scoring for two documents
 - `/tools/text-similarity-calculator` — cosine similarity by BoW or TF-IDF
@@ -75,6 +107,7 @@ npm run start:hostinger
 - `POST /api/v1/compare` analyzes and compares two inputs.
 - `POST /api/v1/word-frequency` returns the complete vocabulary table.
 - `POST /api/v1/keyword-density` returns unigram, bigram, trigram, and tracked-phrase density.
+- `POST /api/v1/ngram-analyzer` returns n-grams for a selected phrase length.
 - `POST /api/v1/bag-of-words` returns a full Bag-of-Words vector with term frequencies.
 - `POST /api/v1/tf-idf` scores documents with corpus-aware TF-IDF values.
 - `POST /api/v1/similarity` returns cosine similarity and top contributing terms (BoW or TF-IDF).

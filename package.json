@@ -2,6 +2,13 @@
   "name": "textanalysis-tools",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "textanalysis": "./dist/textanalysis.mjs"
+  },
+  "files": [
+    "dist/textanalysis.mjs",
+    "README.md"
+  ],
   "engines": {
     "node": ">=22.13.0"
   },
@@ -10,10 +17,14 @@
     "dev:hostinger": "next dev",
     "build": "next build",
     "build:hostinger": "next build",
+    "cli": "npm run cli:build --silent && node dist/textanalysis.mjs",
+    "cli:build": "esbuild cli/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/textanalysis.mjs",
     "start": "next start",
     "start:hostinger": "next start",
-    "test": "npm run build:hostinger && node scripts/run-rendered-tests.mjs",
+    "test": "npm run cli:build && npm run build:hostinger && node scripts/run-rendered-tests.mjs",
+    "test:cli": "npm run cli:build --silent && node --test tests/cli.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "prepack": "npm run cli:build",
     "smoke:hostinger": "SMOKE_BASE_URL=http://127.0.0.1:3000 node scripts/smoke-production.mjs",
     "smoke:production": "node scripts/smoke-production.mjs",
     "db:generate": "drizzle-kit generate"
@@ -32,6 +43,7 @@
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.26",
     "drizzle-kit": "0.31.10",
+    "esbuild": "0.28.1",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.11",
     "postcss": "8.5.22",

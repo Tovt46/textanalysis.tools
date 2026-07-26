@@ -41,7 +41,7 @@ const testCommand = async () => {
       throw new Error("Next.js server did not become ready for rendered tests.");
     }
 
-    const testRunner = spawn(process.execPath, ["--test", "tests/rendered-html.test.mjs"], {
+    const testRunner = spawn(process.execPath, ["--test", "tests/cli.test.mjs", "tests/rendered-html.test.mjs"], {
       stdio: "inherit",
       env: {
         ...process.env,

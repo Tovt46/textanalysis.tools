@@ -284,9 +284,9 @@ function cosineFromMaps(a:Map<string,number>,b:Map<string,number>,terms:Iterable
 export function cosineSimilarityFromTerms(rowsA:readonly {term:string;frequency:number}[],rowsB:readonly {term:string;frequency:number}[],top=100){
   const mapA=new Map(rowsA.map((row)=>[row.term,row.frequency]));
   const mapB=new Map(rowsB.map((row)=>[row.term,row.frequency]));
-  const sharedTerms = new Set([...mapA.keys(), ...mapB.keys()]);
-  const {dot,normA,normB,cosine}=cosineFromMaps(mapA,mapB,sharedTerms);
-  const topContributions=[...sharedTerms].map((term)=>{
+  const overlappingTerms=new Set([...mapA.keys()].filter((term)=>mapB.has(term)));
+  const {dot,normA,normB,cosine}=cosineFromMaps(mapA,mapB,overlappingTerms);
+  const topContributions=[...overlappingTerms].map((term)=>{
     const weightA=mapA.get(term) ?? 0;
     const weightB=mapB.get(term) ?? 0;
     if(weightA===0 || weightB===0) return null;
@@ -304,7 +304,7 @@ export function cosineSimilarityFromTerms(rowsA:readonly {term:string;frequency:
       weightB:entry.weightB,
       contribution:entry.contribution,
     }));
-  return {dot,normA,normB,cosine,terms:topContributions,sharedTerms:sharedTerms.size};
+  return {dot,normA,normB,cosine,terms:topContributions,sharedTerms:overlappingTerms.size};
 }
 
 export type SimilarityMethod="bow"|"tfidf";
@@ -325,6 +325,79 @@ export function calculateSimilarityFromTfIdf(
     normB:result.normB,
     overlapTerms:result.sharedTerms,
     topTerms:result.terms,
+  };
+}
+
+export type TextSimilarityResult={
+  language:Lang|"auto";
+  method:SimilarityMethod;
+  tokenCounts:{a:number;b:number};
+  top:number;
+  cosine:number;
+  dotProduct:number;
+  normA:number;
+  normB:number;
+  overlapTerms:number;
+  topTerms:SimilarityTerm[];
+  documents?:Array<Omit<TfIdfDocumentResult,"vectorNorm">>;
+  idfTable?:Array<{term:string;documentFrequency:number;idf:number}>;
+};
+
+function bagOfWordsAsTfIdfDocument(result:BagOfWordsResult):TfIdfDocumentResult{
+  const rows=result.rows.map((row)=>({
+    term:row.term,
+    count:row.count,
+    tf:row.frequency,
+    idf:1,
+    tfidf:row.frequency,
+    percentage:row.percentage,
+    per1000:row.per1000,
+  }));
+  return {
+    language:result.language,
+    tokenCount:result.tokenCount,
+    vocabularySize:result.vocabularySize,
+    stopwordCount:result.stopwordCount,
+    rows,
+    vectorNorm:Math.sqrt(rows.reduce((sum,row)=>sum+(row.tfidf*row.tfidf),0)),
+  };
+}
+
+export function calculateTextSimilarity(
+  documentA:BagOfWordsResult,
+  documentB:BagOfWordsResult,
+  method:SimilarityMethod,
+  top=100,
+):TextSimilarityResult{
+  const limit=Math.max(1,Math.min(Math.trunc(top)||100,100));
+  const language=documentA.language===documentB.language?documentA.language:"auto";
+
+  if(method==="bow"){
+    return {
+      language,
+      tokenCounts:{a:documentA.tokenCount,b:documentB.tokenCount},
+      top:limit,
+      ...calculateSimilarityFromTfIdf(
+        bagOfWordsAsTfIdfDocument(documentA),
+        bagOfWordsAsTfIdfDocument(documentB),
+        "bow",
+        limit,
+      ),
+    };
+  }
+
+  const tfidf=calculateTfIdfCorpus([documentA,documentB]);
+  const similarity=calculateSimilarityFromTfIdf(tfidf.documents[0],tfidf.documents[1],"tfidf",limit);
+  return {
+    language,
+    tokenCounts:{a:documentA.tokenCount,b:documentB.tokenCount},
+    top:limit,
+    ...similarity,
+    documents:tfidf.documents.map(({vectorNorm,...document})=>{
+      void vectorNorm;
+      return {...document,rows:document.rows.slice(0,limit)};
+    }),
+    idfTable:tfidf.idfTable,
   };
 }
 

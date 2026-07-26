@@ -2,7 +2,7 @@
 
 import { FormEvent,useEffect,useMemo,useState } from "react";
 import Link from "next/link";
-import { analyzeBagOfWords, calculateSimilarityFromTfIdf, calculateTfIdfCorpus, type TfIdfDocumentResult, type BagOfWordsResult, type SimilarityMethod } from "./lib/analyze";
+import { analyzeBagOfWords, calculateTextSimilarity, type SimilarityMethod } from "./lib/analyze";
 import { DEFAULT_STOPWORD_TEXT,parseStopwordText,type TextLanguage } from "./lib/stopwords";
 
 type SourceType="text"|"url";
@@ -76,27 +76,6 @@ function downloadFile(filename:string,content:string,type:string){
 
 function contributionShare(value:number){return (Math.abs(value)).toFixed(4);}
 
-function toTfIdfDocument(result:BagOfWordsResult):TfIdfDocumentResult{
-  const rows=result.rows.map((row)=>({
-    term:row.term,
-    count:row.count,
-    tf:row.frequency,
-    idf:1,
-    tfidf:row.frequency,
-    percentage:row.percentage,
-    per1000:row.per1000,
-  }));
-  const vectorNorm=Math.sqrt(rows.reduce((sum,row)=>sum+(row.tfidf*row.tfidf),0));
-  return {
-    language:result.language,
-    tokenCount:result.tokenCount,
-    vocabularySize:result.vocabularySize,
-    stopwordCount:result.stopwordCount,
-    rows,
-    vectorNorm,
-  };
-}
-
 export default function TextSimilarityCalculatorTool(){
   const [sourceTypeA,setSourceTypeA]=useState<SourceType>("text");
   const [sourceTypeB,setSourceTypeB]=useState<SourceType>("text");
@@ -156,63 +135,7 @@ export default function TextSimilarityCalculatorTool(){
           analyzeBagOfWords({text:sourceA,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:"en"}),
           analyzeBagOfWords({text:sourceB,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:"en"}),
         ]);
-        const languageResult=(docA.language===docB.language?docA.language:"auto") as SimilarityResult["language"];
-        if(method==="bow"){
-          const similarity=calculateSimilarityFromTfIdf(toTfIdfDocument(docA),toTfIdfDocument(docB),"bow",limit);
-          setResult({
-            language:languageResult,
-            method:"bow",
-            tokenCounts:{a:docA.tokenCount,b:docB.tokenCount},
-            top:limit,
-            cosine:similarity.cosine,
-            dotProduct:similarity.dotProduct,
-            normA:similarity.normA,
-            normB:similarity.normB,
-            overlapTerms:similarity.overlapTerms,
-            topTerms:similarity.topTerms.map(term=>({
-              term:term.term,
-              weightA:term.weightA,
-              weightB:term.weightB,
-              contribution:term.contribution,
-            })),
-          });
-        }else{
-          const tfidf=calculateTfIdfCorpus([docA,docB],limit);
-          const similarity=calculateSimilarityFromTfIdf({
-            language:docA.language,
-            tokenCount:docA.tokenCount,
-            vocabularySize:docA.vocabularySize,
-            stopwordCount:docA.stopwordCount,
-            rows:docA.rows.map(row=>({term:row.term,count:row.count,tf:row.frequency,idf:1,tfidf:row.frequency,percentage:row.percentage,per1000:row.per1000})),
-            vectorNorm:0,
-          },{
-            language:docB.language,
-            tokenCount:docB.tokenCount,
-            vocabularySize:docB.vocabularySize,
-            stopwordCount:docB.stopwordCount,
-            rows:docB.rows.map(row=>({term:row.term,count:row.count,tf:row.frequency,idf:1,tfidf:row.frequency,percentage:row.percentage,per1000:row.per1000})),
-            vectorNorm:0,
-          },"tfidf",limit);
-          setResult({
-            language:languageResult,
-            method:"tfidf",
-            tokenCounts:{a:docA.tokenCount,b:docB.tokenCount},
-            top:limit,
-            cosine:similarity.cosine,
-            dotProduct:similarity.dotProduct,
-            normA:similarity.normA,
-            normB:similarity.normB,
-            overlapTerms:similarity.overlapTerms,
-            topTerms:similarity.topTerms.map(term=>({
-              term:term.term,
-              weightA:term.weightA,
-              weightB:term.weightB,
-              contribution:term.contribution,
-            })),
-            documents:tfidf.documents,
-            idfTable:tfidf.idfTable,
-          });
-        }
+        setResult(calculateTextSimilarity(docA,docB,method,limit));
         await new Promise<void>(resolve=>window.setTimeout(resolve,0));
       }else{
         const response=await fetch("/api/v1/similarity",{
