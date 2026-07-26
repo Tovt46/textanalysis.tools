@@ -6,6 +6,7 @@ import {spawn} from "node:child_process";
 import test from "node:test";
 
 const CLI_PATH=new URL("../packages/cli/dist/textanalysis.mjs",import.meta.url);
+const CLI_PACKAGE=JSON.parse(await readFile(new URL("../packages/cli/package.json",import.meta.url),"utf8"));
 
 function runCli(args,{input}={}){
   return new Promise((resolve,reject)=>{
@@ -35,7 +36,7 @@ test("CLI exposes help and version",async()=>{
   assert.match(help.stdout,/Commands:\s+analyze/);
   assert.match(help.stdout,/similarity/);
   assert.equal(version.code,0);
-  assert.match(version.stdout,/^0\.1\.0\n$/);
+  assert.equal(version.stdout,`${CLI_PACKAGE.version}\n`);
 });
 
 test("frequency reads stdin and returns deterministic local JSON",async()=>{

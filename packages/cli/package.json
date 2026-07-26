@@ -1,6 +1,6 @@
 {
   "name": "textanalysis-tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local-first word frequency, keyword density, Bag of Words, TF-IDF, n-gram, comparison, and text similarity CLI.",
   "type": "module",
   "bin": {
@@ -12,7 +12,7 @@
   "engines": {
     "node": ">=22.13.0"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Tovt46/textanalysis.tools.git",
