@@ -55,6 +55,22 @@ const xml=`<?xml version="1.0" encoding="UTF-8"?>
     <lastmod>2026-07-23</lastmod>
   </url>
   <url>
+    <loc>${SITE_URL}/tools/ngram-analyzer</loc>
+    <lastmod>2026-07-23</lastmod>
+  </url>
+  <url>
+    <loc>${SITE_URL}/tools/bag-of-words-generator</loc>
+    <lastmod>2026-07-25</lastmod>
+  </url>
+  <url>
+    <loc>${SITE_URL}/tools/tf-idf-calculator</loc>
+    <lastmod>2026-07-25</lastmod>
+  </url>
+  <url>
+    <loc>${SITE_URL}/tools/text-similarity-calculator</loc>
+    <lastmod>2026-07-25</lastmod>
+  </url>
+  <url>
     <loc>${SITE_URL}/how-to-calculate-word-frequency</loc>
     <lastmod>2026-07-23</lastmod>
   </url>

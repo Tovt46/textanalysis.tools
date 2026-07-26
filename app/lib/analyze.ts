@@ -148,6 +148,217 @@ export function analyzeKeywordDensity(input:AnalyzeInput,trackedInput=""){
   };
 }
 
+export type BagOfWordsTerm={
+  term:string;
+  count:number;
+  frequency:number;
+  percentage:number;
+  per1000:number;
+};
+
+export type BagOfWordsResult={
+  language:Lang;
+  tokenCount:number;
+  vocabularySize:number;
+  stopwordCount:number;
+  rows:BagOfWordsTerm[];
+};
+
+export function analyzeBagOfWords(input:AnalyzeInput):BagOfWordsResult{
+  const {language,tokens,stopwordCount}=prepareTokens(input);
+  const total=Math.max(1,tokens.length);
+  const rows=countTerms(tokens).map(([term,count])=>{
+    const frequency=count/total;
+    return {
+      term,
+      count,
+      frequency,
+      percentage:frequency*100,
+      per1000:frequency*1000,
+    };
+  });
+  return {
+    language,
+    tokenCount:tokens.length,
+    vocabularySize:rows.length,
+    stopwordCount,
+    rows,
+  };
+}
+
+export type TfIdfTerm ={
+  term:string;
+  count:number;
+  tf:number;
+  idf:number;
+  tfidf:number;
+  percentage:number;
+  per1000:number;
+};
+
+export type TfIdfDocumentResult ={
+  language:Lang;
+  tokenCount:number;
+  vocabularySize:number;
+  stopwordCount:number;
+  rows:TfIdfTerm[];
+  vectorNorm:number;
+};
+
+export type TfIdfCorpusInput = BagOfWordsResult[];
+
+export function calculateTfIdfCorpus(documents:TfIdfCorpusInput,top?:number){
+  if(documents.length<2) throw new Error("TF-IDF requires at least two documents.");
+  const totalDocs=documents.length;
+  const docFrequency=new Map<string,number>();
+  for(const doc of documents){
+    for(const row of doc.rows) docFrequency.set(row.term, (docFrequency.get(row.term) || 0) + 1);
+  }
+  const idfTableEntries=[...docFrequency].map(([term,documentFrequency])=>{
+    const idf=Math.log((totalDocs + 1) / (1 + documentFrequency)) + 1;
+    return {term,documentFrequency,idf};
+  });
+  const idfLookup=new Map(idfTableEntries.map(item=>[item.term,item.idf] as const));
+  const normalizeTop = top===undefined?undefined:Math.max(1,Math.min(top,1000));
+
+  const resultDocuments:TfIdfDocumentResult[]=documents.map((document)=>{
+    const rows: TfIdfTerm[] = document.rows.map((row)=>{
+      const idf = idfLookup.get(row.term) ?? 1;
+      const tfidf = row.frequency * idf;
+      return {
+        term: row.term,
+        count: row.count,
+        tf: row.frequency,
+        idf,
+        tfidf,
+        percentage: row.percentage,
+        per1000: row.per1000,
+      };
+    }).sort((left,right)=>right.tfidf-left.tfidf || left.term.localeCompare(right.term));
+    const vectorNorm=Math.sqrt(rows.reduce((sum,row)=>sum+(row.tfidf*row.tfidf),0));
+    const limited=rows.slice(0,normalizeTop===undefined?rows.length:Math.min(rows.length,normalizeTop));
+    return {
+      language: document.language,
+      tokenCount: document.tokenCount,
+      vocabularySize: document.vocabularySize,
+      stopwordCount: document.stopwordCount,
+      rows: limited,
+      vectorNorm,
+    };
+  });
+
+  return {
+    documents: resultDocuments,
+    idfTable: idfTableEntries.sort((left,right)=>right.idf-left.idf || left.term.localeCompare(right.term)),
+    averageDocumentFrequency: [...docFrequency.values()].reduce((sum,value)=>sum+value,0)/Math.max(1,docFrequency.size),
+    totalVocabularySize:docFrequency.size,
+  };
+}
+
+export type SimilarityTerm=BagOfWordsTerm & {
+  weightA:number;
+  weightB:number;
+  contribution:number;
+};
+
+function cosineFromMaps(a:Map<string,number>,b:Map<string,number>,terms:Iterable<string>){
+  let dot=0;
+  let normA=0;
+  let normB=0;
+  for(const [,value] of a) normA += value*value;
+  for(const [,value] of b) normB += value*value;
+  for(const term of terms){
+    const leftWeight=a.get(term);
+    const rightWeight=b.get(term);
+    if(leftWeight===undefined||rightWeight===undefined) continue;
+    dot += leftWeight*rightWeight;
+  }
+  return {
+    dot,
+    normA:Math.sqrt(normA),
+    normB:Math.sqrt(normB),
+    cosine:dot===0 ? 0 : dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1),
+  };
+}
+
+export function cosineSimilarityFromTerms(rowsA:readonly {term:string;frequency:number}[],rowsB:readonly {term:string;frequency:number}[],top=100){
+  const mapA=new Map(rowsA.map((row)=>[row.term,row.frequency]));
+  const mapB=new Map(rowsB.map((row)=>[row.term,row.frequency]));
+  const sharedTerms = new Set([...mapA.keys(), ...mapB.keys()]);
+  const {dot,normA,normB,cosine}=cosineFromMaps(mapA,mapB,sharedTerms);
+  const topContributions=[...sharedTerms].map((term)=>{
+    const weightA=mapA.get(term) ?? 0;
+    const weightB=mapB.get(term) ?? 0;
+    if(weightA===0 || weightB===0) return null;
+    return {term,weightA,weightB,contribution:weightA*weightB};
+  }).filter((entry):entry is {term:string;weightA:number;weightB:number;contribution:number}=>Boolean(entry))
+    .sort((a,b)=>Math.abs(b.contribution)-Math.abs(a.contribution) || a.term.localeCompare(b.term))
+    .slice(0,top)
+    .map((entry)=>({
+      term:entry.term,
+      count:0,
+      frequency:0,
+      percentage:(entry.weightA+entry.weightB)===0?0:(entry.contribution/((entry.weightA+entry.weightB)/2))*100,
+      per1000:(entry.weightA+entry.weightB)*1000,
+      weightA:entry.weightA,
+      weightB:entry.weightB,
+      contribution:entry.contribution,
+    }));
+  return {dot,normA,normB,cosine,terms:topContributions,sharedTerms:sharedTerms.size};
+}
+
+export type SimilarityMethod="bow"|"tfidf";
+
+export function calculateSimilarityFromTfIdf(
+  sourceA:TfIdfDocumentResult,
+  sourceB:TfIdfDocumentResult,
+  method:SimilarityMethod,
+  top=100,
+){
+  const rowsToWeights=(rows:TfIdfTerm[])=>rows.map((row)=>({term:row.term,frequency:method==="tfidf"?row.tfidf:row.tf}));
+  const result=cosineSimilarityFromTerms(rowsToWeights(sourceA.rows), rowsToWeights(sourceB.rows), top);
+  return {
+    method,
+    cosine:result.cosine,
+    dotProduct:result.dot,
+    normA:result.normA,
+    normB:result.normB,
+    overlapTerms:result.sharedTerms,
+    topTerms:result.terms,
+  };
+}
+
+export type NgramResult={
+  term:string;
+  count:number;
+  percentage:number;
+  per1000:number;
+};
+
+export type NgramAnalysisResult={
+  language:Lang;
+  tokenCount:number;
+  ngramCount:number;
+  vocabularySize:number;
+  stopwordCount:number;
+  keepStopwords:boolean;
+  n:number;
+  rows:NgramResult[];
+};
+
+export function analyzeNgram(input:AnalyzeInput,n=2){
+  const nValue=Number(n);
+  if(!Number.isInteger(nValue)||nValue<1) throw new Error("N-gram size must be an integer of at least 1.");
+  const {language,rawTokens,activeStopwords,stopwordCount}=prepareRawTokens(input);
+  const keepStopwords=Boolean(input.keepStopwords);
+  const termCounts=countTerms(rawTokens,nValue);
+  const meaningful=(term:string)=>keepStopwords||term.split(" ").some(token=>!activeStopwords.has(token));
+  const filtered=termCounts.filter(([term])=>meaningful(term));
+  const denominator=Math.max(1,rawTokens.length-nValue+1);
+  const rows=filtered.map(([term,count])=>{const share=count/denominator;return{term,count,percentage:share*100,per1000:share*1000};});
+  return{language,tokenCount:rawTokens.length,ngramCount:Math.max(0,rawTokens.length-nValue+1),vocabularySize:rows.length,stopwordCount,keepStopwords,n:nValue,rows};
+}
+
 export function analyzeText(input: AnalyzeInput) {
   const uiLanguage = input.uiLanguage || "ru";
   const {language,tokens,stopwordCount}=prepareTokens(input);

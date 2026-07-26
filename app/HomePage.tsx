@@ -54,6 +54,10 @@ const COPY:Record<UiLang,HomeCopy>={
       {name:"Keyword Density Checker",description:"Measure words, bigrams, and trigrams, track exact phrases, and compare density changes between two results."},
       {name:"Bag of Words Analyzer",description:"Review vocabulary, bigrams, tracked phrases, and Zipf distribution, then compare result A with result B."},
       {name:"Text Analysis Comparison",description:"Compare two texts or webpages by word count, vocabulary, normalized word frequency, bigrams, and Zipf diagnostics."},
+      {name:"N-gram Analyzer",description:"Analyze recurring phrases of custom length (including bigrams and trigrams) in text or a public webpage."},
+      {name:"Bag of Words Generator",description:"Build raw term vectors from text or a URL and inspect term frequencies, percentages, and export-ready rows."},
+      {name:"TF-IDF Calculator",description:"Calculate corpus-aware TF-IDF scores for two documents and compare weighted term influence."},
+      {name:"Text Similarity Calculator",description:"Measure cosine similarity between two texts with BoW or TF-IDF, then inspect top contribution terms."},
     ],
     methodEye:"WHY THIS TOOLKIT",
     methodTitle:"Useful numbers, with the method left visible",
@@ -96,6 +100,10 @@ const COPY:Record<UiLang,HomeCopy>={
       {name:"Анализатор плотности ключей",description:"Измерьте слова, биграммы и триграммы, проверьте точные фразы и сравните изменения между результатами."},
       {name:"Bag of Words-анализатор",description:"Проверьте лексику, биграммы, контрольные фразы и распределение Ципфа, затем сравните результаты A и B."},
       {name:"Сравнение двух текстов",description:"Сопоставьте два текста или URL по объёму, словарю, нормализованной частотности, биграммам и показателям Ципфа."},
+      {name:"N-gram Аналізатор",description:"Проаналізуйте повторювані фрази різної довжини (від біграм до триграм) для тексту або публічного URL."},
+      {name:"Bag of Words Generator",description:"Побудуйте початкові вектори документів з тексту або URL і збережіть таблицю частот для подальшого аналізу."},
+      {name:"TF-IDF Calculator",description:"Порахуйте TF-IDF ваги для двох текстів, щоб знизити вплив дуже частих термінів."},
+      {name:"Text Similarity Calculator",description:"Виміряйте косинусну подібність двох текстів на основі BoW або TF-IDF і перегляньте ключові внески."},
     ],
     methodEye:"ПОЧЕМУ ЭТОТ НАБОР",
     methodTitle:"Полезные цифры с понятной методикой",
@@ -138,6 +146,10 @@ const COPY:Record<UiLang,HomeCopy>={
       {name:"Аналізатор щільності ключів",description:"Виміряйте слова, біграми й триграми, перевірте точні фрази та порівняйте зміни між результатами."},
       {name:"Bag of Words-аналізатор",description:"Перевірте лексику, біграми, контрольні фрази й розподіл Ципфа, а потім порівняйте результати A і B."},
       {name:"Порівняння двох текстів",description:"Зіставте два тексти або URL за обсягом, словником, нормалізованою частотністю, біграмами й показниками Ципфа."},
+      {name:"N-gram Аналізатор",description:"Аналізуйте повторювані фрази різної довжини (від біграм до триграм) для тексту або публічного URL."},
+      {name:"Bag of Words Generator",description:"Побудуйте сирі вектори термінів із тексту або URL та перегляньте частоти, відсотки й значення для експорту."},
+      {name:"TF-IDF Calculator",description:"Розрахуйте TF-IDF ваги для двох документів і фокусуйтесь на термінах з найвищою дискримінацією."},
+      {name:"Text Similarity Calculator",description:"Оцініть косинусну подібність текстів через BoW або TF-IDF і перегляньте внески ключових термінів."},
     ],
     methodEye:"ЧОМУ ЦЕЙ НАБІР",
     methodTitle:"Корисні числа з прозорою методикою",
@@ -162,13 +174,30 @@ const COPY:Record<UiLang,HomeCopy>={
 };
 
 const HOME_PATHS:Record<UiLang,string>={en:"/",ru:"/ru",uk:"/uk"};
-const TOOL_PATHS=["/tools/word-frequency-counter","/tools/keyword-density-checker"] as const;
-const COMPARISON_PATH="/tools/text-analysis-comparison";
+const TOOL_PATHS=[
+  "/tools/word-frequency-counter",
+  "/tools/keyword-density-checker",
+  "/tools/bag-of-words-analyzer",
+  "/tools/text-analysis-comparison",
+  "/tools/ngram-analyzer",
+  "/tools/bag-of-words-generator",
+  "/tools/tf-idf-calculator",
+  "/tools/text-similarity-calculator",
+] as const;
 const GUIDE_PATHS=["/how-to-calculate-word-frequency","/keyword-density-formula","/bag-of-words-model"] as const;
 
 export default function HomePage({locale}:{locale:UiLang}){
   const copy=COPY[locale];
-  const toolPaths=[...TOOL_PATHS,BOW_LANGUAGE_PATHS[locale],COMPARISON_PATH];
+  const toolPaths=[
+    TOOL_PATHS[0],
+    TOOL_PATHS[1],
+    BOW_LANGUAGE_PATHS[locale],
+    TOOL_PATHS[3],
+    TOOL_PATHS[4],
+    TOOL_PATHS[5],
+    TOOL_PATHS[6],
+    TOOL_PATHS[7],
+  ];
   const guidePaths=[GUIDE_PATHS[0],GUIDE_PATHS[1],locale==="en"?GUIDE_PATHS[2]:`/${locale}/bag-of-words-model`];
   return <main className="home-page">
     <SiteHeader locale={locale} active="home" languagePaths={HOME_PATHS}/>
@@ -181,7 +210,7 @@ export default function HomePage({locale}:{locale:UiLang}){
         <span className="privacy-note"><b/>{copy.privacy}</span>
       </div>
     </section>
-    <section className="home-stats" aria-label="Product facts"><div><strong>4</strong><span>{copy.live}</span></div><div><strong>3</strong><span>{copy.languages}</span></div><div><strong>0</strong><span>{copy.storage}</span></div></section>
+    <section className="home-stats" aria-label="Product facts"><div><strong>8</strong><span>{copy.live}</span></div><div><strong>3</strong><span>{copy.languages}</span></div><div><strong>0</strong><span>{copy.storage}</span></div></section>
     <section className="home-section home-tools" id="available-tools" aria-labelledby="home-tools-title">
       <div className="home-section-heading"><p className="section-number">{copy.available}</p><h2 id="home-tools-title">{copy.choose}</h2><p>{copy.chooseCopy}</p></div>
       <div className="home-tool-grid">{copy.tools.map((tool,index)=><Link className={`home-tool-card tool-${index+1}`} href={toolPaths[index]} key={tool.name}><div className="home-tool-card-top"><span>0{index+1} · LIVE</span>{locale!=="en"&&index!==2?<small>{copy.english}</small>:null}</div><h3>{tool.name}</h3><p>{tool.description}</p><strong>{copy.open}<b>→</b></strong></Link>)}</div>

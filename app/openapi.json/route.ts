@@ -67,6 +67,121 @@ const keywordDensityResult={
   },
 };
 
+const ngramResult={
+  type:"object",
+  required:["language","tokenCount","ngramCount","vocabularySize","stopwordCount","keepStopwords","n","rows"],
+  properties:{
+    language:{type:"string",enum:["en","ru","uk"]},
+    tokenCount:{type:"integer",description:"Tokenized words used as source for sliding-window extraction."},
+    ngramCount:{type:"integer",description:"Number of sliding windows for n-gram extraction."},
+    vocabularySize:{type:"integer"},
+    stopwordCount:{type:"integer"},
+    keepStopwords:{type:"boolean"},
+    n:{type:"integer",minimum:1,maximum:10},
+    rows:{type:"array",items:{type:"object",required:["term","count","percentage","per1000"],properties:{term:{type:"string"},count:{type:"integer"},percentage:{type:"number"},per1000:{type:"number"}}}},
+  },
+};
+
+const bagOfWordsTerm={
+  type:"object",
+  required:["term","count","frequency","percentage","per1000"],
+  properties:{
+    term:{type:"string"},
+    count:{type:"integer"},
+    frequency:{type:"number"},
+    percentage:{type:"number"},
+    per1000:{type:"number"},
+  },
+};
+
+const bagOfWordsResult={
+  type:"object",
+  required:["language","tokenCount","vocabularySize","stopwordCount","rows"],
+  properties:{
+    language:{type:"string",enum:["en","ru","uk"]},
+    tokenCount:{type:"integer",description:"Words remaining after the selected stop-word rule."},
+    vocabularySize:{type:"integer"},
+    stopwordCount:{type:"integer"},
+    rows:{type:"array",items:bagOfWordsTerm},
+  },
+};
+
+const tfIdfTerm={
+  type:"object",
+  required:["term","count","tf","idf","tfidf","percentage","per1000"],
+  properties:{
+    term:{type:"string"},
+    count:{type:"integer"},
+    tf:{type:"number"},
+    idf:{type:"number"},
+    tfidf:{type:"number"},
+    percentage:{type:"number"},
+    per1000:{type:"number"},
+  },
+};
+
+const tfIdfDocument={
+  type:"object",
+  required:["language","tokenCount","vocabularySize","stopwordCount","rows"],
+  properties:{
+    language:{type:"string",enum:["en","ru","uk"]},
+    tokenCount:{type:"integer"},
+    vocabularySize:{type:"integer"},
+    stopwordCount:{type:"integer"},
+    rows:{type:"array",items:{$ref:"#/components/schemas/TfIdfTerm"}},
+  },
+};
+
+const idfTerm={
+  type:"object",
+  required:["term","documentFrequency","idf"],
+  properties:{term:{type:"string"},documentFrequency:{type:"integer"},idf:{type:"number"}},
+};
+
+const tfIdfResult={
+  type:"object",
+  required:["language","documentCount","top","totalVocabularySize","averageDocumentFrequency","documents","idfTable"],
+  properties:{
+    language:{type:"string",enum:["en","ru","uk","auto"]},
+    documentCount:{type:"integer"},
+    top:{type:"integer"},
+    totalVocabularySize:{type:"integer"},
+    averageDocumentFrequency:{type:"number"},
+    documents:{type:"array",items:{$ref:"#/components/schemas/TfIdfDocument"}},
+    idfTable:{type:"array",items:{$ref:"#/components/schemas/IdfTerm"}},
+  },
+};
+
+const similarityTerm={
+  type:"object",
+  required:["term","weightA","weightB","contribution"],
+  properties:{
+    term:{type:"string"},
+    weightA:{type:"number"},
+    weightB:{type:"number"},
+    contribution:{type:"number"},
+  },
+};
+
+const similarityResult={
+  type:"object",
+  required:["language","method","tokenCounts","top","cosine","dotProduct","normA","normB","overlapTerms","topTerms"],
+  properties:{
+    language:{type:"string",enum:["en","ru","uk","auto"]},
+    method:{type:"string",enum:["bow","tfidf"]},
+    tokenCounts:{type:"object",required:["a","b"],properties:{a:{type:"integer"},b:{type:"integer"}}},
+    top:{type:"integer",minimum:1,maximum:100},
+    cosine:{type:"number"},
+    dotProduct:{type:"number"},
+    normA:{type:"number"},
+    normB:{type:"number"},
+    overlapTerms:{type:"integer"},
+    topTerms:{type:"array",items:{$ref:"#/components/schemas/SimilarityTerm"}},
+    documents:{type:"array",items:{$ref:"#/components/schemas/TfIdfDocument"}},
+    idfTable:{type:"array",items:{$ref:"#/components/schemas/IdfTerm"}},
+  },
+};
+
 const document={
   openapi:"3.1.0",
   info:{title:"Text Analysis Tools API",version:"1.0.0",description:"Stateless Bag of Words, word-frequency, keyword-density, n-gram, focus-phrase, Zipf-distribution, and comparison analysis for text and public webpages. Submitted content is not stored."},
@@ -80,6 +195,19 @@ const document={
     WordFrequencyResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/WordFrequencyResult"}}},
     KeywordDensityResult:keywordDensityResult,
     KeywordDensityResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/KeywordDensityResult"}}},
+    BagOfWordsTerm:bagOfWordsTerm,
+    BagOfWordsResult:bagOfWordsResult,
+    BagOfWordsResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/BagOfWordsResult"}}},
+    TfIdfTerm:tfIdfTerm,
+    TfIdfDocument:tfIdfDocument,
+    IdfTerm:idfTerm,
+    TfIdfResult:tfIdfResult,
+    TfIdfResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/TfIdfResult"}}},
+    SimilarityTerm:similarityTerm,
+    SimilarityResult:similarityResult,
+    SimilarityResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/SimilarityResult"}}},
+    NgramAnalyzerResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/NgramAnalyzerResult"}}},
+    NgramAnalyzerResult:ngramResult,
   }},
   paths:{
     "/api/v1/analyze":{
@@ -138,6 +266,19 @@ const document={
         },
       },
     },
+    "/api/v1/bag-of-words":{
+      post:{
+        operationId:"analyzeBagOfWords",
+        summary:"Return a full Bag-of-Words term table",
+        requestBody:{required:true,content:{"application/json":{schema:{$ref:"#/components/schemas/AnalyzeInput"}}}},
+        responses:{
+          "200":{description:"Bag-of-Words analysis completed",content:{"application/json":{schema:{$ref:"#/components/schemas/BagOfWordsResponse"}}}},
+          "400":{description:"Invalid input"},
+          "413":{description:"Input too large"},
+          "429":{description:"Rate limited"},
+        },
+      },
+    },
     "/api/v1/keyword-density":{
       post:{
         operationId:"analyzeKeywordDensity",
@@ -151,6 +292,86 @@ const document={
         },
         responses:{
           "200":{description:"Density analysis completed",content:{"application/json":{schema:{$ref:"#/components/schemas/KeywordDensityResponse"}}}},
+          "400":{description:"Invalid input"},
+          "413":{description:"Input too large"},
+          "429":{description:"Rate limited"},
+        },
+      },
+    },
+    "/api/v1/tf-idf":{
+      post:{
+        operationId:"analyzeTfIdf",
+        summary:"Build TF-IDF scores for a document collection",
+        requestBody:{
+          required:true,
+          content:{
+            "application/json":{
+              schema:{
+                type:"object",
+                required:["documents"],
+                properties:{
+                  documents:{
+                    type:"array",
+                    minItems:2,
+                    maxItems:10,
+                    items:{$ref:"#/components/schemas/AnalyzeInput"},
+                  },
+                  top:{type:"integer",minimum:1,maximum:100},
+                },
+              },
+            },
+          },
+        },
+        responses:{
+          "200":{description:"TF-IDF results completed",content:{"application/json":{schema:{$ref:"#/components/schemas/TfIdfResponse"}}}},
+          "400":{description:"Invalid input"},
+          "413":{description:"Input too large"},
+          "429":{description:"Rate limited"},
+        },
+      },
+    },
+    "/api/v1/ngram-analyzer":{
+      post:{
+        operationId:"analyzeNgram",
+        summary:"Return a focused n-gram frequency table",
+        requestBody:{
+          required:true,
+        content:{"application/json":{schema:{allOf:[
+            {$ref:"#/components/schemas/AnalyzeInput"},
+            {type:"object",properties:{ngramSize:{type:"integer",minimum:1,maximum:10,default:2,description:"N-gram size used for sliding extraction."}}},
+          ]}}},
+        },
+        responses:{
+          "200":{description:"N-gram analysis completed",content:{"application/json":{schema:{$ref:"#/components/schemas/NgramAnalyzerResponse"}}}},
+          "400":{description:"Invalid input"},
+          "413":{description:"Input too large"},
+          "429":{description:"Rate limited"},
+        },
+      },
+    },
+    "/api/v1/similarity":{
+      post:{
+        operationId:"compareTextSimilarity",
+        summary:"Compare two inputs with cosine similarity",
+        requestBody:{
+          required:true,
+          content:{
+            "application/json":{
+              schema:{
+                type:"object",
+                required:["a","b"],
+                properties:{
+                  a:{$ref:"#/components/schemas/AnalyzeInput"},
+                  b:{$ref:"#/components/schemas/AnalyzeInput"},
+                  method:{type:"string",enum:["bow","tf-idf"]},
+                  top:{type:"integer",minimum:1,maximum:100},
+                },
+              },
+            },
+          },
+        },
+        responses:{
+          "200":{description:"Similarity results completed",content:{"application/json":{schema:{$ref:"#/components/schemas/SimilarityResponse"}}}},
           "400":{description:"Invalid input"},
           "413":{description:"Input too large"},
           "429":{description:"Rate limited"},

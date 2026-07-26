@@ -12,6 +12,10 @@ const content=`# Text Analysis Tools
 - Compare two inputs: POST ${SITE_URL}/api/v1/compare
 - Count the complete vocabulary: POST ${SITE_URL}/api/v1/word-frequency
 - Measure unigram, bigram, trigram, and tracked-phrase density: POST ${SITE_URL}/api/v1/keyword-density
+- Analyze recurring phrases by n-gram length: POST ${SITE_URL}/api/v1/ngram-analyzer
+- Build term-frequency vectors: POST ${SITE_URL}/api/v1/bag-of-words
+- Score corpus-aware terms (TF-IDF): POST ${SITE_URL}/api/v1/tf-idf
+- Measure text similarity (BoW or TF-IDF): POST ${SITE_URL}/api/v1/similarity
 
 Requests use application/json. Supported languages are English, Russian, and Ukrainian. The API is public, rate-limited, and requires no API key. Use it for analysis, not for claims about search-engine rankings.
 
@@ -23,6 +27,10 @@ Requests use application/json. Supported languages are English, Russian, and Ukr
 - Word frequency counter: ${SITE_URL}/tools/word-frequency-counter
 - Keyword density checker: ${SITE_URL}/tools/keyword-density-checker
 - Text analysis comparison: ${SITE_URL}/tools/text-analysis-comparison
+- N-gram analyzer: ${SITE_URL}/tools/ngram-analyzer
+- Bag of Words generator: ${SITE_URL}/tools/bag-of-words-generator
+- TF-IDF calculator: ${SITE_URL}/tools/tf-idf-calculator
+- Text similarity calculator: ${SITE_URL}/tools/text-similarity-calculator
 - How to calculate word frequency: ${SITE_URL}/how-to-calculate-word-frequency
 - Keyword density formula and limitations: ${SITE_URL}/keyword-density-formula
 - Bag of Words model guide: ${SITE_URL}/bag-of-words-model

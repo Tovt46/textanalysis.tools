@@ -1,0 +1,100 @@
+name: Deploy to Hostinger (main)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
+      HOSTINGER_PORT: ${{ secrets.HOSTINGER_SSH_PORT || '22' }}
+      HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
+      HOSTINGER_DEPLOY_PATH: ${{ secrets.HOSTINGER_DEPLOY_PATH }}
+      HOSTINGER_NODE_PORT: ${{ secrets.HOSTINGER_NODE_PORT || '3000' }}
+      HOSTINGER_PM2_PROCESS_NAME: ${{ secrets.HOSTINGER_PM2_PROCESS_NAME || 'textanalysis-tools' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.13"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate and build
+        run: npm run test
+
+      - name: Package built artifacts
+        run: |
+          tar -czf /tmp/textanalysis-build.tgz \
+            --exclude='./.git' \
+            --exclude='./node_modules' \
+            --exclude='./.next/cache' \
+            --exclude='./dist' \
+            --exclude='./.github' \
+            --transform='s|^./||' \
+            .
+
+      - name: Configure SSH
+        uses: webfactory/ssh-agent@v0.1.0
+        with:
+          ssh-private-key: ${{ secrets.HOSTINGER_SSH_KEY }}
+
+      - name: Trust remote host
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$HOSTINGER_PORT" "$HOSTINGER_HOST" >> ~/.ssh/known_hosts
+
+      - name: Prepare remote directory
+        run: ssh -p "$HOSTINGER_PORT" "$HOSTINGER_USER@$HOSTINGER_HOST" "mkdir -p '$HOSTINGER_DEPLOY_PATH'"
+
+      - name: Transfer artifact
+        run: scp -P "$HOSTINGER_PORT" /tmp/textanalysis-build.tgz "$HOSTINGER_USER@$HOSTINGER_HOST:$HOSTINGER_DEPLOY_PATH/deploy.tgz"
+
+      - name: Deploy on Hostinger
+        run: |
+          ssh -p "$HOSTINGER_PORT" "$HOSTINGER_USER@$HOSTINGER_HOST" "HOSTINGER_DEPLOY_PATH='$HOSTINGER_DEPLOY_PATH' HOSTINGER_NODE_PORT='$HOSTINGER_NODE_PORT' HOSTINGER_PM2_PROCESS_NAME='$HOSTINGER_PM2_PROCESS_NAME' bash -s" <<'EOF'
+          set -euo pipefail
+
+          APP_DIR="${HOSTINGER_DEPLOY_PATH}"
+          RELEASE_DIR="$APP_DIR/.releases"
+          TIMESTAMP="$(date +%Y%m%d%H%M%S)"
+          DEPLOY_PATH="$RELEASE_DIR/$TIMESTAMP"
+          BUILD_TGZ="$APP_DIR/deploy.tgz"
+          PROCESS_NAME="${HOSTINGER_PM2_PROCESS_NAME}"
+          PORT="${HOSTINGER_NODE_PORT}"
+
+          mkdir -p "$RELEASE_DIR"
+          mkdir -p "$DEPLOY_PATH"
+          tar -xzf "$BUILD_TGZ" -C "$DEPLOY_PATH"
+
+          cd "$DEPLOY_PATH"
+          npm ci --omit=dev --no-audit --no-fund
+          if command -v pm2 >/dev/null 2>&1; then
+            if pm2 describe "$PROCESS_NAME" >/dev/null 2>&1; then
+              pm2 delete "$PROCESS_NAME"
+            fi
+
+            pm2 start npm --name "$PROCESS_NAME" --cwd "$DEPLOY_PATH" -- run start:hostinger -- --hostname 0.0.0.0 --port "$PORT"
+          else
+            echo "pm2 is not available on remote host. Configure PM2 or adjust the deploy command."
+            exit 1
+          fi
+
+          ls -1dt "$RELEASE_DIR"/*/ | tail -n +6 | xargs -r rm -rf
+
+          rm -f "$APP_DIR/current"
+          ln -sfn "$DEPLOY_PATH" "$APP_DIR/current"
+          rm -f "$BUILD_TGZ"
+          EOF
