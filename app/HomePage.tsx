@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { UiLang } from "./i18n";
 import { BOW_LANGUAGE_PATHS } from "./seo-metadata";
 import { SiteFooter,SiteHeader } from "./SiteChrome";
+import { localizedPath } from "./localization";
 
 type HomeCopy={
   eyebrow:string;
@@ -30,6 +31,7 @@ type HomeCopy={
   apiTitle:string;
   apiCopy:string;
   apiCta:string;
+  cliCta:string;
 };
 
 const COPY:Record<UiLang,HomeCopy>={
@@ -56,7 +58,7 @@ const COPY:Record<UiLang,HomeCopy>={
       {name:"Text Analysis Comparison",description:"Compare two texts or webpages by word count, vocabulary, normalized word frequency, bigrams, and Zipf diagnostics."},
       {name:"N-gram Analyzer",description:"Analyze recurring phrases of custom length (including bigrams and trigrams) in text or a public webpage."},
       {name:"Bag of Words Generator",description:"Build raw term vectors from text or a URL and inspect term frequencies, percentages, and export-ready rows."},
-      {name:"TF-IDF Calculator",description:"Calculate corpus-aware TF-IDF scores for two documents and compare weighted term influence."},
+      {name:"TF-IDF Calculator",description:"Calculate corpus-aware TF-IDF scores for 2–10 documents and compare weighted term influence."},
       {name:"Text Similarity Calculator",description:"Measure cosine similarity between two texts with BoW or TF-IDF, then inspect top contribution terms."},
     ],
     methodEye:"WHY THIS TOOLKIT",
@@ -73,11 +75,16 @@ const COPY:Record<UiLang,HomeCopy>={
       {label:"GUIDE",title:"How to Calculate Word Frequency",description:"Counts, percentages, per-1,000 rates, tokenization, and a worked example."},
       {label:"GUIDE",title:"Keyword Density Formula",description:"Exact phrase calculations, comparison rules, and why density is not a ranking score."},
       {label:"NLP GUIDE",title:"Bag of Words Model",description:"How frequency tables become document vectors and machine-learning features."},
+      {label:"NLP GUIDE",title:"TF-IDF Formula",description:"Term frequency, smoothed inverse document frequency, corpus effects, and a worked example."},
+      {label:"NLP GUIDE",title:"Cosine Similarity for Text",description:"How document vectors become a 0–1 overlap score and what that score cannot prove."},
+      {label:"NLP GUIDE",title:"What Are N-grams?",description:"Unigrams through longer phrase windows, denominators, filtering, and practical uses."},
+      {label:"WORKFLOW GUIDE",title:"Compare Texts by Word Frequency",description:"Measure normalized vocabulary changes without confusing them with a character diff."},
     ],
     apiEye:"FOR DEVELOPERS",
-    apiTitle:"Use the same analysis in your own workflow",
-    apiCopy:"The stateless JSON API analyzes text or public URLs and compares two inputs. OpenAPI documentation is available without an account.",
+    apiTitle:"Use the same analysis through API or CLI",
+    apiCopy:"Call the stateless JSON API from an application or run eight local-first commands from npm. Both interfaces expose the same transparent analysis methods.",
     apiCta:"Read API documentation",
+    cliCta:"Open CLI documentation",
   },
   ru:{
     eyebrow:"АНАЛИЗ ТЕКСТА БЕЗ ЧЁРНОГО ЯЩИКА",
@@ -94,16 +101,16 @@ const COPY:Record<UiLang,HomeCopy>={
     choose:"Начните с вопроса, на который нужен ответ",
     chooseCopy:"У каждого инструмента — отдельный сценарий, видимые формулы и проверяемый результат вместо непрозрачной оценки.",
     open:"Открыть",
-    english:"Интерфейс EN",
+    english:"",
     tools:[
       {name:"Счётчик частотности слов",description:"Посчитайте все слова, найдите нужный термин, отсортируйте словарь и экспортируйте CSV или JSON."},
       {name:"Анализатор плотности ключей",description:"Измерьте слова, биграммы и триграммы, проверьте точные фразы и сравните изменения между результатами."},
       {name:"Bag of Words-анализатор",description:"Проверьте лексику, биграммы, контрольные фразы и распределение Ципфа, затем сравните результаты A и B."},
       {name:"Сравнение двух текстов",description:"Сопоставьте два текста или URL по объёму, словарю, нормализованной частотности, биграммам и показателям Ципфа."},
-      {name:"N-gram Аналізатор",description:"Проаналізуйте повторювані фрази різної довжини (від біграм до триграм) для тексту або публічного URL."},
-      {name:"Bag of Words Generator",description:"Побудуйте початкові вектори документів з тексту або URL і збережіть таблицю частот для подальшого аналізу."},
-      {name:"TF-IDF Calculator",description:"Порахуйте TF-IDF ваги для двох текстів, щоб знизити вплив дуже частих термінів."},
-      {name:"Text Similarity Calculator",description:"Виміряйте косинусну подібність двох текстів на основі BoW або TF-IDF і перегляньте ключові внески."},
+      {name:"N-gram анализатор",description:"Анализируйте повторяющиеся фразы длиной от одного до десяти слов в тексте или на публичной странице."},
+      {name:"Генератор Bag of Words",description:"Создавайте исходные векторы документов из текста или URL и сохраняйте таблицу частот для дальнейшего анализа."},
+      {name:"Калькулятор TF-IDF",description:"Рассчитывайте веса TF-IDF для 2–10 документов, чтобы уменьшить влияние терминов, общих для всего корпуса."},
+      {name:"Калькулятор сходства текстов",description:"Измеряйте косинусное сходство двух текстов на основе BoW или TF-IDF и изучайте вклад отдельных терминов."},
     ],
     methodEye:"ПОЧЕМУ ЭТОТ НАБОР",
     methodTitle:"Полезные цифры с понятной методикой",
@@ -116,14 +123,19 @@ const COPY:Record<UiLang,HomeCopy>={
     guidesEye:"РАЗОБРАТЬСЯ В МЕТОДЕ",
     guidesTitle:"Формулы, примеры и ограничения",
     guides:[
-      {label:"ГАЙД · EN",title:"Как рассчитать частотность слов",description:"Количество, проценты, частота на 1 000 слов, токенизация и пример расчёта."},
-      {label:"ГАЙД · EN",title:"Формула плотности ключей",description:"Расчёт точных фраз, правила сравнения и ограничения показателя."},
+      {label:"ГАЙД",title:"Как рассчитать частотность слов",description:"Количество, проценты, частота на 1 000 слов, токенизация и пример расчёта."},
+      {label:"ГАЙД",title:"Формула плотности ключей",description:"Расчёт точных фраз, правила сравнения и ограничения показателя."},
       {label:"NLP-ГАЙД",title:"Модель Bag of Words",description:"Как таблица частот превращается в векторы документов и признаки для машинного обучения."},
+      {label:"NLP-ГАЙД",title:"Формула TF-IDF",description:"Частота термина, сглаженный IDF, влияние корпуса и пример расчёта."},
+      {label:"NLP-ГАЙД",title:"Косинусное сходство текстов",description:"Как векторы документов превращаются в оценку от 0 до 1 и как её интерпретировать."},
+      {label:"NLP-ГАЙД",title:"Что такое N-граммы?",description:"Последовательности слов, знаменатели, фильтрация и практические сценарии."},
+      {label:"ГАЙД",title:"Сравнение текстов по частотности",description:"Нормализованные изменения словаря без подмены анализа посимвольным diff."},
     ],
     apiEye:"ДЛЯ РАЗРАБОТЧИКОВ",
-    apiTitle:"Добавьте тот же анализ в свой процесс",
-    apiCopy:"JSON API без хранения данных анализирует текст или публичные URL и сравнивает два источника. OpenAPI доступен без аккаунта.",
+    apiTitle:"Используйте анализ через API или CLI",
+    apiCopy:"Вызывайте JSON API из приложения или запускайте восемь локальных команд из npm. Оба интерфейса используют те же прозрачные методы анализа.",
     apiCta:"Открыть документацию API",
+    cliCta:"Открыть документацию CLI",
   },
   uk:{
     eyebrow:"АНАЛІЗ ТЕКСТУ БЕЗ ЧОРНОЇ СКРИНЬКИ",
@@ -140,16 +152,16 @@ const COPY:Record<UiLang,HomeCopy>={
     choose:"Почніть із запитання, на яке потрібна відповідь",
     chooseCopy:"Кожен інструмент має окремий сценарій, видимі формули та результат, який можна перевірити замість непрозорої оцінки.",
     open:"Відкрити",
-    english:"Інтерфейс EN",
+    english:"",
     tools:[
       {name:"Лічильник частотності слів",description:"Порахуйте всі слова, знайдіть потрібний термін, відсортуйте словник і експортуйте CSV або JSON."},
       {name:"Аналізатор щільності ключів",description:"Виміряйте слова, біграми й триграми, перевірте точні фрази та порівняйте зміни між результатами."},
       {name:"Bag of Words-аналізатор",description:"Перевірте лексику, біграми, контрольні фрази й розподіл Ципфа, а потім порівняйте результати A і B."},
       {name:"Порівняння двох текстів",description:"Зіставте два тексти або URL за обсягом, словником, нормалізованою частотністю, біграмами й показниками Ципфа."},
-      {name:"N-gram Аналізатор",description:"Аналізуйте повторювані фрази різної довжини (від біграм до триграм) для тексту або публічного URL."},
-      {name:"Bag of Words Generator",description:"Побудуйте сирі вектори термінів із тексту або URL та перегляньте частоти, відсотки й значення для експорту."},
-      {name:"TF-IDF Calculator",description:"Розрахуйте TF-IDF ваги для двох документів і фокусуйтесь на термінах з найвищою дискримінацією."},
-      {name:"Text Similarity Calculator",description:"Оцініть косинусну подібність текстів через BoW або TF-IDF і перегляньте внески ключових термінів."},
+      {name:"Аналізатор N-грам",description:"Аналізуйте повторювані фрази різної довжини (від біграм до триграм) для тексту або публічного URL."},
+      {name:"Генератор Bag of Words",description:"Побудуйте сирі вектори термінів із тексту або URL та перегляньте частоти, відсотки й значення для експорту."},
+      {name:"Калькулятор TF-IDF",description:"Розрахуйте TF-IDF ваги для 2–10 документів і зосередьтеся на термінах з найвищою розрізнювальною здатністю."},
+      {name:"Калькулятор подібності текстів",description:"Оцініть косинусну подібність текстів через BoW або TF-IDF і перегляньте внески ключових термінів."},
     ],
     methodEye:"ЧОМУ ЦЕЙ НАБІР",
     methodTitle:"Корисні числа з прозорою методикою",
@@ -162,14 +174,19 @@ const COPY:Record<UiLang,HomeCopy>={
     guidesEye:"ЗРОЗУМІТИ МЕТОД",
     guidesTitle:"Формули, приклади й обмеження",
     guides:[
-      {label:"ГАЙД · EN",title:"Як розрахувати частотність слів",description:"Кількість, відсотки, частота на 1 000 слів, токенізація та приклад розрахунку."},
-      {label:"ГАЙД · EN",title:"Формула щільності ключів",description:"Розрахунок точних фраз, правила порівняння й обмеження показника."},
+      {label:"ГАЙД",title:"Як розрахувати частотність слів",description:"Кількість, відсотки, частота на 1 000 слів, токенізація та приклад розрахунку."},
+      {label:"ГАЙД",title:"Формула щільності ключів",description:"Розрахунок точних фраз, правила порівняння й обмеження показника."},
       {label:"NLP-ГАЙД",title:"Модель Bag of Words",description:"Як таблиця частот перетворюється на вектори документів і ознаки для машинного навчання."},
+      {label:"NLP-ГАЙД",title:"Формула TF-IDF",description:"Частота терміна, згладжений IDF, вплив корпусу та приклад розрахунку."},
+      {label:"NLP-ГАЙД",title:"Косинусна подібність текстів",description:"Як вектори документів перетворюються на оцінку від 0 до 1 та як її тлумачити."},
+      {label:"NLP-ГАЙД",title:"Що таке N-грами?",description:"Послідовності слів, знаменники, фільтрація та практичні сценарії."},
+      {label:"ГАЙД",title:"Порівняння текстів за частотністю",description:"Нормалізовані зміни словника без підміни аналізу посимвольним diff."},
     ],
     apiEye:"ДЛЯ РОЗРОБНИКІВ",
-    apiTitle:"Додайте той самий аналіз у свій процес",
-    apiCopy:"JSON API без зберігання даних аналізує текст або публічні URL і порівнює два джерела. OpenAPI доступний без акаунта.",
+    apiTitle:"Використовуйте аналіз через API або CLI",
+    apiCopy:"Викликайте JSON API з програми або запускайте вісім локальних команд із npm. Обидва інтерфейси використовують ті самі прозорі методи аналізу.",
     apiCta:"Відкрити документацію API",
+    cliCta:"Відкрити документацію CLI",
   },
 };
 
@@ -184,21 +201,29 @@ const TOOL_PATHS=[
   "/tools/tf-idf-calculator",
   "/tools/text-similarity-calculator",
 ] as const;
-const GUIDE_PATHS=["/how-to-calculate-word-frequency","/keyword-density-formula","/bag-of-words-model"] as const;
+const GUIDE_PATHS=[
+  "/how-to-calculate-word-frequency",
+  "/keyword-density-formula",
+  "/bag-of-words-model",
+  "/tf-idf-formula",
+  "/cosine-similarity-for-text",
+  "/what-are-n-grams",
+  "/compare-texts-by-word-frequency",
+] as const;
 
 export default function HomePage({locale}:{locale:UiLang}){
   const copy=COPY[locale];
   const toolPaths=[
-    TOOL_PATHS[0],
-    TOOL_PATHS[1],
+    localizedPath(locale,TOOL_PATHS[0]),
+    localizedPath(locale,TOOL_PATHS[1]),
     BOW_LANGUAGE_PATHS[locale],
-    TOOL_PATHS[3],
-    TOOL_PATHS[4],
-    TOOL_PATHS[5],
-    TOOL_PATHS[6],
-    TOOL_PATHS[7],
+    localizedPath(locale,TOOL_PATHS[3]),
+    localizedPath(locale,TOOL_PATHS[4]),
+    localizedPath(locale,TOOL_PATHS[5]),
+    localizedPath(locale,TOOL_PATHS[6]),
+    localizedPath(locale,TOOL_PATHS[7]),
   ];
-  const guidePaths=[GUIDE_PATHS[0],GUIDE_PATHS[1],locale==="en"?GUIDE_PATHS[2]:`/${locale}/bag-of-words-model`];
+  const guidePaths=GUIDE_PATHS.map(path=>localizedPath(locale,path));
   return <main className="home-page">
     <SiteHeader locale={locale} active="home" languagePaths={HOME_PATHS}/>
     <section className="home-hero">
@@ -206,14 +231,14 @@ export default function HomePage({locale}:{locale:UiLang}){
       <h1>{copy.title}<br/><em>{copy.accent}</em></h1>
       <div className="home-hero-aside">
         <p>{copy.intro}</p>
-        <div className="home-actions"><a className="home-primary" href="#available-tools">{copy.primary}<span>↓</span></a><Link href="/api-docs">{copy.secondary}<span>→</span></Link></div>
+        <div className="home-actions"><a className="home-primary" href="#available-tools">{copy.primary}<span>↓</span></a><Link href={localizedPath(locale,"/api-docs")}>{copy.secondary}<span>→</span></Link></div>
         <span className="privacy-note"><b/>{copy.privacy}</span>
       </div>
     </section>
     <section className="home-stats" aria-label="Product facts"><div><strong>8</strong><span>{copy.live}</span></div><div><strong>3</strong><span>{copy.languages}</span></div><div><strong>0</strong><span>{copy.storage}</span></div></section>
     <section className="home-section home-tools" id="available-tools" aria-labelledby="home-tools-title">
       <div className="home-section-heading"><p className="section-number">{copy.available}</p><h2 id="home-tools-title">{copy.choose}</h2><p>{copy.chooseCopy}</p></div>
-      <div className="home-tool-grid">{copy.tools.map((tool,index)=><Link className={`home-tool-card tool-${index+1}`} href={toolPaths[index]} key={tool.name}><div className="home-tool-card-top"><span>0{index+1} · LIVE</span>{locale!=="en"&&index!==2?<small>{copy.english}</small>:null}</div><h3>{tool.name}</h3><p>{tool.description}</p><strong>{copy.open}<b>→</b></strong></Link>)}</div>
+      <div className="home-tool-grid">{copy.tools.map((tool,index)=><Link className={`home-tool-card tool-${index+1}`} href={toolPaths[index]} key={tool.name}><div className="home-tool-card-top"><span>0{index+1} · LIVE</span></div><h3>{tool.name}</h3><p>{tool.description}</p><strong>{copy.open}<b>→</b></strong></Link>)}</div>
     </section>
     <section className="home-method">
       <div className="home-section-heading"><p className="section-number">{copy.methodEye}</p><h2>{copy.methodTitle}</h2></div>
@@ -225,7 +250,7 @@ export default function HomePage({locale}:{locale:UiLang}){
     </section>
     <section className="home-api">
       <div><p className="eyebrow">{copy.apiEye}</p><h2>{copy.apiTitle}</h2></div>
-      <div><p>{copy.apiCopy}</p><Link href="/api-docs">{copy.apiCta}<span>→</span></Link></div>
+      <div><p>{copy.apiCopy}</p><div className="home-developer-links"><Link href={localizedPath(locale,"/api-docs")}>{copy.apiCta}<span>→</span></Link><Link href={localizedPath(locale,"/cli")}>{copy.cliCta}<span>→</span></Link></div></div>
     </section>
     <SiteFooter locale={locale}/>
   </main>;

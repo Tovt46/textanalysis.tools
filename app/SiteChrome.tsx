@@ -1,9 +1,10 @@
 import type { UiLang } from "./i18n";
+import { languagePaths,localizedPath } from "./localization";
 
 type ActiveNav="home"|"tools"|"guide"|"api";
 type LanguagePaths=Record<UiLang,string>;
 
-const ROOT_LANGUAGE_PATHS:LanguagePaths={en:"/",uk:"/uk",ru:"/ru"};
+const ROOT_LANGUAGE_PATHS:LanguagePaths=languagePaths("/");
 
 const LABELS:Record<UiLang,{
   home:string;
@@ -12,19 +13,21 @@ const LABELS:Record<UiLang,{
   navigation:string;
   languages:string;
   privacy:string;
+  resources:string;
+  sitemap:string;
 }>={
-  en:{home:"Home",tools:"Tools",guides:"Guides",navigation:"Main navigation",languages:"Language",privacy:"Transparent text analysis without server storage."},
-  uk:{home:"Головна",tools:"Інструменти",guides:"Гайди",navigation:"Головна навігація",languages:"Мова",privacy:"Прозорий аналіз тексту без збереження на сервері."},
-  ru:{home:"Главная",tools:"Инструменты",guides:"Гайды",navigation:"Главная навигация",languages:"Язык",privacy:"Прозрачный анализ текста без хранения на сервере."},
+  en:{home:"Home",tools:"Tools",guides:"Guides",navigation:"Main navigation",languages:"Language",privacy:"Transparent text analysis without server storage.",resources:"Developer and machine-readable resources",sitemap:"Sitemap"},
+  uk:{home:"Головна",tools:"Інструменти",guides:"Гайди",navigation:"Головна навігація",languages:"Мова",privacy:"Прозорий аналіз тексту без збереження на сервері.",resources:"Ресурси для розробників і машинного читання",sitemap:"Мапа сайту"},
+  ru:{home:"Главная",tools:"Инструменты",guides:"Гайды",navigation:"Главная навигация",languages:"Язык",privacy:"Прозрачный анализ текста без хранения на сервере.",resources:"Ресурсы для разработчиков и машинного чтения",sitemap:"Карта сайта"},
 };
 
 function navItems(locale:UiLang){
   const labels=LABELS[locale];
   return [
     {key:"home" as const,href:ROOT_LANGUAGE_PATHS[locale],label:labels.home},
-    {key:"tools" as const,href:"/tools",label:labels.tools},
-    {key:"guide" as const,href:locale==="en"?"/bag-of-words-model":`/${locale}/bag-of-words-model`,label:labels.guides},
-    {key:"api" as const,href:"/api-docs",label:"API"},
+    {key:"tools" as const,href:localizedPath(locale,"/tools"),label:labels.tools},
+    {key:"guide" as const,href:localizedPath(locale,"/guides"),label:labels.guides},
+    {key:"api" as const,href:localizedPath(locale,"/api-docs"),label:"API"},
   ];
 }
 
@@ -41,6 +44,6 @@ export function SiteFooter({locale}:{locale:UiLang}){
   const labels=LABELS[locale];
   return <footer className="site-footer">
     <div className="site-footer-brand"><a className="brand" href={ROOT_LANGUAGE_PATHS[locale]}><span className="brand-mark" aria-hidden="true"/><span>TEXT ANALYSIS TOOLS</span></a><p>{labels.privacy}</p></div>
-    <div className="site-footer-links"><nav className="site-footer-nav" aria-label={labels.navigation}>{navItems(locale).map(item=><a key={item.key} href={item.href}>{item.label}</a>)}</nav><nav className="site-footer-utility" aria-label="Machine-readable resources"><a href="/openapi.json">OpenAPI</a><a href="/llms.txt">llms.txt</a><a href="/sitemap.xml">Sitemap</a></nav></div>
+    <div className="site-footer-links"><nav className="site-footer-nav" aria-label={labels.navigation}>{navItems(locale).map(item=><a key={item.key} href={item.href}>{item.label}</a>)}</nav><nav className="site-footer-utility" aria-label={labels.resources}><a href={localizedPath(locale,"/cli")}>CLI</a><a href="/openapi.json">OpenAPI</a><a href="/llms.txt">llms.txt</a><a href="/sitemap.xml">{labels.sitemap}</a></nav></div>
   </footer>;
 }

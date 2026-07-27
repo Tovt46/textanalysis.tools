@@ -4,6 +4,14 @@ import type { UiLang } from "./i18n";
 export const SITE_URL = "https://textanalysis.tools";
 export const SITE_NAME = "Text Analysis Tools";
 
+type ToolSchemaInput={
+  name:string;
+  description:string;
+  path:string;
+  inLanguage?:UiLang;
+  featureList:string[];
+};
+
 export const SITE_ICONS:Metadata["icons"] = {
   icon:[
     {url:"/favicon.ico"},
@@ -93,4 +101,32 @@ export function homeMetadata(lang:UiLang):Metadata {
 
 export function bowMetadata(lang:UiLang):Metadata {
   return metadata(BOW_COPY[lang],bowLanguageAlternates,"Bag of Words frequency analysis and text comparison");
+}
+
+export function toolWebApplicationSchema({
+  name,
+  description,
+  path,
+  inLanguage="en",
+  featureList,
+}:ToolSchemaInput){
+  return {
+    "@context":"https://schema.org",
+    "@type":"WebApplication",
+    name,
+    description,
+    url:`${SITE_URL}${path}`,
+    inLanguage,
+    applicationCategory:"UtilitiesApplication",
+    operatingSystem:"Any",
+    browserRequirements:{
+      en:"Requires JavaScript and a modern web browser",
+      ru:"Требуется JavaScript и современный веб-браузер",
+      uk:"Потрібен JavaScript і сучасний веббраузер",
+    }[inLanguage],
+    isAccessibleForFree:true,
+    offers:{"@type":"Offer",price:"0",priceCurrency:"USD"},
+    provider:{"@type":"Organization",name:SITE_NAME,url:SITE_URL},
+    featureList,
+  };
 }

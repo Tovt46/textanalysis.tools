@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import TextComparisonTool from "../../../TextComparisonTool";
-import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../../seo-metadata";
+import { SITE_ICONS,SITE_NAME,SITE_URL,toolWebApplicationSchema } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
+import { languageAlternates,languagePaths } from "../../../localization";
 
 const path="/tools/text-analysis-comparison";
 const title="Free Text Comparison Tool for Word Frequency Changes";
@@ -10,15 +11,23 @@ const description="Compare two texts or webpages by word count, vocabulary, norm
 
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
-  alternates:{canonical:path,languages:{en:path,"x-default":path}},
+  alternates:{canonical:path,languages:languageAlternates(path)},
   openGraph:{type:"website",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest",
 };
 
+const schema=toolWebApplicationSchema({
+  name:"Text Analysis Comparison",
+  description,
+  path,
+  featureList:["Normalized word-frequency comparison","Bigram change comparison","Vocabulary and length metrics","Text and URL input","CSV and JSON export"],
+});
+
 export default function TextAnalysisComparisonPage(){
   return <main className="tool-page">
-    <SiteHeader locale="en" active="tools" languagePaths={{en:path,uk:"/uk",ru:"/ru"}}/>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
+    <SiteHeader locale="en" active="tools" languagePaths={languagePaths(path)}/>
     <TextComparisonTool/>
     <article className="tool-explainer">
       <section>
@@ -40,7 +49,7 @@ export default function TextAnalysisComparisonPage(){
         <p>The comparison shows how surface vocabulary changed. It does not determine whether two passages mean the same thing, whether a revision is factually correct, or whether one version will perform better in search. Treat increases and decreases as diagnostic directions, not optimization recommendations.</p>
         <div className="article-callout subtle"><b>No automatic winner</b><p>The tool deliberately avoids a “better version” score. Interpret the changes alongside intent, readability, factual accuracy, and the purpose of the page.</p></div>
       </section>
-      <section className="tool-next-links"><p className="section-number">RELATED WORKFLOWS</p><h2>Inspect one text or automate the comparison</h2><p>Use the focused frequency table for one vocabulary, open the Bag of Words analyzer for distribution detail, or call the same comparison contract from an application.</p><div><Link href="/tools/word-frequency-counter">Word Frequency Counter <span>→</span></Link><Link href="/tools/bag-of-words-analyzer">Bag of Words Analyzer <span>→</span></Link><Link href="/api-docs#compare">Comparison API <span>→</span></Link></div></section>
+      <section className="tool-next-links"><p className="section-number">RELATED WORKFLOWS</p><h2>Inspect one text or automate the comparison</h2><p>Read the normalized comparison workflow, use the focused frequency table for one vocabulary, or call the same comparison contract from an application.</p><div><Link href="/compare-texts-by-word-frequency">Read the comparison guide <span>→</span></Link><Link href="/tools/word-frequency-counter">Word Frequency Counter <span>→</span></Link><Link href="/api-docs#compare">Comparison API <span>→</span></Link></div></section>
     </article>
     <SiteFooter locale="en"/>
   </main>;

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_ICONS, SITE_NAME, SITE_URL } from "../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../SiteChrome";
+import { languageAlternates,languagePaths } from "../../localization";
 
 const path="/bag-of-words-vs-word2vec";
 const title="Bag of Words vs Word2Vec: Key Differences | Text Analysis Tools";
@@ -11,7 +12,7 @@ export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),
   title,
   description,
-  alternates:{canonical:path},
+  alternates:{canonical:path,languages:languageAlternates(path)},
   openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
@@ -35,7 +36,7 @@ export default function BagOfWordsVsWord2VecPage(){
   return <main className="article-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
 
-    <SiteHeader locale="en" active="guide"/>
+    <SiteHeader locale="en" active="guide" languagePaths={languagePaths(path)}/>
 
     <article>
       <div className="article-hero">

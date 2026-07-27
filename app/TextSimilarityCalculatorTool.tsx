@@ -4,6 +4,9 @@ import { FormEvent,useEffect,useMemo,useState } from "react";
 import Link from "next/link";
 import { analyzeBagOfWords, calculateTextSimilarity, type SimilarityMethod } from "./lib/analyze";
 import { DEFAULT_STOPWORD_TEXT,parseStopwordText,type TextLanguage } from "./lib/stopwords";
+import type { UiLang } from "./i18n";
+import { BREADCRUMB_LABELS,formatNumber,localizedPath,localizeApiError } from "./localization";
+import { SIMILARITY_UI } from "./tool-ui-copy";
 
 type SourceType="text"|"url";
 type SimilarityMethodLocal=Extract<SimilarityMethod,"bow"|"tfidf">;
@@ -48,16 +51,6 @@ type ResponsePayload = {
 const STOPWORDS_KEY="bow-zipf-stopwords-v1";
 const DISPLAY_LIMIT=500;
 
-function errorMessage(payload:unknown,fallback:string){
-  if(!payload||typeof payload!=="object") return fallback;
-  if("error"in payload){
-    const error=(payload as {error:unknown}).error;
-    if(typeof error==="string") return error;
-    if(error&&typeof error==="object"&&"message" in error) return String((error as {message:unknown}).message);
-  }
-  return fallback;
-}
-
 function csvCell(value:string|number){
   const text=String(value);
   return /[",\n]/.test(text)?`"${text.replaceAll('"','""')}"`:text;
@@ -76,7 +69,8 @@ function downloadFile(filename:string,content:string,type:string){
 
 function contributionShare(value:number){return (Math.abs(value)).toFixed(4);}
 
-export default function TextSimilarityCalculatorTool(){
+export default function TextSimilarityCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
+  const copy=SIMILARITY_UI[uiLang];
   const [sourceTypeA,setSourceTypeA]=useState<SourceType>("text");
   const [sourceTypeB,setSourceTypeB]=useState<SourceType>("text");
   const [sourceA,setSourceA]=useState("");
@@ -132,8 +126,8 @@ export default function TextSimilarityCalculatorTool(){
       const limit=Math.max(1,Math.min(top,100));
       if(sourceTypeA==="text"&&sourceTypeB==="text"){
         const [docA,docB]=await Promise.all([
-          analyzeBagOfWords({text:sourceA,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:"en"}),
-          analyzeBagOfWords({text:sourceB,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:"en"}),
+          analyzeBagOfWords({text:sourceA,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang}),
+          analyzeBagOfWords({text:sourceB,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang}),
         ]);
         setResult(calculateTextSimilarity(docA,docB,method,limit));
         await new Promise<void>(resolve=>window.setTimeout(resolve,0));
@@ -149,10 +143,10 @@ export default function TextSimilarityCalculatorTool(){
         });
         const raw=await response.text();
         let payload:unknown;
-        try{payload=JSON.parse(raw);}catch{throw new Error("The service returned an invalid response. Paste both texts instead.");}
-        if(!response.ok) throw new Error(errorMessage(payload,"The documents could not be compared."));
+        try{payload=JSON.parse(raw);}catch{throw new Error(copy.invalid);}
+        if(!response.ok) throw new Error(localizeApiError(payload,copy.urlFailed,uiLang));
         const next=(payload as ResponsePayload).result;
-        if(!next) throw new Error("The service response is missing result data.");
+        if(!next) throw new Error(copy.missing);
         setResult({
           language:(next.language ?? "auto") as SimilarityResult["language"],
           method:(next.method==="bow"?"bow":"tfidf") as SimilarityMethodLocal,
@@ -175,7 +169,7 @@ export default function TextSimilarityCalculatorTool(){
       }
       window.setTimeout(()=>document.getElementById("text-similarity-results")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
     }catch(caught){
-      setError(caught instanceof Error?caught.message:"The texts could not be compared.");
+      setError(caught instanceof Error?caught.message:copy.failed);
     }finally{
       setLoading(false);
     }
@@ -224,66 +218,66 @@ export default function TextSimilarityCalculatorTool(){
 
   return <>
     <section className="tool-hero">
-      <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/tools">Tools</Link><span>/</span><span>Text Similarity Calculator</span></nav>
-      <p className="eyebrow">FREE TEXT SIMILARITY · EN / UKR / RU</p>
-      <h1>Text Similarity Calculator</h1>
-      <p>Compare two documents with cosine similarity on top of either raw term weights (BoW) or TF-IDF weights. Use top contribution terms to audit why each score came out as it did.</p>
-      <span className="privacy-note"><b/>{sourceTypeA==="url"||sourceTypeB==="url"?"URL modes are processed statelessly by the API.": "Pasted text is analyzed locally in this browser."}</span>
+      <nav className="breadcrumbs" aria-label={BREADCRUMB_LABELS[uiLang]}><Link href={localizedPath(uiLang,"/")}>{copy.home}</Link><span>/</span><Link href={localizedPath(uiLang,"/tools")}>{copy.tools}</Link><span>/</span><span>{copy.breadcrumb}</span></nav>
+      <p className="eyebrow">{copy.eyebrow}</p>
+      <h1>{copy.title}</h1>
+      <p>{copy.deck}</p>
+      <span className="privacy-note"><b/>{sourceTypeA==="url"||sourceTypeB==="url"?copy.privacyApi:copy.privacyLocal}</span>
     </section>
 
     <form className="comparison-workspace" onSubmit={runAnalysis}>
       <section className="comparison-source-card">
-        <div className="section-head"><div><span>01</span><h2>First source</h2></div><div className="tabs"><button type="button" className={sourceTypeA==="text"?"active":""} onClick={()=>selectSource("a","text")}>Text</button><button type="button" className={sourceTypeA==="url"?"active":""} onClick={()=>selectSource("a","url")}>URL</button></div></div>
+        <div className="section-head"><div><span>01</span><h2>{copy.first}</h2></div><div className="tabs"><button type="button" className={sourceTypeA==="text"?"active":""} onClick={()=>selectSource("a","text")}>{copy.text}</button><button type="button" className={sourceTypeA==="url"?"active":""} onClick={()=>selectSource("a","url")}>{copy.url}</button></div></div>
         {sourceTypeA==="text"
-          ?<div className="textarea-wrap"><textarea value={sourceA} onChange={event=>setSourceA(event.target.value)} placeholder="Paste source A or HTML text…" aria-label="Source A"/><span>{sourceA.length.toLocaleString("en-US")} characters</span></div>
-          :<><input className="url-input" type="url" value={sourceA} onChange={event=>setSourceA(event.target.value)} placeholder="https://example.com/source-a" aria-label="Source A URL" required/><p className="url-help">Public HTTP/HTTPS pages only.</p></>}
+          ?<div className="textarea-wrap"><textarea value={sourceA} onChange={event=>setSourceA(event.target.value)} placeholder={copy.pasteA} aria-label={copy.sourceA}/><span>{formatNumber(sourceA.length,uiLang)} {copy.characters}</span></div>
+          :<><input className="url-input" type="url" value={sourceA} onChange={event=>setSourceA(event.target.value)} placeholder="https://example.com/source-a" aria-label={copy.urlA} required/><p className="url-help">{copy.urlHelp}</p></>}
       </section>
       <section className="comparison-source-card">
-        <div className="section-head"><div><span>02</span><h2>Second source</h2></div><div className="tabs"><button type="button" className={sourceTypeB==="text"?"active":""} onClick={()=>selectSource("b","text")}>Text</button><button type="button" className={sourceTypeB==="url"?"active":""} onClick={()=>selectSource("b","url")}>URL</button></div></div>
+        <div className="section-head"><div><span>02</span><h2>{copy.second}</h2></div><div className="tabs"><button type="button" className={sourceTypeB==="text"?"active":""} onClick={()=>selectSource("b","text")}>{copy.text}</button><button type="button" className={sourceTypeB==="url"?"active":""} onClick={()=>selectSource("b","url")}>{copy.url}</button></div></div>
         {sourceTypeB==="text"
-          ?<div className="textarea-wrap"><textarea value={sourceB} onChange={event=>setSourceB(event.target.value)} placeholder="Paste source B or HTML text…" aria-label="Source B"/><span>{sourceB.length.toLocaleString("en-US")} characters</span></div>
-          :<><input className="url-input" type="url" value={sourceB} onChange={event=>setSourceB(event.target.value)} placeholder="https://example.com/source-b" aria-label="Source B URL" required/><p className="url-help">Public HTTP/HTTPS pages only.</p></>}
+          ?<div className="textarea-wrap"><textarea value={sourceB} onChange={event=>setSourceB(event.target.value)} placeholder={copy.pasteB} aria-label={copy.sourceB}/><span>{formatNumber(sourceB.length,uiLang)} {copy.characters}</span></div>
+          :<><input className="url-input" type="url" value={sourceB} onChange={event=>setSourceB(event.target.value)} placeholder="https://example.com/source-b" aria-label={copy.urlB} required/><p className="url-help">{copy.urlHelp}</p></>}
       </section>
 
       <aside className="comparison-settings-card">
-        <div className="section-head simple"><div><span>03</span><h2>Similarity settings</h2></div></div>
-        <label className="field"><span>Text language</span><select value={language} onChange={event=>changeLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">Detect automatically</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option></select></label>
-        <label className="field"><span>Method</span><select value={method} onChange={event=>setMethod(event.target.value==="bow"?"bow":"tfidf")}>
+        <div className="section-head simple"><div><span>03</span><h2>{copy.settings}</h2></div></div>
+        <label className="field"><span>{copy.language}</span><select value={language} onChange={event=>changeLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option></select></label>
+        <label className="field"><span>{copy.method}</span><select value={method} onChange={event=>setMethod(event.target.value==="bow"?"bow":"tfidf")}>
           <option value="tfidf">TF-IDF</option>
           <option value="bow">Bag of Words</option>
         </select></label>
-        <label className="field"><span>Top terms</span><input type="number" min="1" max="100" value={top} onChange={event=>setTop(Math.max(1,Math.min(100,Number(event.target.value)||100)))} /></label>
-        <label className="check"><input type="checkbox" checked={keepStopwords} onChange={event=>setKeepStopwords(event.target.checked)}/><span><b>Keep stop words</b><small>{keepStopwords?"Common function words will be counted.":"Common function words are excluded."}</small></span></label>
-        <details className="stopword-editor"><summary>Edit stop words <span>{parsedStopwords[editorLanguage].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru"] as TextLanguage[]).map((item)=><button type="button" key={item} className={editorLanguage===item?"active":""} onClick={()=>changeEditorLanguage(item)}>{item.toUpperCase()}</button>)}</div><p>Stop words are applied after tokenization and filtering of numeric tokens.</p><textarea value={stopwordLists[editorLanguage]} onChange={event=>updateStopwords(event.target.value)} aria-label={`Edit ${editorLanguage.toUpperCase()} stop words`}/><div className="stopword-actions"><small>{parsedStopwords[editorLanguage].length} words saved locally</small><button type="button" onClick={resetStopwords}>Restore defaults</button></div></div></details>
-        <button className="analyze-button" disabled={loading||!sourceA.trim()||!sourceB.trim()}><span>{loading?"Measuring…":`Compare with ${methodLabel}`}</span><b>→</b></button>
+        <label className="field"><span>{copy.top}</span><input type="number" min="1" max="100" value={top} onChange={event=>setTop(Math.max(1,Math.min(100,Number(event.target.value)||100)))} /></label>
+        <label className="check"><input type="checkbox" checked={keepStopwords} onChange={event=>setKeepStopwords(event.target.checked)}/><span><b>{copy.keepStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
+        <details className="stopword-editor"><summary>{copy.editStops} <span>{parsedStopwords[editorLanguage].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru"] as TextLanguage[]).map((item)=><button type="button" key={item} className={editorLanguage===item?"active":""} onClick={()=>changeEditorLanguage(item)}>{item.toUpperCase()}</button>)}</div><p>{copy.editorHelp}</p><textarea value={stopwordLists[editorLanguage]} onChange={event=>updateStopwords(event.target.value)} aria-label={`${copy.editAria}: ${editorLanguage.toUpperCase()}`}/><div className="stopword-actions"><small>{parsedStopwords[editorLanguage].length} {copy.saved}</small><button type="button" onClick={resetStopwords}>{copy.restore}</button></div></div></details>
+        <button className="analyze-button" disabled={loading||!sourceA.trim()||!sourceB.trim()}><span>{loading?copy.loading:`${copy.submit} ${methodLabel}`}</span><b>→</b></button>
         {error&&<p className="error" role="alert">{error}</p>}
       </aside>
     </form>
 
     {result&&<section className="frequency-results" id="text-similarity-results">
-      <div className="results-title"><div><span>04</span><h2>Similarity result</h2></div><p>Detected language: <b>{result.language.toUpperCase()}</b> · Method: <b>{methodLabel}</b></p></div>
+      <div className="results-title"><div><span>04</span><h2>{copy.results}</h2></div><p>{copy.detected}: <b>{result.language.toUpperCase()}</b> · {copy.methodLabel}: <b>{methodLabel}</b></p></div>
       <div className="frequency-metrics">
-        <div><span>Source A words</span><strong>{result.tokenCounts.a.toLocaleString("en-US")}</strong><small>for vector A</small></div>
-        <div><span>Source B words</span><strong>{result.tokenCounts.b.toLocaleString("en-US")}</strong><small>for vector B</small></div>
-        <div><span>Cosine similarity</span><strong>{result.cosine.toFixed(4)}</strong><small>normalized dot-product score</small></div>
-        <div><span>Top contribution terms</span><strong>{result.top.toLocaleString("en-US")}</strong><small>largest weighted overlap terms</small></div>
+        <div><span>{copy.wordsA}</span><strong>{formatNumber(result.tokenCounts.a,uiLang)}</strong><small>{copy.wordsANote}</small></div>
+        <div><span>{copy.wordsB}</span><strong>{formatNumber(result.tokenCounts.b,uiLang)}</strong><small>{copy.wordsBNote}</small></div>
+        <div><span>{copy.cosine}</span><strong>{result.cosine.toFixed(4)}</strong><small>{copy.cosineNote}</small></div>
+        <div><span>{copy.contributions}</span><strong>{formatNumber(result.top,uiLang)}</strong><small>{copy.contributionsNote}</small></div>
       </div>
       <div className="frequency-table-card">
         <div className="frequency-toolbar">
-          <label><span>Search terms</span><input type="search" value={query} onChange={event=>setQuery(event.target.value.toLocaleLowerCase())} placeholder="Filter contribution terms…"/></label>
-          <div><small>{supportsIdf?`${result.topTerms.length} TF-IDF terms shown`:`${result.topTerms.length} terms shown`}</small><div className="export-actions"><button type="button" onClick={exportCsv}>Export CSV</button><button type="button" onClick={exportJson}>Export JSON</button></div></div>
+          <label><span>{copy.search}</span><input type="search" value={query} onChange={event=>setQuery(event.target.value.toLocaleLowerCase())} placeholder={copy.filter}/></label>
+          <div><small>{formatNumber(result.topTerms.length,uiLang)} {supportsIdf?"TF-IDF ":""}{copy.shown}</small><div className="export-actions"><button type="button" onClick={exportCsv}>{copy.exportCsv}</button><button type="button" onClick={exportJson}>{copy.exportJson}</button></div></div>
         </div>
-        <div className="frequency-table-meta"><span>{filteredRows.length.toLocaleString("en-US")} matching rows</span>{filteredRows.length>DISPLAY_LIMIT&&<span>Showing the first {DISPLAY_LIMIT}; exports include the full view.</span>}</div>
+        <div className="frequency-table-meta"><span>{formatNumber(filteredRows.length,uiLang)} {copy.matching}</span>{filteredRows.length>DISPLAY_LIMIT&&<span>{copy.showing}</span>}</div>
         <div className="table-scroll">
           <table className="frequency-table">
-            <thead><tr><th>#</th><th>Term</th><th>{methodLabel==="TF-IDF"?"A tfidf":"A weight"}</th><th>{methodLabel==="TF-IDF"?"B tfidf":"B weight"}</th><th>Contribution</th><th>Abs. contribution</th></tr></thead>
+            <thead><tr><th>#</th><th>{copy.term}</th><th>{methodLabel==="TF-IDF"?"A TF-IDF":copy.weightA}</th><th>{methodLabel==="TF-IDF"?"B TF-IDF":copy.weightB}</th><th>{copy.contribution}</th><th>{copy.absolute}</th></tr></thead>
             <tbody>{shownRows.map((row,index)=><tr key={row.term}><td>{index+1}</td><td><b>{row.term}</b></td><td>{row.weightA.toFixed(6)}</td><td>{row.weightB.toFixed(6)}</td><td>{row.contribution.toFixed(6)}</td><td>{contributionShare(Math.abs(row.contribution))}</td></tr>)}</tbody>
           </table>
         </div>
-        {!filteredRows.length&&<p className="empty-filter">No terms match this filter.</p>}
+        {!filteredRows.length&&<p className="empty-filter">{copy.noMatch}</p>}
       </div>
 
-      {supportsIdf&&result?.idfTable&&<section className="tool-explainer"><p className="section-number">TOP IDF TERMS</p><h2>Global IDF table</h2><div className="table-scroll"><table className="frequency-table"><thead><tr><th>#</th><th>Term</th><th>Document frequency</th><th>IDF</th></tr></thead><tbody>{result.idfTable.slice(0,DISPLAY_LIMIT).map((row,index)=><tr key={row.term}><td>{index+1}</td><td><b>{row.term}</b></td><td>{row.documentFrequency.toLocaleString("en-US")}</td><td>{row.idf.toFixed(3)}</td></tr>)}</tbody></table></div></section>}
+      {supportsIdf&&result?.idfTable&&<section className="tool-explainer"><p className="section-number">{copy.idfEye}</p><h2>{copy.idfTitle}</h2><div className="table-scroll"><table className="frequency-table"><thead><tr><th>#</th><th>{copy.term}</th><th>{copy.documentFrequency}</th><th>IDF</th></tr></thead><tbody>{result.idfTable.slice(0,DISPLAY_LIMIT).map((row,index)=><tr key={row.term}><td>{index+1}</td><td><b>{row.term}</b></td><td>{formatNumber(row.documentFrequency,uiLang)}</td><td>{row.idf.toFixed(3)}</td></tr>)}</tbody></table></div></section>}
     </section>}
   </>;
 }

@@ -2,16 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../SiteChrome";
+import { languageAlternates,languagePaths } from "../../localization";
 
 const path="/keyword-density-formula";
 const title="Keyword Density: Formula, Examples & Limitations";
 const description="Learn the keyword density formula, calculate words and phrases with examples, compare pages correctly, and understand why density is not a Google ranking score.";
 
-export const metadata:Metadata={metadataBase:new URL(SITE_URL),title,description,alternates:{canonical:path,languages:{en:path,"x-default":path}},openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},twitter:{card:"summary",title,description},verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest"};
+export const metadata:Metadata={metadataBase:new URL(SITE_URL),title,description,alternates:{canonical:path,languages:languageAlternates(path)},openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},twitter:{card:"summary",title,description},verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest"};
 const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"Keyword Density: Formula, Examples and Limitations",description,inLanguage:"en",datePublished:"2026-07-22",dateModified:"2026-07-23",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:SITE_NAME}};
 
 export default function KeywordDensityFormulaPage(){
-  return <main className="article-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/><SiteHeader locale="en" active="tools" languagePaths={{en:path,uk:"/uk",ru:"/ru"}}/>
+  return <main className="article-page"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/><SiteHeader locale="en" active="guide" languagePaths={languagePaths(path)}/>
     <article><div className="article-hero"><nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/tools">Tools</Link><span>/</span><span>Keyword density formula</span></nav><p className="eyebrow">SEO MEASUREMENT · FORMULA & LIMITS</p><h1>Keyword Density: Formula, Examples and Limitations</h1><p className="article-deck">Keyword density measures how often a word or exact phrase occurs relative to a text’s length. It can reveal emphasis and repetition, but it does not measure quality, relevance, or ranking potential.</p><p className="article-meta">Published July 22, 2026 · 9 minute read</p><div className="article-actions"><Link className="primary-article-cta" href="/tools/keyword-density-checker">Check keyword density</Link><a href="#formula">Start with the formula ↓</a></div></div>
       <div className="article-layout"><aside className="article-toc" aria-label="On this page"><b>On this page</b><a href="#definition">Definition</a><a href="#formula">Formula</a><a href="#example">Worked example</a><a href="#phrases">Phrase density</a><a href="#ideal">Is there an ideal density?</a><a href="#workflow">Practical workflow</a><a href="#limitations">Limitations</a></aside>
         <div className="article-body">

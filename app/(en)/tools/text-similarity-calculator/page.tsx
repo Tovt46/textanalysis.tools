@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import TextSimilarityCalculatorTool from "../../../TextSimilarityCalculatorTool";
-import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../../seo-metadata";
+import { SITE_ICONS,SITE_NAME,SITE_URL,toolWebApplicationSchema } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
+import { languageAlternates,languagePaths } from "../../../localization";
 
 const path="/tools/text-similarity-calculator";
 const title="Free Text Similarity Calculator for Text & URLs";
@@ -12,7 +13,7 @@ export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),
   title,
   description,
-  alternates:{canonical:path,languages:{en:path,"x-default":path}},
+  alternates:{canonical:path,languages:languageAlternates(path)},
   openGraph:{type:"website",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
@@ -20,9 +21,17 @@ export const metadata:Metadata={
   manifest:"/site.webmanifest",
 };
 
+const schema=toolWebApplicationSchema({
+  name:"Text Similarity Calculator",
+  description,
+  path,
+  featureList:["Cosine similarity from 0 to 1","Bag of Words and TF-IDF modes","Per-term contribution table","Text and URL input","JSON export"],
+});
+
 export default function TextSimilarityCalculatorPage(){
   return <main className="tool-page">
-    <SiteHeader locale="en" active="tools" languagePaths={{en:path,uk:"/uk",ru:"/ru"}}/>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
+    <SiteHeader locale="en" active="tools" languagePaths={languagePaths(path)}/>
     <TextSimilarityCalculatorTool/>
     <article className="tool-explainer">
       <section>
@@ -45,7 +54,7 @@ export default function TextSimilarityCalculatorPage(){
         <p className="section-number">WHEN TO USE</p>
         <h2>Use similarity checks before semantic-only judging</h2>
         <p>Similarity gives a surface overlap score. It is useful for revision QA, duplicate checks, and duplicate-safe candidate filtering before manual review.</p>
-        <div><Link href="/tools/text-analysis-comparison">Text Analysis Comparison <span>→</span></Link><Link href="/tools/bag-of-words-analyzer">Bag of Words Analyzer <span>→</span></Link><Link href="/api-docs#similarity">Similarity API <span>→</span></Link></div>
+        <div><Link href="/cosine-similarity-for-text">Read the cosine similarity guide <span>→</span></Link><Link href="/tools/text-analysis-comparison">Text Analysis Comparison <span>→</span></Link><Link href="/api-docs#weighted">Similarity API <span>→</span></Link></div>
       </section>
     </article>
     <SiteFooter locale="en"/>

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import NgramAnalyzerTool from "../../../NgramAnalyzerTool";
-import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../../seo-metadata";
+import { SITE_ICONS,SITE_NAME,SITE_URL,toolWebApplicationSchema } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
+import { languageAlternates,languagePaths } from "../../../localization";
 
 const path="/tools/ngram-analyzer";
 const title="Free N-gram Analyzer for Text & URLs";
@@ -10,15 +11,23 @@ const description="Find recurring word sequences and compare phrase concentratio
 
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
-  alternates:{canonical:path,languages:{en:path,"x-default":path}},
+  alternates:{canonical:path,languages:languageAlternates(path)},
   openGraph:{type:"website",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest",
 };
 
+const schema=toolWebApplicationSchema({
+  name:"N-gram Analyzer",
+  description,
+  path,
+  featureList:["N-grams from 1 to 10 tokens","Counts, percentages, and per-1,000 rates","Minimum-count filtering","Text and URL input","CSV and JSON export"],
+});
+
 export default function NgramAnalyzerPage(){
   return <main className="tool-page">
-    <SiteHeader locale="en" active="tools" languagePaths={{en:path,uk:"/uk",ru:"/ru"}}/>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
+    <SiteHeader locale="en" active="tools" languagePaths={languagePaths(path)}/>
     <NgramAnalyzerTool/>
     <article className="tool-explainer">
       <section>
@@ -47,7 +56,7 @@ export default function NgramAnalyzerPage(){
         <p className="section-number">WHERE TO GO NEXT</p>
         <h2>Move between phrase frequency and broader analysis</h2>
         <p>Use Word Frequency for a full token-level baseline and Keyword Density for tracked phrase coverage, then compare draft versions in the text comparison tool.</p>
-        <div><Link href="/tools/word-frequency-counter">Word Frequency Counter <span>→</span></Link><Link href="/tools/keyword-density-checker">Keyword Density Checker <span>→</span></Link><Link href="/tools/text-analysis-comparison">Text Analysis Comparison <span>→</span></Link></div>
+        <div><Link href="/what-are-n-grams">Read the N-gram guide <span>→</span></Link><Link href="/tools/word-frequency-counter">Word Frequency Counter <span>→</span></Link><Link href="/tools/text-analysis-comparison">Text Analysis Comparison <span>→</span></Link></div>
       </section>
     </article>
     <SiteFooter locale="en"/>

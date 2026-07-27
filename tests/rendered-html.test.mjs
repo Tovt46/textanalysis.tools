@@ -49,6 +49,8 @@ test("renders the English product homepage with live tools and production SEO me
   assert.match(html, /Bag of Words Generator/i);
   assert.match(html, /TF-IDF Calculator/i);
   assert.match(html, /Text Similarity Calculator/i);
+  assert.match(html, /href="\/tf-idf-formula"/i);
+  assert.match(html, /href="\/cli"/i);
   assert.match(html, />8<\/strong><span>live tools/i);
   assert.doesNotMatch(html, /<textarea/i);
 });
@@ -67,7 +69,18 @@ test("renders the Bag of Words analyzer on its dedicated multilingual route", as
   assert.match(html, /rel="canonical" href="https:\/\/textanalysis\.tools\/tools\/bag-of-words-analyzer"/i);
   assert.match(html, /hrefLang="ru" href="https:\/\/textanalysis\.tools\/ru\/tools\/bag-of-words-analyzer"/i);
   assert.match(html, /Free Bag of Words SEO analyzer/i);
+  assert.match(html, /"@type":"WebApplication"/i);
   assert.match(html, /<textarea/i);
+});
+
+test("renders Russian product copy without Ukrainian text in the new tool cards", async () => {
+  const response=await request("/ru",{headers:{accept:"text/html"}});
+  assert.equal(response.status,200);
+  const html=await response.text();
+  assert.match(html,/N-gram анализатор/i);
+  assert.match(html,/Рассчитывайте веса TF-IDF/i);
+  assert.match(html,/Калькулятор сходства текстов/i);
+  assert.doesNotMatch(html,/Проаналізуйте|Побудуйте|Порахуйте|Виміряйте/i);
 });
 
 test("counts tracked phrases as exact token sequences and allows overlaps", async () => {
@@ -143,7 +156,7 @@ test("serves a valid XML sitemap", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^application\/xml/i);
   const xml = await response.text();
   assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
-  assert.match(xml, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/);
+  assert.match(xml, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9" xmlns:xhtml="http:\/\/www\.w3\.org\/1999\/xhtml">/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/bag-of-words-analyzer<\/loc>/);
@@ -158,6 +171,36 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/text-similarity-calculator<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/how-to-calculate-word-frequency<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/keyword-density-formula<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/guides<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tf-idf-formula<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/cosine-similarity-for-text<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/what-are-n-grams<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/compare-texts-by-word-frequency<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/cli<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/ru\/cli<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk\/tf-idf-formula<\/loc>/);
+  assert.match(xml, /hreflang="x-default" href="https:\/\/textanalysis\.tools\/tools\/tf-idf-calculator"/);
+  assert.equal((xml.match(/<url>/g)||[]).length,63);
+});
+
+test("documents every tool page as a free WebApplication", async () => {
+  const paths=[
+    "/tools/bag-of-words-analyzer",
+    "/tools/word-frequency-counter",
+    "/tools/keyword-density-checker",
+    "/tools/text-analysis-comparison",
+    "/tools/ngram-analyzer",
+    "/tools/bag-of-words-generator",
+    "/tools/tf-idf-calculator",
+    "/tools/text-similarity-calculator",
+  ];
+  const responses=await Promise.all(paths.map(path=>request(path,{headers:{accept:"text/html"}})));
+  for(let index=0;index<responses.length;index+=1){
+    assert.equal(responses[index].status,200,paths[index]);
+    const html=await responses[index].text();
+    assert.match(html,/"@type":"WebApplication"/i,paths[index]);
+    assert.match(html,/"isAccessibleForFree":true/i,paths[index]);
+  }
 });
 
 test("renders the word frequency tool as a canonical English search page", async () => {
@@ -169,7 +212,7 @@ test("renders the word frequency tool as a canonical English search page", async
   assert.match(html, /rel="canonical" href="https:\/\/textanalysis\.tools\/tools\/word-frequency-counter"/i);
   assert.match(html, /<h1>Word Frequency Counter<\/h1>/i);
   assert.match(html, /Export CSV/i);
-  assert.doesNotMatch(html, /hrefLang="ru" href="https:\/\/textanalysis\.tools\/ru\/tools/i);
+  assert.match(html, /hrefLang="ru" href="https:\/\/textanalysis\.tools\/ru\/tools\/word-frequency-counter/i);
 });
 
 test("word frequency endpoint handles short text and returns the full vocabulary", async () => {
@@ -241,7 +284,7 @@ test("renders the standalone text comparison with canonical metadata and two inp
   assert.match(html,/aria-label="Original text"/i);
   assert.match(html,/aria-label="Updated text"/i);
   assert.match(html,/Frequency change is not semantic similarity or content quality/i);
-  assert.doesNotMatch(html,/hrefLang="ru" href="https:\/\/textanalysis\.tools\/ru\/tools\/text-analysis-comparison/i);
+  assert.match(html,/hrefLang="ru" href="https:\/\/textanalysis\.tools\/ru\/tools\/text-analysis-comparison/i);
 });
 
 test("renders the n-gram analyzer page with canonical metadata and phrase methodology", async () => {
@@ -272,8 +315,19 @@ test("renders the TF-IDF calculator page with canonical metadata and weighting e
   assert.match(html,/<title>Free TF-IDF Calculator for Text &amp; URLs/i);
   assert.match(html,/rel="canonical" href="https:\/\/textanalysis\.tools\/tools\/tf-idf-calculator"/i);
   assert.match(html,/<h1>TF-IDF Calculator<\/h1>/i);
+  assert.match(html,/across 2–10 documents/i);
+  assert.match(html,/Add another document/i);
   assert.match(html,/Term frequency and rarity are combined/i);
   assert.match(html,/Global IDF table/i);
+});
+
+test("TF-IDF client supports a 2–10 document corpus and keeps pasted text local", async () => {
+  const source=await readFile(new URL("../app/TfIdfCalculatorTool.tsx",import.meta.url),"utf8");
+  assert.match(source,/sources\.length>=10/);
+  assert.match(source,/sources\.every\(item=>item\.sourceType==="text"\)/);
+  assert.match(source,/sources\.map\(item=>analyzeBagOfWords/);
+  assert.match(source,/fetch\("\/api\/v1\/tf-idf"/);
+  assert.match(source,/<th>\{copy\.documentFrequency\}<\/th><th>IDF<\/th>/);
 });
 
 test("renders the text similarity calculator page with canonical metadata and cosine sections", async () => {
@@ -427,7 +481,7 @@ test("versioned bag-of-words endpoint is documented and returns vocabulary with 
   assert.equal(typeof data.result.rows[0].frequency,"number");
 });
 
-test("versioned tf-idf endpoint supports two documents and returns idf table", async () => {
+test("versioned tf-idf endpoint supports a multi-document corpus and returns idf table", async () => {
   const [descriptor,preflight,response]=await Promise.all([
     request("/api/v1/tf-idf"),
     request("/api/v1/tf-idf",{
@@ -442,6 +496,7 @@ test("versioned tf-idf endpoint supports two documents and returns idf table", a
       documents:[
         {source:"alpha beta alpha",language:"en",keepStopwords:true},
         {source:"alpha gamma alpha",language:"en",keepStopwords:true},
+        {source:"alpha delta delta",language:"en",keepStopwords:true},
       ],
       top:50,
     }),
@@ -454,9 +509,9 @@ test("versioned tf-idf endpoint supports two documents and returns idf table", a
   assert.equal(response.status,200);
   const data=await response.json();
   assert.equal(data.apiVersion,"1.0");
-  assert.equal(data.result.documentCount,2);
+  assert.equal(data.result.documentCount,3);
   assert.equal(data.result.top,50);
-  assert.equal(data.result.documents.length,2);
+  assert.equal(data.result.documents.length,3);
   assert.equal(Array.isArray(data.result.idfTable),true);
 });
 
@@ -534,4 +589,142 @@ test("renders both educational pages with unique canonical titles", async () => 
   assert.match(densityHtml,/<title>Keyword Density: Formula, Examples &amp; Limitations<\/title>/i);
   assert.match(densityHtml,/rel="canonical" href="https:\/\/textanalysis\.tools\/keyword-density-formula"/i);
   assert.match(densityHtml,/developers\.google\.com\/search\/docs\/essentials\/spam-policies#keyword-stuffing/i);
+});
+
+test("renders the guide directory and four new method guides with canonical TechArticle markup", async () => {
+  const guideChecks=[
+    ["/tf-idf-formula","TF-IDF Formula: Calculation, Example &amp; Limits","TF-IDF Formula: How the Weight Is Calculated","/tools/tf-idf-calculator"],
+    ["/cosine-similarity-for-text","Cosine Similarity for Text: Formula &amp; Example","Cosine Similarity for Text","/tools/text-similarity-calculator"],
+    ["/what-are-n-grams","What Are N-grams\\? Unigram, Bigram &amp; Trigram Guide","What Are N-grams\\?","/tools/ngram-analyzer"],
+    ["/compare-texts-by-word-frequency","How to Compare Texts by Word Frequency","How to Compare Texts by Word Frequency","/tools/text-analysis-comparison"],
+  ];
+  const responses=await Promise.all(guideChecks.map(([path])=>request(path,{headers:{accept:"text/html"}})));
+  for(let index=0;index<guideChecks.length;index+=1){
+    const [path,title,h1,toolPath]=guideChecks[index];
+    assert.equal(responses[index].status,200,path);
+    const html=await responses[index].text();
+    assert.match(html,new RegExp(`<title>${title}<\\/title>`,"i"),path);
+    assert.match(html,new RegExp(`rel="canonical" href="https:\\/\\/textanalysis\\.tools${path}"`,"i"),path);
+    assert.match(html,new RegExp(`<h1>${h1}<\\/h1>`,"i"),path);
+    assert.match(html,/"@type":"TechArticle"/i,path);
+    assert.match(html,new RegExp(`href="${toolPath}"`,"i"),path);
+  }
+
+  const directory=await request("/guides",{headers:{accept:"text/html"}});
+  assert.equal(directory.status,200);
+  const directoryHtml=await directory.text();
+  assert.match(directoryHtml,/<h1>Formulas, examples, and honest limits<\/h1>/i);
+  assert.match(directoryHtml,/"@type":"CollectionPage"/i);
+  for(const [path] of guideChecks) assert.match(directoryHtml,new RegExp(`href="${path}"`,"i"));
+});
+
+test("renders versioned npm CLI documentation and advertises it in llms.txt", async () => {
+  const [page,llms]=await Promise.all([
+    request("/cli",{headers:{accept:"text/html"}}),
+    request("/llms.txt"),
+  ]);
+  assert.equal(page.status,200);
+  const html=await page.text();
+  assert.match(html,/<title>Text Analysis CLI: npm Installation &amp; Command Guide<\/title>/i);
+  assert.match(html,/rel="canonical" href="https:\/\/textanalysis\.tools\/cli"/i);
+  assert.match(html,/<h1>Text Analysis from the Command Line<\/h1>/i);
+  assert.match(html,/npm install --global textanalysis-tools/i);
+  assert.match(html,/"@type":"SoftwareSourceCode"/i);
+  assert.match(html,/"version":"0\.1\.1"/i);
+
+  assert.equal(llms.status,200);
+  const llmsText=await llms.text();
+  assert.match(llmsText,/## Local CLI/);
+  assert.match(llmsText,/https:\/\/textanalysis\.tools\/cli/);
+  assert.match(llmsText,/https:\/\/textanalysis\.tools\/tf-idf-formula/);
+});
+
+test("renders every tool with complete Russian and Ukrainian UI localization", async () => {
+  const tools=[
+    ["word-frequency-counter","Счётчик частотности слов","Лічильник частотності слів"],
+    ["keyword-density-checker","Анализатор плотности ключей","Аналізатор щільності ключів"],
+    ["bag-of-words-analyzer","Бесплатный Bag of Words SEO-анализатор","Безкоштовний Bag of Words SEO-аналізатор"],
+    ["text-analysis-comparison","Сравните два текста слово за словом","Порівняйте два тексти слово за словом"],
+    ["ngram-analyzer","Анализатор N-грамм","Аналізатор N-грам"],
+    ["bag-of-words-generator","Генератор Bag of Words","Генератор Bag of Words"],
+    ["tf-idf-calculator","Калькулятор TF-IDF","Калькулятор TF-IDF"],
+    ["text-similarity-calculator","Калькулятор сходства текстов","Калькулятор подібності текстів"],
+  ];
+  const requests=[];
+  for(const [slug] of tools){
+    requests.push(request(`/ru/tools/${slug}`,{headers:{accept:"text/html"}}));
+    requests.push(request(`/uk/tools/${slug}`,{headers:{accept:"text/html"}}));
+  }
+  const responses=await Promise.all(requests);
+  for(let index=0;index<tools.length;index+=1){
+    const [slug,ruHeading,ukHeading]=tools[index];
+    const ruResponse=responses[index*2];
+    const ukResponse=responses[index*2+1];
+    assert.equal(ruResponse.status,200,`ru ${slug}`);
+    assert.equal(ukResponse.status,200,`uk ${slug}`);
+    const [ruHtml,ukHtml]=await Promise.all([ruResponse.text(),ukResponse.text()]);
+    assert.match(ruHtml,new RegExp(ruHeading,"i"),`ru ${slug}`);
+    assert.match(ukHtml,new RegExp(ukHeading,"i"),`uk ${slug}`);
+    assert.match(ruHtml,new RegExp(`rel="canonical" href="https:\\/\\/textanalysis\\.tools\\/ru\\/tools\\/${slug}"`,"i"),`ru ${slug}`);
+    assert.match(ukHtml,new RegExp(`rel="canonical" href="https:\\/\\/textanalysis\\.tools\\/uk\\/tools\\/${slug}"`,"i"),`uk ${slug}`);
+    assert.match(ruHtml,new RegExp(`hrefLang="en" href="https:\\/\\/textanalysis\\.tools\\/tools\\/${slug}"`,"i"),`ru ${slug}`);
+    assert.match(ukHtml,new RegExp(`hrefLang="ru" href="https:\\/\\/textanalysis\\.tools\\/ru\\/tools\\/${slug}"`,"i"),`uk ${slug}`);
+    assert.match(ruHtml,/"@type":"WebApplication"/i,`ru ${slug}`);
+    assert.match(ukHtml,/"@type":"WebApplication"/i,`uk ${slug}`);
+  }
+});
+
+test("renders every informational route in Russian and Ukrainian with reciprocal hreflang", async () => {
+  const routes=[
+    "guides",
+    "api-docs",
+    "cli",
+    "how-to-calculate-word-frequency",
+    "keyword-density-formula",
+    "bag-of-words-model",
+    "bag-of-words-vs-word2vec",
+    "tf-idf-formula",
+    "cosine-similarity-for-text",
+    "what-are-n-grams",
+    "compare-texts-by-word-frequency",
+  ];
+  const responses=await Promise.all(routes.flatMap(slug=>[
+    request(`/ru/${slug}`,{headers:{accept:"text/html"}}),
+    request(`/uk/${slug}`,{headers:{accept:"text/html"}}),
+  ]));
+  let russianGuidesHtml="";
+  let russianCliHtml="";
+  for(let index=0;index<routes.length;index+=1){
+    const slug=routes[index];
+    const ruResponse=responses[index*2];
+    const ukResponse=responses[index*2+1];
+    assert.equal(ruResponse.status,200,`ru ${slug}`);
+    assert.equal(ukResponse.status,200,`uk ${slug}`);
+    const [ruHtml,ukHtml]=await Promise.all([ruResponse.text(),ukResponse.text()]);
+    if(slug==="guides")russianGuidesHtml=ruHtml;
+    if(slug==="cli")russianCliHtml=ruHtml;
+    assert.match(ruHtml,new RegExp(`rel="canonical" href="https:\\/\\/textanalysis\\.tools\\/ru\\/${slug}"`,"i"),`ru ${slug}`);
+    assert.match(ukHtml,new RegExp(`rel="canonical" href="https:\\/\\/textanalysis\\.tools\\/uk\\/${slug}"`,"i"),`uk ${slug}`);
+    assert.match(ruHtml,new RegExp(`hrefLang="uk" href="https:\\/\\/textanalysis\\.tools\\/uk\\/${slug}"`,"i"),`ru ${slug}`);
+    assert.match(ukHtml,new RegExp(`hrefLang="en" href="https:\\/\\/textanalysis\\.tools\\/${slug}"`,"i"),`uk ${slug}`);
+    assert.doesNotMatch(ruHtml,/Интерфейс EN|ГАЙД · EN/i,`ru ${slug}`);
+    assert.doesNotMatch(ukHtml,/Інтерфейс EN|ГАЙД · EN/i,`uk ${slug}`);
+  }
+  assert.match(russianGuidesHtml,/"@type":"CollectionPage"/i);
+  assert.match(russianCliHtml,/"@type":"SoftwareSourceCode"/i);
+});
+
+test("localized homepages link only to localized tools, guides, API, and CLI", async () => {
+  const [ruResponse,ukResponse]=await Promise.all([
+    request("/ru",{headers:{accept:"text/html"}}),
+    request("/uk",{headers:{accept:"text/html"}}),
+  ]);
+  const [ruHtml,ukHtml]=await Promise.all([ruResponse.text(),ukResponse.text()]);
+  for(const [locale,html] of [["ru",ruHtml],["uk",ukHtml]]){
+    assert.match(html,new RegExp(`href="\\/${locale}\\/tools\\/word-frequency-counter"`,"i"));
+    assert.match(html,new RegExp(`href="\\/${locale}\\/tf-idf-formula"`,"i"));
+    assert.match(html,new RegExp(`href="\\/${locale}\\/api-docs"`,"i"));
+    assert.match(html,new RegExp(`href="\\/${locale}\\/cli"`,"i"));
+    assert.doesNotMatch(html,/Интерфейс EN|Інтерфейс EN|ГАЙД · EN/i);
+  }
 });

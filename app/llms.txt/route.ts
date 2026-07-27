@@ -19,10 +19,20 @@ const content=`# Text Analysis Tools
 
 Requests use application/json. Supported languages are English, Russian, and Ukrainian. The API is public, rate-limited, and requires no API key. Use it for analysis, not for claims about search-engine rankings.
 
+## Local CLI
+
+- CLI documentation: ${SITE_URL}/cli
+- npm package: https://www.npmjs.com/package/textanalysis-tools
+- Executable: textanalysis
+- Commands: analyze, frequency, density, compare, ngram, bow, tfidf, similarity
+
+The CLI accepts UTF-8 files, public HTTP(S) URLs, inline text, and piped stdin. Local files and stdin are processed on the user's machine. Results can be returned as tables, JSON, or CSV.
+
 ## Main pages
 
 - Product homepage: ${SITE_URL}/
 - Text analysis tools: ${SITE_URL}/tools
+- Text analysis guide directory: ${SITE_URL}/guides
 - Bag of Words analyzer: ${SITE_URL}/tools/bag-of-words-analyzer
 - Word frequency counter: ${SITE_URL}/tools/word-frequency-counter
 - Keyword density checker: ${SITE_URL}/tools/keyword-density-checker
@@ -35,6 +45,31 @@ Requests use application/json. Supported languages are English, Russian, and Ukr
 - Keyword density formula and limitations: ${SITE_URL}/keyword-density-formula
 - Bag of Words model guide: ${SITE_URL}/bag-of-words-model
 - Bag of Words vs Word2Vec: ${SITE_URL}/bag-of-words-vs-word2vec
+- TF-IDF formula and worked example: ${SITE_URL}/tf-idf-formula
+- Cosine similarity for text: ${SITE_URL}/cosine-similarity-for-text
+- N-gram guide: ${SITE_URL}/what-are-n-grams
+- Text comparison by normalized word frequency: ${SITE_URL}/compare-texts-by-word-frequency
+- Command-line interface documentation: ${SITE_URL}/cli
+
+## Russian pages
+
+- Главная: ${SITE_URL}/ru
+- Все инструменты: ${SITE_URL}/ru/tools
+- Все руководства: ${SITE_URL}/ru/guides
+- Документация API: ${SITE_URL}/ru/api-docs
+- Документация CLI: ${SITE_URL}/ru/cli
+- Инструменты доступны по тем же путям с префиксом /ru, например ${SITE_URL}/ru/tools/tf-idf-calculator
+- Руководства доступны по тем же путям с префиксом /ru, например ${SITE_URL}/ru/tf-idf-formula
+
+## Ukrainian pages
+
+- Головна: ${SITE_URL}/uk
+- Усі інструменти: ${SITE_URL}/uk/tools
+- Усі гайди: ${SITE_URL}/uk/guides
+- Документація API: ${SITE_URL}/uk/api-docs
+- Документація CLI: ${SITE_URL}/uk/cli
+- Інструменти доступні за тими самими шляхами з префіксом /uk, наприклад ${SITE_URL}/uk/tools/tf-idf-calculator
+- Гайди доступні за тими самими шляхами з префіксом /uk, наприклад ${SITE_URL}/uk/tf-idf-formula
 `;
 
 export function GET(){return new Response(content,{headers:{"Content-Type":"text/plain; charset=utf-8","Access-Control-Allow-Origin":"*","Cache-Control":"public, max-age=3600"}});}

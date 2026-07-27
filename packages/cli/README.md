@@ -47,8 +47,9 @@ Common options include `--language auto|en|ru|uk`, `--keep-stopwords`,
 `--stopwords <file>`, `--top <number>`, `--format table|json|csv`, and
 `--output <file>`.
 
-Full documentation and the web tools are available at
-[textanalysis.tools](https://textanalysis.tools/).
+Full CLI documentation is available at
+[textanalysis.tools/cli](https://textanalysis.tools/cli). The same analysis
+methods are also available through the web tools and public API.
 
 ## License
 

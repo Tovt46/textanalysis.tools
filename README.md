@@ -5,7 +5,8 @@ bigrams, focus phrases, Zipf distribution, and side-by-side text comparison.
 
 ## Features
 
-- English, Ukrainian, and Russian interfaces
+- complete English, Ukrainian, and Russian interfaces across all tools, guides,
+  API documentation, and CLI documentation
 - local analysis for pasted text
 - editable language-specific stopword lists
 - saved result A and side-by-side A/B comparison
@@ -95,22 +96,31 @@ npm run start:hostinger
 ## Main routes
 
 - `/`, `/uk`, `/ru` — localized product homepages
-- `/tools/bag-of-words-analyzer` — English Bag of Words analyzer
-- `/uk/tools/bag-of-words-analyzer` — Ukrainian Bag of Words analyzer
-- `/ru/tools/bag-of-words-analyzer` — Russian Bag of Words analyzer
+- `/tools/*`, `/uk/tools/*`, `/ru/tools/*` — all eight tools in English,
+  Ukrainian, and Russian
+- `/guides`, `/uk/guides`, `/ru/guides` — localized guide directories
+- `/<guide>`, `/uk/<guide>`, `/ru/<guide>` — all eight guides in each language
+- `/api-docs`, `/uk/api-docs`, `/ru/api-docs` — localized API documentation
+- `/cli`, `/uk/cli`, `/ru/cli` — localized npm CLI documentation
 - `/bag-of-words-model` — Bag-of-Words guide
 - `/bag-of-words-vs-word2vec` — Bag-of-Words and Word2Vec comparison
 - `/api-docs` — public API documentation
 - `/tools` — focused text-analysis tools
+- `/guides` — text-analysis formulas, examples, and method limitations
 - `/tools/word-frequency-counter` — searchable word counts for text and URLs
 - `/tools/keyword-density-checker` — 1–3-word density tables and A/B comparison
 - `/tools/text-analysis-comparison` — normalized A/B word and bigram changes
 - `/tools/ngram-analyzer` — recurring phrase analysis for 1–10-word n-grams
 - `/tools/bag-of-words-generator` — full Bag-of-Words vector with counts and frequencies
-- `/tools/tf-idf-calculator` — corpus-aware TF-IDF scoring for two documents
+- `/tools/tf-idf-calculator` — corpus-aware TF-IDF scoring for 2–10 documents
 - `/tools/text-similarity-calculator` — cosine similarity by BoW or TF-IDF
 - `/how-to-calculate-word-frequency` — formulas and worked frequency example
 - `/keyword-density-formula` — density formulas, examples, and limitations
+- `/tf-idf-formula` — exact TF-IDF formula, corpus effects, and worked example
+- `/cosine-similarity-for-text` — vector formula, weighting modes, and score interpretation
+- `/what-are-n-grams` — unigram through 10-token window methodology
+- `/compare-texts-by-word-frequency` — normalized A/B text-comparison workflow
+- `/cli` — npm CLI installation, commands, inputs, output formats, and exit codes
 - `/openapi.json` — OpenAPI 3.1 schema
 - `/llms.txt` — machine-readable agent guidance
 

@@ -1,91 +1,56 @@
+import type { UiLang } from "../i18n";
+import { languagePaths,localizedPath } from "../localization";
 import { SITE_URL } from "../seo-metadata";
 
+const LAST_MODIFIED="2026-07-27";
+const LANGUAGES=["en","ru","uk"] as const satisfies readonly UiLang[];
+const PATHS=[
+  "/",
+  "/tools",
+  "/guides",
+  "/api-docs",
+  "/cli",
+  "/tools/word-frequency-counter",
+  "/tools/keyword-density-checker",
+  "/tools/bag-of-words-analyzer",
+  "/tools/text-analysis-comparison",
+  "/tools/ngram-analyzer",
+  "/tools/bag-of-words-generator",
+  "/tools/tf-idf-calculator",
+  "/tools/text-similarity-calculator",
+  "/how-to-calculate-word-frequency",
+  "/keyword-density-formula",
+  "/bag-of-words-model",
+  "/bag-of-words-vs-word2vec",
+  "/tf-idf-formula",
+  "/cosine-similarity-for-text",
+  "/what-are-n-grams",
+  "/compare-texts-by-word-frequency",
+] as const;
+
+function absolute(path:string){
+  return `${SITE_URL}${path}`;
+}
+
+function entry(path:string,locale:UiLang){
+  const paths=languagePaths(path);
+  const alternates=[
+    `<xhtml:link rel="alternate" hreflang="en" href="${absolute(paths.en)}" />`,
+    `<xhtml:link rel="alternate" hreflang="ru" href="${absolute(paths.ru)}" />`,
+    `<xhtml:link rel="alternate" hreflang="uk" href="${absolute(paths.uk)}" />`,
+    `<xhtml:link rel="alternate" hreflang="x-default" href="${absolute(paths.en)}" />`,
+  ].join("\n    ");
+  return `  <url>
+    <loc>${absolute(localizedPath(locale,path))}</loc>
+    <lastmod>${LAST_MODIFIED}</lastmod>
+    ${alternates}
+  </url>`;
+}
+
+const entries=PATHS.flatMap(path=>LANGUAGES.map(locale=>entry(path,locale))).join("\n");
 const xml=`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${SITE_URL}/</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/ru</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/uk</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/tools/bag-of-words-analyzer</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/ru/tools/bag-of-words-analyzer</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/uk/tools/bag-of-words-analyzer</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/bag-of-words-model</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/bag-of-words-vs-word2vec</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/api-docs</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/tools</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/tools/word-frequency-counter</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/tools/keyword-density-checker</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/tools/text-analysis-comparison</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/tools/ngram-analyzer</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/tools/bag-of-words-generator</loc>
-    <lastmod>2026-07-25</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/tools/tf-idf-calculator</loc>
-    <lastmod>2026-07-25</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/tools/text-similarity-calculator</loc>
-    <lastmod>2026-07-25</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/how-to-calculate-word-frequency</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/keyword-density-formula</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/ru/bag-of-words-model</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
-  <url>
-    <loc>${SITE_URL}/uk/bag-of-words-model</loc>
-    <lastmod>2026-07-23</lastmod>
-  </url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+${entries}
 </urlset>
 `;
 

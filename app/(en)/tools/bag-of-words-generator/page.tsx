@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import BagOfWordsGeneratorTool from "../../../BagOfWordsGeneratorTool";
-import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../../seo-metadata";
+import { SITE_ICONS,SITE_NAME,SITE_URL,toolWebApplicationSchema } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
+import { languageAlternates,languagePaths } from "../../../localization";
 
 const path="/tools/bag-of-words-generator";
 const title="Free Bag of Words Generator for Text & URLs";
@@ -12,7 +13,7 @@ export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),
   title,
   description,
-  alternates:{canonical:path,languages:{en:path,"x-default":path}},
+  alternates:{canonical:path,languages:languageAlternates(path)},
   openGraph:{type:"website",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
@@ -20,9 +21,17 @@ export const metadata:Metadata={
   manifest:"/site.webmanifest",
 };
 
+const schema=toolWebApplicationSchema({
+  name:"Bag of Words Generator",
+  description,
+  path,
+  featureList:["Complete term vectors","Raw counts and normalized frequencies","Editable stop words","Text and URL input","CSV and JSON export"],
+});
+
 export default function BagOfWordsGeneratorPage(){
   return <main className="tool-page">
-    <SiteHeader locale="en" active="tools" languagePaths={{en:path,uk:"/uk",ru:"/ru"}}/>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
+    <SiteHeader locale="en" active="tools" languagePaths={languagePaths(path)}/>
     <BagOfWordsGeneratorTool/>
     <article className="tool-explainer">
       <section>

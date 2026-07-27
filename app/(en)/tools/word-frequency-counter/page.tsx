@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import WordFrequencyTool from "../../../WordFrequencyTool";
-import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../../seo-metadata";
+import { SITE_ICONS,SITE_NAME,SITE_URL,toolWebApplicationSchema } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
+import { languageAlternates,languagePaths } from "../../../localization";
 
 const path="/tools/word-frequency-counter";
 const title="Free Word Frequency Counter for Text & URLs";
@@ -10,15 +11,23 @@ const description="Count word frequency in text or a webpage. Search and sort co
 
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
-  alternates:{canonical:path,languages:{en:path,"x-default":path}},
+  alternates:{canonical:path,languages:languageAlternates(path)},
   openGraph:{type:"website",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest",
 };
 
+const schema=toolWebApplicationSchema({
+  name:"Word Frequency Counter",
+  description,
+  path,
+  featureList:["Complete word-frequency table","Counts, percentages, and per-1,000 rates","Editable stop words","Text and URL input","CSV and JSON export"],
+});
+
 export default function WordFrequencyCounterPage(){
   return <main className="tool-page">
-    <SiteHeader locale="en" active="tools" languagePaths={{en:path,uk:"/uk",ru:"/ru"}}/>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
+    <SiteHeader locale="en" active="tools" languagePaths={languagePaths(path)}/>
     <WordFrequencyTool/>
     <article className="tool-explainer">
       <section>

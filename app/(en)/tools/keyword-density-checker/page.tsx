@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import KeywordDensityTool from "../../../KeywordDensityTool";
-import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../../seo-metadata";
+import { SITE_ICONS,SITE_NAME,SITE_URL,toolWebApplicationSchema } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
+import { languageAlternates,languagePaths } from "../../../localization";
 
 const path="/tools/keyword-density-checker";
 const title="Free Keyword Density Checker for Text & URLs";
@@ -10,15 +11,23 @@ const description="Check keyword density for words, bigrams, and trigrams in tex
 
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
-  alternates:{canonical:path,languages:{en:path,"x-default":path}},
+  alternates:{canonical:path,languages:languageAlternates(path)},
   openGraph:{type:"website",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest",
 };
 
+const schema=toolWebApplicationSchema({
+  name:"Keyword Density Checker",
+  description,
+  path,
+  featureList:["Unigram, bigram, and trigram density","Tracked exact phrases","Text and URL input","A/B density comparison","CSV and JSON export"],
+});
+
 export default function KeywordDensityCheckerPage(){
   return <main className="tool-page">
-    <SiteHeader locale="en" active="tools" languagePaths={{en:path,uk:"/uk",ru:"/ru"}}/>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
+    <SiteHeader locale="en" active="tools" languagePaths={languagePaths(path)}/>
     <KeywordDensityTool/>
     <article className="tool-explainer">
       <section>
