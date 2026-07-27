@@ -6,19 +6,19 @@ const sourceSchema={
   properties:{
     sourceType:{type:"string",enum:["text","url"],default:"text",description:"Whether source contains raw text/HTML or a public URL."},
     source:{type:"string",description:"Text, HTML, or a public HTTP(S) URL."},
-    language:{type:"string",enum:["auto","en","ru","uk"],default:"auto"},
+    language:{type:"string",enum:["auto","en","ru","uk","es"],default:"auto"},
     focus:{oneOf:[{type:"string"},{type:"array",items:{type:"string"},maxItems:100}],description:"Phrases whose coverage should be measured."},
     top:{type:"integer",minimum:5,maximum:100,default:20},
     tolerance:{type:"number",minimum:1.2,maximum:4,default:2,description:"Multiplier used for above/below Zipf model zones."},
     keepStopwords:{type:"boolean",default:false},
-    stopwordLists:{type:"object",properties:{en:{type:"array",items:{type:"string"}},ru:{type:"array",items:{type:"string"}},uk:{type:"array",items:{type:"string"}}}},
+    stopwordLists:{type:"object",properties:{en:{type:"array",items:{type:"string"}},ru:{type:"array",items:{type:"string"}},uk:{type:"array",items:{type:"string"}},es:{type:"array",items:{type:"string"}}}},
   },
 };
 
 const analysisResult={
   type:"object",
   properties:{
-    language:{type:"string",enum:["en","ru","uk"]},tokenCount:{type:"integer"},vocabularySize:{type:"integer"},fittedExponent:{type:"number"},rSquared:{type:"number"},
+    language:{type:"string",enum:["en","ru","uk","es"]},tokenCount:{type:"integer"},vocabularySize:{type:"integer"},fittedExponent:{type:"number"},rSquared:{type:"number"},
     zoneCounts:{type:"object",properties:{above:{type:"integer"},within:{type:"integer"},below:{type:"integer"},sparseTail:{type:"integer"}},description:"Zone totals across the full vocabulary; independent of top."},
     rows:{type:"array",items:{type:"object",properties:{rank:{type:"integer"},term:{type:"string"},actualCount:{type:"integer"},share:{type:"number"},percentage:{type:"number"},per1000:{type:"number"},expectedCount:{type:"number"},ratio:{type:"number"},zone:{type:"string",enum:["above","within","below","sparse-tail"]}}}},
     bigrams:{type:"array",items:{type:"object",properties:{term:{type:"string"},count:{type:"integer"},share:{type:"number"},percentage:{type:"number"},per1000:{type:"number"}}}},
@@ -37,7 +37,7 @@ const wordFrequencyResult={
   type:"object",
   required:["language","tokenCount","vocabularySize","stopwordCount","rows"],
   properties:{
-    language:{type:"string",enum:["en","ru","uk"]},
+    language:{type:"string",enum:["en","ru","uk","es"]},
     tokenCount:{type:"integer",description:"Words remaining after the selected stop-word rule."},
     vocabularySize:{type:"integer"},
     stopwordCount:{type:"integer"},
@@ -55,7 +55,7 @@ const keywordDensityResult={
   type:"object",
   required:["language","wordCount","vocabularySize","stopwordCount","keepStopwords","trackedKeywords","unigrams","bigrams","trigrams"],
   properties:{
-    language:{type:"string",enum:["en","ru","uk"]},
+    language:{type:"string",enum:["en","ru","uk","es"]},
     wordCount:{type:"integer",description:"Total normalized words used as the density denominator."},
     vocabularySize:{type:"integer"},
     stopwordCount:{type:"integer"},
@@ -71,7 +71,7 @@ const ngramResult={
   type:"object",
   required:["language","tokenCount","ngramCount","vocabularySize","stopwordCount","keepStopwords","n","rows"],
   properties:{
-    language:{type:"string",enum:["en","ru","uk"]},
+    language:{type:"string",enum:["en","ru","uk","es"]},
     tokenCount:{type:"integer",description:"Tokenized words used as source for sliding-window extraction."},
     ngramCount:{type:"integer",description:"Number of sliding windows for n-gram extraction."},
     vocabularySize:{type:"integer"},
@@ -98,7 +98,7 @@ const bagOfWordsResult={
   type:"object",
   required:["language","tokenCount","vocabularySize","stopwordCount","rows"],
   properties:{
-    language:{type:"string",enum:["en","ru","uk"]},
+    language:{type:"string",enum:["en","ru","uk","es"]},
     tokenCount:{type:"integer",description:"Words remaining after the selected stop-word rule."},
     vocabularySize:{type:"integer"},
     stopwordCount:{type:"integer"},
@@ -124,7 +124,7 @@ const tfIdfDocument={
   type:"object",
   required:["language","tokenCount","vocabularySize","stopwordCount","rows"],
   properties:{
-    language:{type:"string",enum:["en","ru","uk"]},
+    language:{type:"string",enum:["en","ru","uk","es"]},
     tokenCount:{type:"integer"},
     vocabularySize:{type:"integer"},
     stopwordCount:{type:"integer"},
@@ -142,7 +142,7 @@ const tfIdfResult={
   type:"object",
   required:["language","documentCount","top","totalVocabularySize","averageDocumentFrequency","documents","idfTable"],
   properties:{
-    language:{type:"string",enum:["en","ru","uk","auto"]},
+    language:{type:"string",enum:["en","ru","uk","es","auto"]},
     documentCount:{type:"integer"},
     top:{type:"integer"},
     totalVocabularySize:{type:"integer"},
@@ -167,7 +167,7 @@ const similarityResult={
   type:"object",
   required:["language","method","tokenCounts","top","cosine","dotProduct","normA","normB","overlapTerms","topTerms"],
   properties:{
-    language:{type:"string",enum:["en","ru","uk","auto"]},
+    language:{type:"string",enum:["en","ru","uk","es","auto"]},
     method:{type:"string",enum:["bow","tfidf"]},
     tokenCounts:{type:"object",required:["a","b"],properties:{a:{type:"integer"},b:{type:"integer"}}},
     top:{type:"integer",minimum:1,maximum:100},

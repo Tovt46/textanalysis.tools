@@ -6,16 +6,16 @@ import { SiteFooter,SiteHeader } from "../../../SiteChrome";
 const path="/uk/bag-of-words-model";
 const title="Модель Bag of Words: як вона працює в NLP | Text Analysis Tools";
 const description="Пояснюємо модель Bag of Words: токенізацію, вектори, ознаки, обмеження, відмінності від Word2Vec і застосування для SEO-аналізу тексту.";
-const languages={en:"/bag-of-words-model",ru:"/ru/bag-of-words-model",uk:path,"x-default":"/bag-of-words-model"};
+const languages={en:"/bag-of-words-model",ru:"/ru/bag-of-words-model",uk:path,es:"/es/bag-of-words-model","x-default":"/bag-of-words-model"};
 
-export const metadata:Metadata={metadataBase:new URL(SITE_URL),title,description,alternates:{canonical:path,languages},openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"uk_UA",alternateLocale:["en_US","ru_RU"]},twitter:{card:"summary",title,description},verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest"};
+export const metadata:Metadata={metadataBase:new URL(SITE_URL),title,description,alternates:{canonical:path,languages},openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"uk_UA",alternateLocale:["en_US","ru_RU","es_ES"]},twitter:{card:"summary",title,description},verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest"};
 
 const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"Модель Bag of Words: як вона працює в NLP",description,inLanguage:"uk",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:SITE_NAME}};
 
 export default function UkrainianBagOfWordsModelPage(){
   return <main className="article-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
-    <SiteHeader locale="uk" active="guide" languagePaths={{en:"/bag-of-words-model",uk:path,ru:"/ru/bag-of-words-model"}}/>
+    <SiteHeader locale="uk" active="guide" languagePaths={{en:"/bag-of-words-model",uk:path,ru:"/ru/bag-of-words-model",es:"/es/bag-of-words-model"}}/>
 
     <article>
       <div className="article-hero"><nav className="breadcrumbs" aria-label="Навігаційний ланцюжок"><Link href="/uk">Головна</Link><span>/</span><span>Модель Bag of Words</span></nav><p className="eyebrow">ОСНОВИ NLP · ПРАКТИЧНИЙ ПОСІБНИК</p><h1>Модель Bag of Words: як вона працює в NLP</h1><p className="article-deck">Модель Bag of Words перетворює текст на просте числове представлення, підраховуючи слова. Вона прозора, швидко обчислюється й досі корисна для класифікації текстів, порівняння документів, аналізу частотності ключових слів і перевірки SEO-контенту.</p><div className="article-actions"><Link className="primary-article-cta" href="/uk/tools/bag-of-words-analyzer">Спробувати безкоштовний Bag of Words-аналізатор</Link><a href="#how-it-works">Як працює модель ↓</a></div></div>

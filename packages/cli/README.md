@@ -43,7 +43,7 @@ textanalysis tfidf draft.txt competitor.txt --output tfidf.json --format json
 textanalysis similarity draft.txt competitor.txt --method tfidf
 ```
 
-Common options include `--language auto|en|ru|uk`, `--keep-stopwords`,
+Common options include `--language auto|en|ru|uk|es`, `--keep-stopwords`,
 `--stopwords <file>`, `--top <number>`, `--format table|json|csv`, and
 `--output <file>`.
 

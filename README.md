@@ -5,7 +5,7 @@ bigrams, focus phrases, Zipf distribution, and side-by-side text comparison.
 
 ## Features
 
-- complete English, Ukrainian, and Russian interfaces across all tools, guides,
+- complete English, Ukrainian, Russian, and Spanish interfaces across all tools, guides,
   API documentation, and CLI documentation
 - local analysis for pasted text
 - editable language-specific stopword lists
@@ -71,7 +71,7 @@ textanalysis --help
 
 Available commands are `analyze`, `frequency`, `density`, `compare`, `ngram`,
 `bow`, `tfidf`, and `similarity`. Analysis is performed locally by default;
-only URL inputs are downloaded. Use `--language auto|en|ru|uk`,
+only URL inputs are downloaded. Use `--language auto|en|ru|uk|es`,
 `--keep-stopwords`, `--stopwords <file>`, `--top <number>`, and
 `--format table|json|csv` to control common behavior.
 
@@ -96,10 +96,10 @@ npm run start:hostinger
 ## Main routes
 
 - `/`, `/uk`, `/ru` — localized product homepages
-- `/tools/*`, `/uk/tools/*`, `/ru/tools/*` — all eight tools in English,
-  Ukrainian, and Russian
+- `/tools/*`, `/uk/tools/*`, `/ru/tools/*`, `/es/tools/*` — all eight tools in
+  English, Ukrainian, Russian, and Spanish
 - `/guides`, `/uk/guides`, `/ru/guides` — localized guide directories
-- `/<guide>`, `/uk/<guide>`, `/ru/<guide>` — all eight guides in each language
+- `/<guide>`, `/uk/<guide>`, `/ru/<guide>`, `/es/<guide>` — all eight guides in each language
 - `/api-docs`, `/uk/api-docs`, `/ru/api-docs` — localized API documentation
 - `/cli`, `/uk/cli`, `/ru/cli` — localized npm CLI documentation
 - `/bag-of-words-model` — Bag-of-Words guide

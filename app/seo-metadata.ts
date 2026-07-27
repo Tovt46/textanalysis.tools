@@ -41,6 +41,12 @@ const HOME_COPY: Record<UiLang,{ path:string; title:string; description:string; 
     description: "Аналізуйте частотність слів, щільність ключових фраз і відмінності між текстами. Прозорі розрахунки без реєстрації та зберігання тексту.",
     locale: "uk_UA",
   },
+  es: {
+    path: "/es",
+    title: "Herramientas gratuitas de análisis de texto | Text Analysis Tools",
+    description: "Analiza frecuencia de palabras, densidad de palabras clave y diferencias entre textos con cálculos transparentes, sin registro ni almacenamiento.",
+    locale: "es_ES",
+  },
 };
 
 const BOW_COPY: Record<UiLang,{ path:string; title:string; description:string; locale:string }> = {
@@ -62,13 +68,20 @@ const BOW_COPY: Record<UiLang,{ path:string; title:string; description:string; l
     description:"Аналізуйте частотність і щільність ключових слів, біграми та стоп-слова. Порівнюйте два тексти за допомогою Bag of Words і закону Ципфа.",
     locale:"uk_UA",
   },
+  es: {
+    path:"/es/tools/bag-of-words-analyzer",
+    title:"Analizador Bag of Words gratuito para SEO",
+    description:"Analiza frecuencia y densidad de palabras clave, bigramas y palabras vacías. Compara dos textos con Bag of Words y la ley de Zipf.",
+    locale:"es_ES",
+  },
 };
 
-const homeLanguageAlternates = { en:"/", ru:"/ru", uk:"/uk", "x-default":"/" };
+const homeLanguageAlternates = { en:"/", ru:"/ru", uk:"/uk", es:"/es", "x-default":"/" };
 export const BOW_LANGUAGE_PATHS = {
   en:"/tools/bag-of-words-analyzer",
   ru:"/ru/tools/bag-of-words-analyzer",
   uk:"/uk/tools/bag-of-words-analyzer",
+  es:"/es/tools/bag-of-words-analyzer",
 } satisfies Record<UiLang,string>;
 const bowLanguageAlternates = { ...BOW_LANGUAGE_PATHS, "x-default":BOW_LANGUAGE_PATHS.en };
 
@@ -85,7 +98,7 @@ function metadata(page:{path:string;title:string;description:string;locale:strin
       title:page.title,
       description:page.description,
       locale:page.locale,
-      alternateLocale:["en_US","ru_RU","uk_UA"].filter(locale=>locale!==page.locale),
+      alternateLocale:["en_US","ru_RU","uk_UA","es_ES"].filter(locale=>locale!==page.locale),
       images:[{url:"/og.png",width:1200,height:630,alt:imageAlt}],
     },
     twitter:{ card:"summary_large_image", title:page.title, description:page.description, images:["/og.png"] },
@@ -123,6 +136,7 @@ export function toolWebApplicationSchema({
       en:"Requires JavaScript and a modern web browser",
       ru:"Требуется JavaScript и современный веб-браузер",
       uk:"Потрібен JavaScript і сучасний веббраузер",
+      es:"Requiere JavaScript y un navegador web moderno",
     }[inLanguage],
     isAccessibleForFree:true,
     offers:{"@type":"Offer",price:"0",priceCurrency:"USD"},

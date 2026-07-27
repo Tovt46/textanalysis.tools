@@ -6,18 +6,21 @@ export const UI_LOCALES:Record<UiLang,string>={
   en:"en-US",
   ru:"ru-RU",
   uk:"uk-UA",
+  es:"es",
 };
 
 export const OPEN_GRAPH_LOCALES:Record<UiLang,string>={
   en:"en_US",
   ru:"ru_RU",
   uk:"uk_UA",
+  es:"es_ES",
 };
 
 export const BREADCRUMB_LABELS:Record<UiLang,string>={
   en:"Breadcrumb",
   ru:"Навигационная цепочка",
   uk:"Навігаційний ланцюжок",
+  es:"Ruta de navegación",
 };
 
 export function localizedPath(locale:UiLang,path:string){
@@ -31,6 +34,7 @@ export function languagePaths(path:string){
     en:localizedPath("en",path),
     ru:localizedPath("ru",path),
     uk:localizedPath("uk",path),
+    es:localizedPath("es",path),
   };
 }
 

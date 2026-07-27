@@ -177,7 +177,7 @@ export default function TextComparisonTool({uiLang="en"}:{uiLang?:UiLang}){
 
       <aside className="comparison-settings-card">
         <div className="comparison-settings-copy"><span>01</span><div><h2>{copy.settings}</h2><p>{copy.settingsHelp}</p></div></div>
-        <label className="field"><span>{copy.language}</span><select value={language} onChange={event=>setLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option></select></label>
+        <label className="field"><span>{copy.language}</span><select value={language} onChange={event=>setLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option></select></label>
         <label className="check comparison-check"><input type="checkbox" checked={keepStopwords} onChange={event=>setKeepStopwords(event.target.checked)}/><span><b>{copy.keepStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
         <div className="comparison-submit">
           <p>{usesApi?copy.apiMode:copy.localMode}</p>

@@ -63,6 +63,7 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
         en:typeof saved.en==="string"?saved.en:current.en,
         uk:typeof saved.uk==="string"?saved.uk:current.uk,
         ru:typeof saved.ru==="string"?saved.ru:current.ru,
+        es:typeof saved.es==="string"?saved.es:current.es,
       }));
     }catch{}},0);
     return()=>window.clearTimeout(timer);
@@ -72,6 +73,7 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
     en:parseStopwordText(stopwordLists.en),
     uk:parseStopwordText(stopwordLists.uk),
     ru:parseStopwordText(stopwordLists.ru),
+    es:parseStopwordText(stopwordLists.es),
   }),[stopwordLists]);
 
   const activeRows=useMemo(()=>result?rowsFor(result,ngramSize):[],[ngramSize,result]);
@@ -190,9 +192,9 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
       <aside className="frequency-settings-card">
         <div className="section-head simple"><div><span>02</span><h2>{copy.settings}</h2></div></div>
         {baseline&&<div className="density-baseline-pill"><span>A</span><p><b>{baseline.label}</b><small>{copy.baselineHelp}</small></p><button type="button" onClick={clearBaseline} aria-label={copy.removeA}>×</button></div>}
-        <label className="field"><span>{copy.language}</span><select value={language} disabled={locked} onChange={event=>changeLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option></select><small>{copy.languageHelp}</small></label>
+        <label className="field"><span>{copy.language}</span><select value={language} disabled={locked} onChange={event=>changeLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option></select><small>{copy.languageHelp}</small></label>
         <label className="check"><input type="checkbox" checked={keepStopwords} disabled={locked} onChange={event=>setKeepStopwords(event.target.checked)}/><span><b>{copy.includeStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
-        <details className="stopword-editor"><summary>{copy.editStops} <span>{parsedStopwords[editorLanguage].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru"] as TextLanguage[]).map(item=><button type="button" key={item} disabled={locked} className={editorLanguage===item?"active":""} onClick={()=>changeEditorLanguage(item)}>{item.toUpperCase()}</button>)}</div><p>{copy.editorHelp}</p><textarea value={stopwordLists[editorLanguage]} disabled={locked} onChange={event=>updateStopwords(event.target.value)} aria-label={`${copy.editAria}: ${editorLanguage.toUpperCase()}`}/><div className="stopword-actions"><small>{parsedStopwords[editorLanguage].length} {copy.saved}</small><button type="button" disabled={locked} onClick={resetStopwords}>{copy.restore}</button></div></div></details>
+        <details className="stopword-editor"><summary>{copy.editStops} <span>{parsedStopwords[editorLanguage].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru","es"] as TextLanguage[]).map(item=><button type="button" key={item} disabled={locked} className={editorLanguage===item?"active":""} onClick={()=>changeEditorLanguage(item)}>{item.toUpperCase()}</button>)}</div><p>{copy.editorHelp}</p><textarea value={stopwordLists[editorLanguage]} disabled={locked} onChange={event=>updateStopwords(event.target.value)} aria-label={`${copy.editAria}: ${editorLanguage.toUpperCase()}`}/><div className="stopword-actions"><small>{parsedStopwords[editorLanguage].length} {copy.saved}</small><button type="button" disabled={locked} onClick={resetStopwords}>{copy.restore}</button></div></div></details>
         <button className="analyze-button" disabled={loading||!source.trim()}><span>{loading?copy.loading:baseline?copy.submitB:copy.submit}</span><b>→</b></button>
         {error&&<p className="error" role="alert">{error}</p>}
       </aside>

@@ -54,6 +54,18 @@ const COPY={
     guideDescriptions:["Кількість, відсотки, частота на 1 000 і токенізація.","Точні входження, правила порівняння й обмеження показника.","Як таблиця частот перетворюється на вектор ознак.","Лічильники термінів і навчені семантичні вектори.","Нормований TF, згладжений IDF і приклад розрахунку.","Формула, внесок термінів і тлумачення оцінки 0–1.","Вікна слів, знаменники й фільтрація послідовностей.","Покрокова перевірка нормалізованих змін словника."],
     developerEye:"АВТОМАТИЗАЦІЯ",developerTitle:"Ті самі методи через API або термінал",developerText:"Використовуйте публічний JSON API у програмі або запускайте вісім локальних команд із npm.",api:"Документація API",cli:"Документація CLI",breadcrumb:"Навігаційний ланцюжок",live:"ПРАЦЮЄ",guide:"ГАЙД",publicApi:"ПУБЛІЧНИЙ · БЕЗ КЛЮЧА",
   },
+  es:{
+    title:"Todas las herramientas gratuitas de análisis de texto",
+    description:"Herramientas gratuitas en el navegador para frecuencia de palabras, densidad, N-gramas, comparación de textos, Bag of Words, TF-IDF y similitud coseno.",
+    home:"Inicio",tools:"Herramientas",eyebrow:"CATÁLOGO COMPLETO DE HERRAMIENTAS",heading:"Todas las herramientas de análisis de texto",intro:"Elige una tarea concreta para analizar frecuencias, densidad, vectores o comparar documentos. Cada herramienta explica el método y no almacena en el servidor el texto que pegas.",
+    liveEye:"8 HERRAMIENTAS ACTIVAS",liveTitle:"Elige el tipo de análisis",open:"Abrir herramienta",
+    toolNames:["Contador de frecuencia de palabras","Analizador de densidad de palabras clave","Analizador Bag of Words","Comparación de textos","Analizador de N-gramas","Generador Bag of Words","Calculadora TF-IDF","Calculadora de similitud de textos"],
+    toolDescriptions:["Vocabulario completo, búsqueda, ordenación, palabras vacías y exportación CSV/JSON.","Palabras, bigramas, trigramas, frases exactas y comparación A/B.","Vocabulario, frases controladas, bigramas, distribución de Zipf y comparación A/B.","Diferencias normalizadas de palabras y bigramas entre dos textos o URL.","Secuencias repetidas de 1 a 10 palabras.","Vector reproducible de términos con cantidades y frecuencias normalizadas.","Pesos de términos para corpus de 2–10 documentos con tabla IDF común.","Similitud coseno con BoW o TF-IDF y tabla de contribución."],
+    guidesEye:"APRENDER LOS MÉTODOS",guidesTitle:"Fórmulas, ejemplos y limitaciones",read:"Leer guía",
+    guideNames:["Cómo calcular la frecuencia de palabras","Fórmula de densidad de palabras clave","Modelo Bag of Words","Bag of Words frente a Word2Vec","Fórmula TF-IDF","Similitud coseno para textos","Qué son los N-gramas","Comparar textos por frecuencia"],
+    guideDescriptions:["Cantidad, porcentajes, frecuencia por 1.000 y tokenización.","Coincidencias exactas, reglas de comparación y límites de la métrica.","Cómo una tabla de frecuencias se convierte en un vector.","Contadores de términos frente a vectores semánticos entrenados.","TF normalizado, IDF suavizado y ejemplo de cálculo.","Fórmula, contribución de términos e interpretación de 0 a 1.","Ventanas de palabras, denominadores y filtrado de secuencias.","Proceso paso a paso para revisar cambios normalizados."],
+    developerEye:"AUTOMATIZACIÓN",developerTitle:"Los mismos métodos mediante API o terminal",developerText:"Usa la API JSON pública en tu aplicación o ejecuta ocho comandos locales desde npm.",api:"Documentación de la API",cli:"Documentación de CLI",breadcrumb:"Migas de pan",live:"ACTIVA",guide:"GUÍA",publicApi:"PÚBLICA · SIN CLAVE",
+  },
 } satisfies Record<LocalizedLocale,Record<string,string|string[]>>;
 
 export function localizedToolsMetadata(locale:LocalizedLocale):Metadata{

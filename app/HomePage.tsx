@@ -15,6 +15,8 @@ type HomeCopy={
   live:string;
   languages:string;
   storage:string;
+  facts:string;
+  status:string;
   available:string;
   choose:string;
   chooseCopy:string;
@@ -46,6 +48,8 @@ const COPY:Record<UiLang,HomeCopy>={
     live:"live tools",
     languages:"analysis languages",
     storage:"submitted text stored",
+    facts:"Product facts",
+    status:"LIVE",
     available:"AVAILABLE NOW",
     choose:"Start with the question you need to answer",
     chooseCopy:"Each tool has a focused workflow, visible formulas, and a result you can inspect instead of a single opaque score.",
@@ -97,6 +101,8 @@ const COPY:Record<UiLang,HomeCopy>={
     live:"рабочих инструмента",
     languages:"языка анализа",
     storage:"текста сохраняется",
+    facts:"Факты о продукте",
+    status:"РАБОТАЕТ",
     available:"ДОСТУПНО СЕЙЧАС",
     choose:"Начните с вопроса, на который нужен ответ",
     chooseCopy:"У каждого инструмента — отдельный сценарий, видимые формулы и проверяемый результат вместо непрозрачной оценки.",
@@ -148,6 +154,8 @@ const COPY:Record<UiLang,HomeCopy>={
     live:"робочі інструменти",
     languages:"мови аналізу",
     storage:"тексту зберігається",
+    facts:"Відомості про продукт",
+    status:"ПРАЦЮЄ",
     available:"ДОСТУПНО ЗАРАЗ",
     choose:"Почніть із запитання, на яке потрібна відповідь",
     chooseCopy:"Кожен інструмент має окремий сценарій, видимі формули та результат, який можна перевірити замість непрозорої оцінки.",
@@ -188,9 +196,62 @@ const COPY:Record<UiLang,HomeCopy>={
     apiCta:"Відкрити документацію API",
     cliCta:"Відкрити документацію CLI",
   },
+  es:{
+    eyebrow:"ANÁLISIS DE TEXTO SIN CAJAS NEGRAS",
+    title:"Herramientas gratuitas de análisis de texto.",
+    accent:"Cuenta. Compara. Comprende.",
+    intro:"Examina la frecuencia de palabras, la densidad de frases clave y las diferencias entre textos con cálculos visibles y resultados exportables.",
+    primary:"Elegir una herramienta",
+    secondary:"Explorar la API",
+    privacy:"El texto pegado se procesa sin almacenarse en el servidor.",
+    live:"herramientas activas",
+    languages:"idiomas de análisis",
+    storage:"texto enviado almacenado",
+    facts:"Datos del producto",
+    status:"ACTIVA",
+    available:"DISPONIBLE AHORA",
+    choose:"Empieza por la pregunta que necesitas responder",
+    chooseCopy:"Cada herramienta ofrece un flujo específico, fórmulas visibles y un resultado verificable en lugar de una puntuación opaca.",
+    open:"Abrir herramienta",
+    english:"",
+    tools:[
+      {name:"Contador de frecuencia de palabras",description:"Cuenta todas las palabras, busca y ordena el vocabulario completo, edita palabras vacías y exporta CSV o JSON."},
+      {name:"Analizador de densidad de palabras clave",description:"Mide palabras, bigramas y trigramas, sigue frases exactas y compara cambios de densidad entre dos resultados."},
+      {name:"Analizador Bag of Words",description:"Revisa vocabulario, bigramas, frases controladas y distribución de Zipf; después compara los resultados A y B."},
+      {name:"Comparador de textos",description:"Compara dos textos o páginas por extensión, vocabulario, frecuencia normalizada, bigramas y métricas de Zipf."},
+      {name:"Analizador de N-gramas",description:"Analiza frases repetidas de 1 a 10 palabras en un texto o una página web pública."},
+      {name:"Generador Bag of Words",description:"Crea vectores de términos a partir de texto o URL y consulta frecuencias, porcentajes y filas exportables."},
+      {name:"Calculadora TF-IDF",description:"Calcula pesos TF-IDF para un corpus de 2 a 10 documentos y compara la influencia de cada término."},
+      {name:"Calculadora de similitud de textos",description:"Mide la similitud coseno con BoW o TF-IDF y examina los términos que más contribuyen al resultado."},
+    ],
+    methodEye:"POR QUÉ ESTE CONJUNTO",
+    methodTitle:"Cifras útiles con una metodología visible",
+    methods:[
+      {title:"Cálculos transparentes",description:"Los recuentos, porcentajes y tasas por 1.000 permanecen visibles para que puedas verificar cada resultado."},
+      {title:"Privacidad por diseño",description:"El texto pegado se analiza en el navegador. Las URL públicas solo se descargan cuando solicitas su análisis."},
+      {title:"Creado para comparar",description:"Normaliza textos de distinta longitud y compara borradores, páginas o versiones con los mismos ajustes."},
+      {title:"Sin puntuaciones inventadas",description:"Las herramientas muestran patrones y repeticiones sin presentar un único porcentaje como medida de calidad."},
+    ],
+    guidesEye:"ENTENDER EL MÉTODO",
+    guidesTitle:"Fórmulas, ejemplos y limitaciones",
+    guides:[
+      {label:"GUÍA",title:"Cómo calcular la frecuencia de palabras",description:"Recuentos, porcentajes, frecuencia por 1.000 palabras, tokenización y ejemplo resuelto."},
+      {label:"GUÍA",title:"Fórmula de densidad de palabras clave",description:"Cálculo de frases exactas, reglas de comparación y limitaciones de la métrica."},
+      {label:"GUÍA NLP",title:"Modelo Bag of Words",description:"Cómo una tabla de frecuencias se convierte en vectores de documentos y variables para aprendizaje automático."},
+      {label:"GUÍA NLP",title:"Fórmula TF-IDF",description:"Frecuencia del término, IDF suavizado, efecto del corpus y ejemplo de cálculo."},
+      {label:"GUÍA NLP",title:"Similitud coseno entre textos",description:"Cómo los vectores se convierten en una puntuación de 0 a 1 y cómo interpretarla."},
+      {label:"GUÍA NLP",title:"¿Qué son los N-gramas?",description:"Secuencias de palabras, denominadores, filtrado y usos prácticos."},
+      {label:"GUÍA",title:"Comparar textos por frecuencia",description:"Cambios normalizados de vocabulario sin confundirlos con un diff carácter por carácter."},
+    ],
+    apiEye:"PARA DESARROLLADORES",
+    apiTitle:"Usa el mismo análisis mediante API o CLI",
+    apiCopy:"Llama a la API JSON sin estado desde una aplicación o ejecuta ocho comandos locales desde npm. Ambas interfaces exponen los mismos métodos transparentes.",
+    apiCta:"Leer la documentación de la API",
+    cliCta:"Abrir la documentación de CLI",
+  },
 };
 
-const HOME_PATHS:Record<UiLang,string>={en:"/",ru:"/ru",uk:"/uk"};
+const HOME_PATHS:Record<UiLang,string>={en:"/",ru:"/ru",uk:"/uk",es:"/es"};
 const TOOL_PATHS=[
   "/tools/word-frequency-counter",
   "/tools/keyword-density-checker",
@@ -235,10 +296,10 @@ export default function HomePage({locale}:{locale:UiLang}){
         <span className="privacy-note"><b/>{copy.privacy}</span>
       </div>
     </section>
-    <section className="home-stats" aria-label="Product facts"><div><strong>8</strong><span>{copy.live}</span></div><div><strong>3</strong><span>{copy.languages}</span></div><div><strong>0</strong><span>{copy.storage}</span></div></section>
+    <section className="home-stats" aria-label={copy.facts}><div><strong>8</strong><span>{copy.live}</span></div><div><strong>4</strong><span>{copy.languages}</span></div><div><strong>0</strong><span>{copy.storage}</span></div></section>
     <section className="home-section home-tools" id="available-tools" aria-labelledby="home-tools-title">
       <div className="home-section-heading"><p className="section-number">{copy.available}</p><h2 id="home-tools-title">{copy.choose}</h2><p>{copy.chooseCopy}</p></div>
-      <div className="home-tool-grid">{copy.tools.map((tool,index)=><Link className={`home-tool-card tool-${index+1}`} href={toolPaths[index]} key={tool.name}><div className="home-tool-card-top"><span>0{index+1} · LIVE</span></div><h3>{tool.name}</h3><p>{tool.description}</p><strong>{copy.open}<b>→</b></strong></Link>)}</div>
+      <div className="home-tool-grid">{copy.tools.map((tool,index)=><Link className={`home-tool-card tool-${index+1}`} href={toolPaths[index]} key={tool.name}><div className="home-tool-card-top"><span>0{index+1} · {copy.status}</span></div><h3>{tool.name}</h3><p>{tool.description}</p><strong>{copy.open}<b>→</b></strong></Link>)}</div>
     </section>
     <section className="home-method">
       <div className="home-section-heading"><p className="section-number">{copy.methodEye}</p><h2>{copy.methodTitle}</h2></div>

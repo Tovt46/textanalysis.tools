@@ -30,7 +30,7 @@ Inputs:
   Pair commands accept two positionals or --text-a/--url-a and --text-b/--url-b.
 
 Common options:
-  -l, --language <auto|en|ru|uk>   Text language (default: auto)
+  -l, --language <auto|en|ru|uk|es> Text language (default: auto)
   -f, --format <table|json|csv>    Output format (default: table)
   -o, --output <file>              Save output instead of writing to stdout
       --top <number>               Maximum result rows

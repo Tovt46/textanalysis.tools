@@ -83,8 +83,8 @@ async function parseSettings(command:CliCommand,parsed:ParsedCliArgs):Promise<Cl
     throw new CliUsageError("Option --format must be table, json, or csv.");
   }
   const languageValue=stringOption(parsed,"language")??"auto";
-  if(!["auto","en","ru","uk"].includes(languageValue)){
-    throw new CliUsageError("Option --language must be auto, en, ru, or uk.");
+  if(!["auto","en","ru","uk","es"].includes(languageValue)){
+    throw new CliUsageError("Option --language must be auto, en, ru, uk, or es.");
   }
 
   const defaultTop=command==="analyze"||command==="compare"?20:100;
@@ -112,7 +112,7 @@ async function parseSettings(command:CliCommand,parsed:ParsedCliArgs):Promise<Cl
     const list=parseStopwordText(raw);
     if(!list.length) throw new CliUsageError("The custom stop-word file is empty.");
     stopwordLists=languageValue==="auto"
-      ?{en:list,ru:list,uk:list}
+      ?{en:list,ru:list,uk:list,es:list}
       :{[languageValue]:list};
   }
 

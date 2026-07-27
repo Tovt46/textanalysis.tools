@@ -19,6 +19,7 @@ const LABELS:Record<UiLang,{
   en:{home:"Home",tools:"Tools",guides:"Guides",navigation:"Main navigation",languages:"Language",privacy:"Transparent text analysis without server storage.",resources:"Developer and machine-readable resources",sitemap:"Sitemap"},
   uk:{home:"Головна",tools:"Інструменти",guides:"Гайди",navigation:"Головна навігація",languages:"Мова",privacy:"Прозорий аналіз тексту без збереження на сервері.",resources:"Ресурси для розробників і машинного читання",sitemap:"Мапа сайту"},
   ru:{home:"Главная",tools:"Инструменты",guides:"Гайды",navigation:"Главная навигация",languages:"Язык",privacy:"Прозрачный анализ текста без хранения на сервере.",resources:"Ресурсы для разработчиков и машинного чтения",sitemap:"Карта сайта"},
+  es:{home:"Inicio",tools:"Herramientas",guides:"Guías",navigation:"Navegación principal",languages:"Idioma",privacy:"Análisis de texto transparente sin almacenamiento en el servidor.",resources:"Recursos para desarrolladores y lectura automática",sitemap:"Mapa del sitio"},
 };
 
 function navItems(locale:UiLang){
@@ -36,7 +37,7 @@ export function SiteHeader({locale,active,languagePaths=ROOT_LANGUAGE_PATHS}:{lo
   return <header className="topbar site-header">
     <a className="brand" href={ROOT_LANGUAGE_PATHS[locale]}><span className="brand-mark" aria-hidden="true"/><span>TEXT ANALYSIS TOOLS</span></a>
     <nav className="site-nav" aria-label={labels.navigation}>{navItems(locale).map(item=><a key={item.key} className={active===item.key?"active":undefined} href={item.href} aria-current={active===item.key?"page":undefined}>{item.label}</a>)}</nav>
-    <div className="header-tools"><nav className="ui-languages" aria-label={labels.languages}>{(["en","uk","ru"] as UiLang[]).map(language=><a key={language} href={languagePaths[language]} className={locale===language?"active":undefined} hrefLang={language} lang={language} aria-current={locale===language?"page":undefined}>{language==="uk"?"UKR":language.toUpperCase()}</a>)}</nav></div>
+    <div className="header-tools"><nav className="ui-languages" aria-label={labels.languages}>{(["en","uk","ru","es"] as UiLang[]).map(language=><a key={language} href={languagePaths[language]} className={locale===language?"active":undefined} hrefLang={language} lang={language} aria-current={locale===language?"page":undefined}>{language==="uk"?"UKR":language.toUpperCase()}</a>)}</nav></div>
   </header>;
 }
 

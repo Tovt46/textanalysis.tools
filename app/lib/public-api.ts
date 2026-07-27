@@ -145,9 +145,9 @@ function optionalNumber(value:unknown,name:string,min:number,max:number){
 
 function normalizeStopwordLists(value:unknown){
   if(value===undefined) return undefined;
-  if(!value||typeof value!=="object"||Array.isArray(value)) throw new PublicApiError(400,"INVALID_ARGUMENT","stopwordLists must be an object keyed by en, ru, or uk.");
-  const output:Partial<Record<"en"|"ru"|"uk",string[]>>={};
-  for(const language of ["en","ru","uk"] as const){
+  if(!value||typeof value!=="object"||Array.isArray(value)) throw new PublicApiError(400,"INVALID_ARGUMENT","stopwordLists must be an object keyed by en, ru, uk, or es.");
+  const output:Partial<Record<"en"|"ru"|"uk"|"es",string[]>>={};
+  for(const language of ["en","ru","uk","es"] as const){
     const list=(value as Record<string,unknown>)[language];
     if(list===undefined) continue;
     if(!Array.isArray(list)||list.length>1000||list.some(word=>typeof word!=="string"||word.length>100)) throw new PublicApiError(400,"INVALID_ARGUMENT",`stopwordLists.${language} must be an array of up to 1,000 short strings.`);
@@ -168,7 +168,7 @@ export async function normalizeAnalyzeBody(body:PublicAnalyzeBody):Promise<Analy
   else if(text.length>MAX_TEXT_CHARS) throw new PublicApiError(413,"TEXT_TOO_LARGE",`Text input is limited to ${MAX_TEXT_CHARS.toLocaleString("en-US")} characters.`);
 
   const language=body.language===undefined?"auto":body.language;
-  if(!["auto","en","ru","uk"].includes(String(language))) throw new PublicApiError(400,"INVALID_ARGUMENT","language must be auto, en, ru, or uk.");
+  if(!["auto","en","ru","uk","es"].includes(String(language))) throw new PublicApiError(400,"INVALID_ARGUMENT","language must be auto, en, ru, uk, or es.");
   let focus="";
   if(Array.isArray(body.focus)){
     if(body.focus.length>100||body.focus.some(term=>typeof term!=="string"||term.length>200)) throw new PublicApiError(400,"INVALID_ARGUMENT","focus must contain up to 100 short phrases.");

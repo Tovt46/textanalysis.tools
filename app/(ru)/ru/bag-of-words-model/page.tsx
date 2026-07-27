@@ -6,12 +6,12 @@ import { SiteFooter,SiteHeader } from "../../../SiteChrome";
 const path="/ru/bag-of-words-model";
 const title="Модель Bag of Words: как она работает в NLP | Text Analysis Tools";
 const description="Разбираем модель Bag of Words: токенизацию, векторы, признаки, ограничения, отличия от Word2Vec и применение для SEO-анализа текста.";
-const languages={en:"/bag-of-words-model",ru:path,uk:"/uk/bag-of-words-model","x-default":"/bag-of-words-model"};
+const languages={en:"/bag-of-words-model",ru:path,uk:"/uk/bag-of-words-model",es:"/es/bag-of-words-model","x-default":"/bag-of-words-model"};
 
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
   alternates:{canonical:path,languages},
-  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"ru_RU",alternateLocale:["en_US","uk_UA"]},
+  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"ru_RU",alternateLocale:["en_US","uk_UA","es_ES"]},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
   icons:SITE_ICONS,
@@ -23,7 +23,7 @@ const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"М
 export default function RussianBagOfWordsModelPage(){
   return <main className="article-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
-    <SiteHeader locale="ru" active="guide" languagePaths={{en:"/bag-of-words-model",uk:"/uk/bag-of-words-model",ru:path}}/>
+    <SiteHeader locale="ru" active="guide" languagePaths={{en:"/bag-of-words-model",uk:"/uk/bag-of-words-model",ru:path,es:"/es/bag-of-words-model"}}/>
 
     <article>
       <div className="article-hero">

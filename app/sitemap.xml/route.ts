@@ -3,7 +3,7 @@ import { languagePaths,localizedPath } from "../localization";
 import { SITE_URL } from "../seo-metadata";
 
 const LAST_MODIFIED="2026-07-27";
-const LANGUAGES=["en","ru","uk"] as const satisfies readonly UiLang[];
+const LANGUAGES=["en","ru","uk","es"] as const satisfies readonly UiLang[];
 const PATHS=[
   "/",
   "/tools",
@@ -38,6 +38,7 @@ function entry(path:string,locale:UiLang){
     `<xhtml:link rel="alternate" hreflang="en" href="${absolute(paths.en)}" />`,
     `<xhtml:link rel="alternate" hreflang="ru" href="${absolute(paths.ru)}" />`,
     `<xhtml:link rel="alternate" hreflang="uk" href="${absolute(paths.uk)}" />`,
+    `<xhtml:link rel="alternate" hreflang="es" href="${absolute(paths.es)}" />`,
     `<xhtml:link rel="alternate" hreflang="x-default" href="${absolute(paths.en)}" />`,
   ].join("\n    ");
   return `  <url>

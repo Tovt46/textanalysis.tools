@@ -56,7 +56,7 @@ const inlineExamples=`textanalysis frequency --text "alpha beta alpha"
 textanalysis bow --url https://example.com/article
 textanalysis compare --text-a "old draft text" --text-b "new draft text"
 textanalysis similarity --url-a https://example.com/a --url-b https://example.com/b --method bow`;
-const options=`--language auto|en|ru|uk
+const options=`--language auto|en|ru|uk|es
 --format table|json|csv
 --output <file>
 --top <number>
@@ -130,7 +130,7 @@ export default function CliDocumentationPage(){
             <h2>Common Options</h2>
             <pre className="api-code"><code>{options}</code></pre>
             <div className="api-fields">
-              <div><b>--language</b><span>auto · en · ru · uk</span><p>Controls language detection and the default stop-word list.</p></div>
+              <div><b>--language</b><span>auto · en · ru · uk · es</span><p>Controls language detection and the default stop-word list.</p></div>
               <div><b>--format</b><span>table · json · csv</span><p>Selects terminal-friendly output or a machine-readable serialization.</p></div>
               <div><b>--top</b><span>integer</span><p>Limits result rows. Command-specific minimum and maximum values are validated.</p></div>
               <div><b>--keep-stopwords</b><span>boolean flag</span><p>Includes the default function words in analysis.</p></div>

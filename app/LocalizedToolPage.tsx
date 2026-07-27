@@ -230,12 +230,89 @@ const UK:Record<LocalizedToolSlug,ToolPageCopy>={
   },
 };
 
+const ES:Record<LocalizedToolSlug,ToolPageCopy>={
+  "word-frequency-counter":{
+    title:"Contador gratuito de frecuencia de palabras para texto y URL",
+    description:"Cuenta la frecuencia de palabras en un texto o una página web. Busca y ordena cantidades, porcentajes y frecuencia por 1.000 palabras, edita las palabras vacías y exporta CSV o JSON.",
+    schemaName:"Contador de frecuencia de palabras",
+    schemaFeatures:["Tabla completa de frecuencias","Cantidad, porcentaje y frecuencia por 1.000","Palabras vacías editables","Texto y URL","Exportación CSV y JSON"],
+    calculationEye:"CÓMO SE CALCULA",calculationTitle:"Cómo calcula la frecuencia de palabras",
+    calculation:["La herramienta convierte el texto a minúsculas, elimina el marcado HTML y la puntuación, y agrupa los tokens iguales. Los tokens formados solo por números no se cuentan. De forma predeterminada se excluyen palabras vacías comunes del español, inglés, ucraniano o ruso mediante una lista que puedes revisar y modificar.","Los dos valores normalizados usan como denominador las palabras que quedan después de aplicar la regla elegida. Así, todas las filas de la tabla se pueden comparar de forma coherente."],
+    formulas:[{label:"Porcentaje",value:"(cantidad del término ÷ palabras analizadas) × 100"},{label:"Por 1.000 palabras",value:"(cantidad del término ÷ palabras analizadas) × 1.000"}],
+    workflowEye:"CÓMO USARLO",workflowTitle:"Compara frecuencias sin inventar una puntuación SEO",
+    features:[{title:"Búsqueda y ordenación",description:"Busca un término u ordena el vocabulario por palabra, cantidad, porcentaje o frecuencia normalizada."},{title:"Palabras vacías editables",description:"Usa las listas de EN, UKR, RU y ES o adáptalas a tu proyecto."},{title:"Texto y URL",description:"Analiza localmente un texto pegado u obtén el contenido legible de una página pública."},{title:"CSV y JSON",description:"Guarda el vocabulario completo para una hoja de cálculo, un script o un proceso editorial repetible."}],
+    limitsEye:"LIMITACIONES",limitsTitle:"La frecuencia muestra repetición, no calidad",limits:["La cantidad responde «¿cuántas veces?», mientras que el porcentaje y la frecuencia por 1.000 permiten comparar documentos de distinta longitud. Ninguna de estas métricas demuestra por sí sola relevancia, utilidad o probabilidad de posicionamiento."],
+    nextEye:"SIGUIENTE PASO",nextTitle:"Amplía el análisis más allá de una sola tabla",nextText:"Consulta la fórmula, revisa la densidad de frases exactas o abre el analizador Bag of Words con bigramas y distribución de Zipf.",
+    links:[{path:"/how-to-calculate-word-frequency",label:"Guía de frecuencia de palabras"},{path:"/tools/keyword-density-checker",label:"Comprobar densidad de palabras clave"},{path:"/tools/bag-of-words-analyzer",label:"Abrir el analizador Bag of Words"}],
+  },
+  "keyword-density-checker":{
+    title:"Analizador gratuito de densidad de palabras clave para texto y URL",description:"Comprueba la densidad de palabras, bigramas y trigramas en un texto o URL. Controla frases exactas, compara dos páginas y exporta cantidades, porcentajes y frecuencia por 1.000 palabras.",
+    schemaName:"Analizador de densidad de palabras clave",schemaFeatures:["Densidad de unigramas, bigramas y trigramas","Control de frases exactas","Texto y URL","Comparación A/B","Exportación CSV y JSON"],
+    calculationEye:"FÓRMULA",calculationTitle:"Cómo se calcula la densidad de palabras clave",calculation:["Cada tabla usa la misma fórmula: divide la cantidad de coincidencias exactas entre el total de palabras y multiplica por 100. Una frase que aparece 4 veces en 1.000 palabras tiene una densidad del 0,4% y una frecuencia de 4 por 1.000.","La herramienta no multiplica las apariciones por la longitud de la frase. Así, unigramas, bigramas y trigramas siguen siendo comparables."],
+    formulas:[{label:"Densidad",value:"(coincidencias exactas ÷ palabras totales) × 100"},{label:"Por 1.000 palabras",value:"(coincidencias exactas ÷ palabras totales) × 1.000"}],
+    workflowEye:"ANÁLISIS DE FRASES",workflowTitle:"Revisa por separado palabras, bigramas y trigramas",features:[{title:"Palabras controladas",description:"Comprueba frases exactas importantes aunque no estén entre las filas más frecuentes."},{title:"Frecuencia mínima",description:"Oculta términos únicos en la interfaz sin perderlos en la exportación completa."},{title:"Borrador y página",description:"Guarda el resultado A y compáralo con B usando los mismos ajustes."},{title:"URL o texto",description:"Carga una página pública o revisa un borrador local antes de publicarlo."}],
+    limitsEye:"LIMITACIONES",limitsTitle:"La densidad es un diagnóstico, no un objetivo",limits:["El porcentaje muestra repetición, pero no evalúa intención de búsqueda, utilidad, originalidad, legibilidad ni cobertura temática. No existe un porcentaje «ideal» universal."],
+    nextEye:"MATERIALES RELACIONADOS",nextTitle:"Interpreta la frecuencia en contexto",nextText:"Lee la explicación de la fórmula, abre el contador simple o realiza un análisis Bag of Words más amplio.",
+    links:[{path:"/keyword-density-formula",label:"Fórmula y límites de la densidad"},{path:"/tools/word-frequency-counter",label:"Contador de frecuencia"},{path:"/tools/bag-of-words-analyzer",label:"Analizador Bag of Words"}],
+  },
+  "text-analysis-comparison":{
+    title:"Comparación gratuita de textos por cambios de frecuencia",description:"Compara dos textos o páginas por longitud, vocabulario, frecuencia normalizada, bigramas y métricas de Zipf. Busca y exporta las diferencias exactas entre A y B.",
+    schemaName:"Comparación de textos",schemaFeatures:["Comparación de frecuencia normalizada","Cambios de bigramas","Métricas de vocabulario y longitud","Texto y URL","Exportación CSV y JSON"],
+    calculationEye:"COMPARACIÓN NORMALIZADA",calculationTitle:"Compara textos de distinta longitud, no solo cantidades",calculation:["Una versión más larga suele contener más apariciones de casi todas las palabras. Por eso se muestran tanto el cambio de cantidad como la proporción del término entre las palabras analizadas. La diferencia en puntos porcentuales sigue siendo comparable cuando A y B tienen longitudes distintas.","Se aplica el mismo idioma y la misma regla de palabras vacías a las dos fuentes. Para los bigramas, el denominador es el número de posiciones disponibles de dos palabras."],
+    formulas:[{label:"Proporción del término",value:"cantidad del término ÷ palabras analizadas"},{label:"Cambio de proporción",value:"(proporción B − proporción A) × 100 p.p."}],
+    workflowEye:"FLUJO EDITORIAL",workflowTitle:"Revisa los cambios entre un borrador y una nueva versión",features:[{title:"Borrador y revisión",description:"Encuentra vocabulario añadido, eliminado o repetido con mayor frecuencia."},{title:"Página y competencia",description:"Compara páginas públicas con cautela: menús y plantillas afectan el texto extraído."},{title:"Modo local",description:"Si pegas las dos fuentes, todo el cálculo se ejecuta en el navegador."},{title:"Comparación de URL",description:"La API obtiene y compara las fuentes sin almacenarlas."}],
+    limitsEye:"LIMITACIONES",limitsTitle:"Un cambio de frecuencia no equivale a similitud semántica",limits:["La tabla muestra cambios de vocabulario superficial. No determina si el significado es el mismo, si la revisión es correcta ni qué versión posicionará mejor."],
+    nextEye:"CASOS RELACIONADOS",nextTitle:"Estudia el método o automatiza la comparación",nextText:"Lee el proceso paso a paso, analiza un solo vocabulario o usa el mismo contrato mediante la API.",
+    links:[{path:"/compare-texts-by-word-frequency",label:"Guía de comparación de frecuencias"},{path:"/tools/word-frequency-counter",label:"Contador de frecuencia"},{path:"/api-docs#compare",label:"API de comparación"}],
+  },
+  "ngram-analyzer":{
+    title:"Analizador gratuito de N-gramas para texto y URL",description:"Encuentra secuencias de palabras repetidas y compara la concentración de frases en un texto o una página pública. Ordena, busca y exporta tablas completas de N-gramas.",
+    schemaName:"Analizador de N-gramas",schemaFeatures:["N-gramas de 1 a 10 tokens","Cantidad, porcentaje y frecuencia por 1.000","Filtro de frecuencia mínima","Texto y URL","Exportación CSV y JSON"],
+    calculationEye:"CÓMO SE CALCULA",calculationTitle:"Cómo se cuentan los N-gramas",calculation:["El analizador convierte el texto en palabras normalizadas y construye ventanas superpuestas de longitud n. Con n=2, cada pareja contigua es un bigrama; con n=3, cada trío consecutivo es un trigrama.","El denominador es el número de ventanas, no la cantidad de palabras. Un texto de m tokens contiene m−n+1 ventanas posibles de longitud n."],
+    formulas:[{label:"Porcentaje de frase",value:"(apariciones ÷ número de ventanas) × 100"},{label:"Por 1.000 ventanas",value:"(apariciones ÷ número de ventanas) × 1.000"}],
+    workflowEye:"AJUSTES",workflowTitle:"Elige n y los filtros según la tarea",features:[{title:"Tamaño del N-grama",description:"n=1 muestra palabras, n=2 frases cortas y n=3 o más secuencias específicas."},{title:"Palabras vacías",description:"Excluye ruido funcional o consérvalo para revisar la superficie exacta del texto."},{title:"Cantidad mínima",description:"Oculta ventanas únicas en la interfaz sin eliminarlas de la exportación."},{title:"Texto y URL",description:"El texto se procesa localmente y de las URL se extrae el contenido legible."}],
+    limitsEye:"LIMITACIONES",limitsTitle:"Los N-gramas detectan repetición, no significado",limits:["La tabla muestra secuencias superficiales y orden local de palabras. No demuestra intención de búsqueda, cobertura semántica ni calidad del texto."],
+    nextEye:"QUÉ HACER DESPUÉS",nextTitle:"Pasa de las frases a un análisis más amplio",nextText:"Aprende cómo se forman los N-gramas, genera un vocabulario completo o compara dos versiones.",
+    links:[{path:"/what-are-n-grams",label:"Guía de N-gramas"},{path:"/tools/word-frequency-counter",label:"Contador de frecuencia"},{path:"/tools/text-analysis-comparison",label:"Comparación de textos"}],
+  },
+  "bag-of-words-generator":{
+    title:"Generador gratuito Bag of Words para texto y URL",description:"Crea un vector completo de términos desde un texto o una página pública con cantidad, frecuencia y valores normalizados. Exporta la tabla para análisis posteriores.",
+    schemaName:"Generador Bag of Words",schemaFeatures:["Vectores completos de términos","Cantidad y frecuencia normalizada","Palabras vacías editables","Texto y URL","Exportación CSV y JSON"],
+    calculationEye:"RESULTADO",calculationTitle:"Crea vectores de términos comprensibles",calculation:["El generador devuelve cada token analizado una vez, con su cantidad, frecuencia relativa, porcentaje y valor por 1.000 palabras. Con el mismo idioma y los mismos ajustes, las ejecuciones repetidas producen filas reproducibles.","Cada posición del vector corresponde a un término visible, por lo que sus valores se pueden comprobar en el texto original."],
+    formulas:[{label:"Frecuencia",value:"cantidad del término ÷ palabras analizadas"},{label:"Cobertura",value:"(cantidad del término ÷ todas las palabras) × 100"}],
+    workflowEye:"FLUJO DE TRABAJO",workflowTitle:"Usa texto local para borradores y URL para páginas",features:[{title:"Texto local",description:"El contenido pegado se analiza de inmediato, sin solicitud de red."},{title:"URL pública",description:"Tras limpiar el HTML se aplica el mismo contrato de vector."},{title:"Palabras vacías",description:"Excluye palabras funcionales o consérvalas para un perfil completo."},{title:"CSV y JSON",description:"Pasa el vector a scripts de comparación, clasificación o agrupación."}],
+    limitsEye:"LIMITACIONES",limitsTitle:"Un vector de frecuencia no modela el significado",limits:["Bag of Words conserva términos y pesos, pero pierde gran parte del orden, la gramática y el contexto. Los sinónimos permanecen como coordenadas distintas."],
+    nextEye:"SIGUIENTES HERRAMIENTAS",nextTitle:"Pasa de vectores a ponderación y similitud",nextText:"Aplica TF-IDF para reducir términos comunes o calcula la similitud coseno.",
+    links:[{path:"/tools/tf-idf-calculator",label:"Calculadora TF-IDF"},{path:"/tools/text-similarity-calculator",label:"Calculadora de similitud"},{path:"/bag-of-words-model",label:"Cómo funciona Bag of Words"}],
+  },
+  "tf-idf-calculator":{
+    title:"Calculadora TF-IDF gratuita para texto y URL",description:"Compara de 2 a 10 documentos mediante frecuencia inversa de documento. TF-IDF reduce el peso de términos comunes y destaca los que mejor distinguen cada documento.",
+    schemaName:"Calculadora TF-IDF",schemaFeatures:["TF-IDF para 2–10 documentos","Frecuencia inversa suavizada","Tablas ponderadas por documento","Texto y URL","Exportación CSV y JSON"],
+    calculationEye:"CÓMO FUNCIONA TF-IDF",calculationTitle:"La frecuencia y la rareza se combinan en un peso",calculation:["TF-IDF combina la frecuencia de un término dentro de un documento con su frecuencia inversa en todo el corpus. Los términos presentes en todas partes reciben menos peso; los que aparecen en menos documentos, más.","Todos los documentos usan el mismo preprocesamiento, de modo que el IDF se calcula sobre un vocabulario comparable."],
+    formulas:[{label:"TF",value:"cantidad del término ÷ palabras del documento"},{label:"IDF",value:"ln((N + 1) ÷ (df + 1)) + 1"}],
+    workflowEye:"CORPUS COMPARTIDO",workflowTitle:"Revisa cada documento con un único modelo de pesos",features:[{title:"Corpus",description:"Añade de 2 a 10 textos o URL y aplica ajustes compartidos."},{title:"Términos principales",description:"Limita cada tabla a una cantidad reproducible de términos con mayor peso."},{title:"IDF global",description:"Comprueba qué términos distinguen mejor los documentos del corpus."},{title:"Exportación",description:"Guarda los vectores y los metadatos comunes del cálculo."}],
+    limitsEye:"LIMITACIONES",limitsTitle:"El peso depende del corpus elegido",limits:["El mismo término recibe otro IDF cuando cambia el corpus. Un peso alto significa rareza en estos documentos, no importancia universal ni valor de búsqueda."],
+    nextEye:"SIGUIENTE PASO",nextTitle:"Pasa de funciones ponderadas a similitud",nextText:"Consulta la fórmula exacta o usa las mismas representaciones para una comparación coseno.",
+    links:[{path:"/tf-idf-formula",label:"Guía de la fórmula TF-IDF"},{path:"/tools/text-similarity-calculator",label:"Calculadora de similitud"},{path:"/api-docs#weighted",label:"API TF-IDF"}],
+  },
+  "text-similarity-calculator":{
+    title:"Calculadora gratuita de similitud para textos y URL",description:"Mide la similitud coseno entre dos textos con vectores Bag of Words o TF-IDF. Revisa la contribución de los términos y exporta los resultados.",
+    schemaName:"Calculadora de similitud de textos",schemaFeatures:["Similitud coseno de 0 a 1","Modos Bag of Words y TF-IDF","Tabla de contribución","Texto y URL","Exportación CSV y JSON"],
+    calculationEye:"MODELO DE MEDICIÓN",calculationTitle:"Similitud coseno sobre vectores explícitos",calculation:["La herramienta mide la intersección de vectores de pesos. Bag of Words refleja la coincidencia léxica directa; TF-IDF reduce la influencia de los términos comunes en ambos documentos.","El resultado normaliza el producto escalar según la longitud de los dos vectores. Por eso importa la dirección de los pesos y no solo la cantidad de texto."],
+    formulas:[{label:"Similitud coseno",value:"Σ(aᵢ × bᵢ) ÷ (||a|| × ||b||)"},{label:"Contribución del término",value:"aᵢ × bᵢ"}],
+    workflowEye:"DIAGNÓSTICO",workflowTitle:"Revisa los términos, no solo una puntuación",features:[{title:"Dos modos",description:"BoW mide la coincidencia directa y TF-IDF incorpora la rareza."},{title:"Tabla de contribución",description:"Muestra el peso de cada término compartido y su aporte al resultado."},{title:"Texto y URL",description:"El texto pegado se procesa localmente; las URL, mediante la API pública."},{title:"Exportación",description:"Guarda la puntuación y las filas de intersección para revisarlas."}],
+    limitsEye:"LIMITACIONES",limitsTitle:"La similitud léxica no equivale a significado idéntico",limits:["Dos textos pueden usar las mismas palabras con sentidos distintos o expresar una idea con vocabularios diferentes. La medida coseno no sustituye una revisión semántica y factual."],
+    nextEye:"CUÁNDO USARLO",nextTitle:"Interpreta la puntuación junto con la tabla",nextText:"Lee cómo funciona la similitud coseno o compara cambios exactos de frecuencia.",
+    links:[{path:"/cosine-similarity-for-text",label:"Guía de similitud coseno"},{path:"/tools/text-analysis-comparison",label:"Comparación de textos"},{path:"/api-docs#weighted",label:"API de similitud"}],
+  },
+};
+
 export function isLocalizedToolSlug(value:string):value is LocalizedToolSlug{
   return (LOCALIZED_TOOL_SLUGS as readonly string[]).includes(value);
 }
 
 function copyFor(locale:Exclude<UiLang,"en">,slug:LocalizedToolSlug){
-  return locale==="ru"?RU[slug]:UK[slug];
+  return locale==="ru"?RU[slug]:locale==="uk"?UK[slug]:ES[slug];
 }
 
 export function localizedToolMetadata(locale:Exclude<UiLang,"en">,slug:LocalizedToolSlug):Metadata{

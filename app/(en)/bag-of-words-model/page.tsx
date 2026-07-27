@@ -11,8 +11,8 @@ export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),
   title,
   description,
-  alternates:{canonical:path,languages:{en:path,ru:"/ru/bag-of-words-model",uk:"/uk/bag-of-words-model","x-default":path}},
-  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
+  alternates:{canonical:path,languages:{en:path,ru:"/ru/bag-of-words-model",uk:"/uk/bag-of-words-model",es:"/es/bag-of-words-model","x-default":path}},
+  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US",alternateLocale:["ru_RU","uk_UA","es_ES"]},
   twitter:{card:"summary",title,description},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
   icons:SITE_ICONS,
@@ -32,7 +32,7 @@ const schema={
 export default function BagOfWordsModelPage(){
   return <main className="article-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
-    <SiteHeader locale="en" active="guide" languagePaths={{en:"/bag-of-words-model",uk:"/uk/bag-of-words-model",ru:"/ru/bag-of-words-model"}}/>
+    <SiteHeader locale="en" active="guide" languagePaths={{en:"/bag-of-words-model",uk:"/uk/bag-of-words-model",ru:"/ru/bag-of-words-model",es:"/es/bag-of-words-model"}}/>
 
     <article>
       <div className="article-hero">

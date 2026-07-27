@@ -17,7 +17,7 @@ const content=`# Text Analysis Tools
 - Score corpus-aware terms (TF-IDF): POST ${SITE_URL}/api/v1/tf-idf
 - Measure text similarity (BoW or TF-IDF): POST ${SITE_URL}/api/v1/similarity
 
-Requests use application/json. Supported languages are English, Russian, and Ukrainian. The API is public, rate-limited, and requires no API key. Use it for analysis, not for claims about search-engine rankings.
+Requests use application/json. Supported languages are English, Russian, Ukrainian, and Spanish. The API is public, rate-limited, and requires no API key. Use it for analysis, not for claims about search-engine rankings.
 
 ## Local CLI
 
@@ -70,6 +70,16 @@ The CLI accepts UTF-8 files, public HTTP(S) URLs, inline text, and piped stdin. 
 - Документація CLI: ${SITE_URL}/uk/cli
 - Інструменти доступні за тими самими шляхами з префіксом /uk, наприклад ${SITE_URL}/uk/tools/tf-idf-calculator
 - Гайди доступні за тими самими шляхами з префіксом /uk, наприклад ${SITE_URL}/uk/tf-idf-formula
+
+## Spanish pages
+
+- Inicio: ${SITE_URL}/es
+- Todas las herramientas: ${SITE_URL}/es/tools
+- Todas las guías: ${SITE_URL}/es/guides
+- Documentación de la API: ${SITE_URL}/es/api-docs
+- Documentación de CLI: ${SITE_URL}/es/cli
+- Las herramientas usan las mismas rutas con el prefijo /es, por ejemplo ${SITE_URL}/es/tools/tf-idf-calculator
+- Las guías usan las mismas rutas con el prefijo /es, por ejemplo ${SITE_URL}/es/tf-idf-formula
 `;
 
 export function GET(){return new Response(content,{headers:{"Content-Type":"text/plain; charset=utf-8","Access-Control-Allow-Origin":"*","Cache-Control":"public, max-age=3600"}});}

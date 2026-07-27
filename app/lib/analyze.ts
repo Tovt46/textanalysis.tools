@@ -7,6 +7,7 @@ const STOPWORDS: Record<Lang, Set<string>> = {
   en: new Set(DEFAULT_STOPWORD_LISTS.en),
   ru: new Set(DEFAULT_STOPWORD_LISTS.ru),
   uk: new Set(DEFAULT_STOPWORD_LISTS.uk),
+  es: new Set(DEFAULT_STOPWORD_LISTS.es),
 };
 
 export type AnalyzeInput = {
@@ -23,8 +24,14 @@ export type AnalyzeInput = {
 function detectLanguage(text: string): Lang {
   const lower = text.toLowerCase();
   const cyrillic = (lower.match(/[а-яёіїєґ]/g) || []).length;
-  const latin = (lower.match(/[a-z]/g) || []).length;
+  const latin = (lower.match(/[a-záéíóúüñ]/g) || []).length;
   if (cyrillic > latin) return /[іїєґ]/.test(lower) ? "uk" : "ru";
+  const words=lower.match(/[a-záéíóúüñ]+/g) || [];
+  const spanishHints=new Set(["el","la","los","las","de","del","que","en","por","para","con","una","un","es","son","como","más","pero","sus","este","esta"]);
+  const englishHints=new Set(["the","and","of","to","in","for","with","is","are","that","this","from","as","on","by","an","be","or"]);
+  const spanishScore=words.reduce((score,word)=>score+(spanishHints.has(word)?1:0),0);
+  const englishScore=words.reduce((score,word)=>score+(englishHints.has(word)?1:0),0);
+  if(/[áéíóúüñ¿¡]/.test(lower)||(spanishScore>=2&&spanishScore>englishScore))return "es";
   return "en";
 }
 
@@ -56,7 +63,7 @@ function cleanHtml(raw: string) {
 }
 
 function tokenize(text: string, lang: Lang, keepStopwords: boolean, stopwords = STOPWORDS[lang]) {
-  const matches = text.normalize("NFKC").toLowerCase().replaceAll("’", "'").match(/[a-zа-яёіїєґ0-9']+/gi) || [];
+  const matches = text.normalize("NFKC").toLowerCase().replaceAll("’", "'").match(/[a-záéíóúüñа-яёіїєґ0-9']+/gi) || [];
   return matches
     .map((token) => token.replace(/^'+|'+$/g, ""))
     .filter((token) => token.length > 0 && !/^\d+$/.test(token))

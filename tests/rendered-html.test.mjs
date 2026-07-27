@@ -158,10 +158,12 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
   assert.match(xml, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9" xmlns:xhtml="http:\/\/www\.w3\.org\/1999\/xhtml">/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/es<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/bag-of-words-analyzer<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/ru\/tools\/bag-of-words-analyzer<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk\/tools\/bag-of-words-analyzer<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/es\/tools\/bag-of-words-analyzer<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/word-frequency-counter<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/keyword-density-checker<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/ngram-analyzer<\/loc>/);
@@ -179,8 +181,10 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/cli<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/ru\/cli<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk\/tf-idf-formula<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/es\/tf-idf-formula<\/loc>/);
+  assert.match(xml, /hreflang="es" href="https:\/\/textanalysis\.tools\/es\/tools\/tf-idf-calculator"/);
   assert.match(xml, /hreflang="x-default" href="https:\/\/textanalysis\.tools\/tools\/tf-idf-calculator"/);
-  assert.equal((xml.match(/<url>/g)||[]).length,63);
+  assert.equal((xml.match(/<url>/g)||[]).length,84);
 });
 
 test("documents every tool page as a free WebApplication", async () => {
@@ -223,6 +227,25 @@ test("word frequency endpoint handles short text and returns the full vocabulary
   assert.equal(data.result.tokenCount,132);
   assert.equal(data.result.rows.length,130);
   assert.deepEqual(data.result.rows[0],{term:"term000",count:3,percentage:(3/132)*100,per1000:(3/132)*1000});
+});
+
+test("Spanish analysis detects language, removes default stop words, and is documented in OpenAPI", async () => {
+  const [frequencyResponse,openApiResponse]=await Promise.all([
+    post("/api/v1/word-frequency",{
+      source:"El análisis de texto permite comparar palabras y encontrar patrones en el contenido.",
+      language:"auto",
+      keepStopwords:false,
+    }),
+    request("/openapi.json"),
+  ]);
+  assert.equal(frequencyResponse.status,200);
+  const frequency=await frequencyResponse.json();
+  assert.equal(frequency.result.language,"es");
+  assert.equal(frequency.result.rows.some(row=>row.term==="el"),false);
+  assert.ok(frequency.result.rows.some(row=>row.term==="análisis"));
+  assert.equal(openApiResponse.status,200);
+  const openApi=await openApiResponse.json();
+  assert.match(JSON.stringify(openApi),/"es"/);
 });
 
 test("versioned word frequency endpoint is self-describing and supports CORS", async () => {
@@ -639,42 +662,49 @@ test("renders versioned npm CLI documentation and advertises it in llms.txt", as
   assert.match(llmsText,/https:\/\/textanalysis\.tools\/tf-idf-formula/);
 });
 
-test("renders every tool with complete Russian and Ukrainian UI localization", async () => {
+test("renders every tool with complete Russian, Ukrainian, and Spanish UI localization", async () => {
   const tools=[
-    ["word-frequency-counter","Счётчик частотности слов","Лічильник частотності слів"],
-    ["keyword-density-checker","Анализатор плотности ключей","Аналізатор щільності ключів"],
-    ["bag-of-words-analyzer","Бесплатный Bag of Words SEO-анализатор","Безкоштовний Bag of Words SEO-аналізатор"],
-    ["text-analysis-comparison","Сравните два текста слово за словом","Порівняйте два тексти слово за словом"],
-    ["ngram-analyzer","Анализатор N-грамм","Аналізатор N-грам"],
-    ["bag-of-words-generator","Генератор Bag of Words","Генератор Bag of Words"],
-    ["tf-idf-calculator","Калькулятор TF-IDF","Калькулятор TF-IDF"],
-    ["text-similarity-calculator","Калькулятор сходства текстов","Калькулятор подібності текстів"],
+    ["word-frequency-counter","Счётчик частотности слов","Лічильник частотності слів","Contador de frecuencia de palabras"],
+    ["keyword-density-checker","Анализатор плотности ключей","Аналізатор щільності ключів","Analizador de densidad de palabras clave"],
+    ["bag-of-words-analyzer","Бесплатный Bag of Words SEO-анализатор","Безкоштовний Bag of Words SEO-аналізатор","Analizador Bag of Words"],
+    ["text-analysis-comparison","Сравните два текста слово за словом","Порівняйте два тексти слово за словом","Compara dos textos palabra por palabra"],
+    ["ngram-analyzer","Анализатор N-грамм","Аналізатор N-грам","Analizador de N-gramas"],
+    ["bag-of-words-generator","Генератор Bag of Words","Генератор Bag of Words","Generador Bag of Words"],
+    ["tf-idf-calculator","Калькулятор TF-IDF","Калькулятор TF-IDF","Calculadora TF-IDF"],
+    ["text-similarity-calculator","Калькулятор сходства текстов","Калькулятор подібності текстів","Calculadora de similitud de textos"],
   ];
   const requests=[];
   for(const [slug] of tools){
     requests.push(request(`/ru/tools/${slug}`,{headers:{accept:"text/html"}}));
     requests.push(request(`/uk/tools/${slug}`,{headers:{accept:"text/html"}}));
+    requests.push(request(`/es/tools/${slug}`,{headers:{accept:"text/html"}}));
   }
   const responses=await Promise.all(requests);
   for(let index=0;index<tools.length;index+=1){
-    const [slug,ruHeading,ukHeading]=tools[index];
-    const ruResponse=responses[index*2];
-    const ukResponse=responses[index*2+1];
+    const [slug,ruHeading,ukHeading,esHeading]=tools[index];
+    const ruResponse=responses[index*3];
+    const ukResponse=responses[index*3+1];
+    const esResponse=responses[index*3+2];
     assert.equal(ruResponse.status,200,`ru ${slug}`);
     assert.equal(ukResponse.status,200,`uk ${slug}`);
-    const [ruHtml,ukHtml]=await Promise.all([ruResponse.text(),ukResponse.text()]);
+    assert.equal(esResponse.status,200,`es ${slug}`);
+    const [ruHtml,ukHtml,esHtml]=await Promise.all([ruResponse.text(),ukResponse.text(),esResponse.text()]);
     assert.match(ruHtml,new RegExp(ruHeading,"i"),`ru ${slug}`);
     assert.match(ukHtml,new RegExp(ukHeading,"i"),`uk ${slug}`);
+    assert.match(esHtml,new RegExp(esHeading,"i"),`es ${slug}`);
     assert.match(ruHtml,new RegExp(`rel="canonical" href="https:\\/\\/textanalysis\\.tools\\/ru\\/tools\\/${slug}"`,"i"),`ru ${slug}`);
     assert.match(ukHtml,new RegExp(`rel="canonical" href="https:\\/\\/textanalysis\\.tools\\/uk\\/tools\\/${slug}"`,"i"),`uk ${slug}`);
+    assert.match(esHtml,new RegExp(`rel="canonical" href="https:\\/\\/textanalysis\\.tools\\/es\\/tools\\/${slug}"`,"i"),`es ${slug}`);
     assert.match(ruHtml,new RegExp(`hrefLang="en" href="https:\\/\\/textanalysis\\.tools\\/tools\\/${slug}"`,"i"),`ru ${slug}`);
     assert.match(ukHtml,new RegExp(`hrefLang="ru" href="https:\\/\\/textanalysis\\.tools\\/ru\\/tools\\/${slug}"`,"i"),`uk ${slug}`);
+    assert.match(esHtml,new RegExp(`hrefLang="uk" href="https:\\/\\/textanalysis\\.tools\\/uk\\/tools\\/${slug}"`,"i"),`es ${slug}`);
     assert.match(ruHtml,/"@type":"WebApplication"/i,`ru ${slug}`);
     assert.match(ukHtml,/"@type":"WebApplication"/i,`uk ${slug}`);
+    assert.match(esHtml,/"@type":"WebApplication"/i,`es ${slug}`);
   }
 });
 
-test("renders every informational route in Russian and Ukrainian with reciprocal hreflang", async () => {
+test("renders every informational route in Russian, Ukrainian, and Spanish with reciprocal hreflang", async () => {
   const routes=[
     "guides",
     "api-docs",
@@ -691,36 +721,43 @@ test("renders every informational route in Russian and Ukrainian with reciprocal
   const responses=await Promise.all(routes.flatMap(slug=>[
     request(`/ru/${slug}`,{headers:{accept:"text/html"}}),
     request(`/uk/${slug}`,{headers:{accept:"text/html"}}),
+    request(`/es/${slug}`,{headers:{accept:"text/html"}}),
   ]));
   let russianGuidesHtml="";
   let russianCliHtml="";
   for(let index=0;index<routes.length;index+=1){
     const slug=routes[index];
-    const ruResponse=responses[index*2];
-    const ukResponse=responses[index*2+1];
+    const ruResponse=responses[index*3];
+    const ukResponse=responses[index*3+1];
+    const esResponse=responses[index*3+2];
     assert.equal(ruResponse.status,200,`ru ${slug}`);
     assert.equal(ukResponse.status,200,`uk ${slug}`);
-    const [ruHtml,ukHtml]=await Promise.all([ruResponse.text(),ukResponse.text()]);
+    assert.equal(esResponse.status,200,`es ${slug}`);
+    const [ruHtml,ukHtml,esHtml]=await Promise.all([ruResponse.text(),ukResponse.text(),esResponse.text()]);
     if(slug==="guides")russianGuidesHtml=ruHtml;
     if(slug==="cli")russianCliHtml=ruHtml;
     assert.match(ruHtml,new RegExp(`rel="canonical" href="https:\\/\\/textanalysis\\.tools\\/ru\\/${slug}"`,"i"),`ru ${slug}`);
     assert.match(ukHtml,new RegExp(`rel="canonical" href="https:\\/\\/textanalysis\\.tools\\/uk\\/${slug}"`,"i"),`uk ${slug}`);
+    assert.match(esHtml,new RegExp(`rel="canonical" href="https:\\/\\/textanalysis\\.tools\\/es\\/${slug}"`,"i"),`es ${slug}`);
     assert.match(ruHtml,new RegExp(`hrefLang="uk" href="https:\\/\\/textanalysis\\.tools\\/uk\\/${slug}"`,"i"),`ru ${slug}`);
     assert.match(ukHtml,new RegExp(`hrefLang="en" href="https:\\/\\/textanalysis\\.tools\\/${slug}"`,"i"),`uk ${slug}`);
+    assert.match(esHtml,new RegExp(`hrefLang="ru" href="https:\\/\\/textanalysis\\.tools\\/ru\\/${slug}"`,"i"),`es ${slug}`);
     assert.doesNotMatch(ruHtml,/Интерфейс EN|ГАЙД · EN/i,`ru ${slug}`);
     assert.doesNotMatch(ukHtml,/Інтерфейс EN|ГАЙД · EN/i,`uk ${slug}`);
+    assert.doesNotMatch(esHtml,/Интерфейс EN|Інтерфейс EN|ГАЙД · EN/i,`es ${slug}`);
   }
   assert.match(russianGuidesHtml,/"@type":"CollectionPage"/i);
   assert.match(russianCliHtml,/"@type":"SoftwareSourceCode"/i);
 });
 
 test("localized homepages link only to localized tools, guides, API, and CLI", async () => {
-  const [ruResponse,ukResponse]=await Promise.all([
+  const [ruResponse,ukResponse,esResponse]=await Promise.all([
     request("/ru",{headers:{accept:"text/html"}}),
     request("/uk",{headers:{accept:"text/html"}}),
+    request("/es",{headers:{accept:"text/html"}}),
   ]);
-  const [ruHtml,ukHtml]=await Promise.all([ruResponse.text(),ukResponse.text()]);
-  for(const [locale,html] of [["ru",ruHtml],["uk",ukHtml]]){
+  const [ruHtml,ukHtml,esHtml]=await Promise.all([ruResponse.text(),ukResponse.text(),esResponse.text()]);
+  for(const [locale,html] of [["ru",ruHtml],["uk",ukHtml],["es",esHtml]]){
     assert.match(html,new RegExp(`href="\\/${locale}\\/tools\\/word-frequency-counter"`,"i"));
     assert.match(html,new RegExp(`href="\\/${locale}\\/tf-idf-formula"`,"i"));
     assert.match(html,new RegExp(`href="\\/${locale}\\/api-docs"`,"i"));

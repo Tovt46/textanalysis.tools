@@ -17,7 +17,7 @@ type SimilarityTerm={
   contribution:number;
 };
 type SimilarityResult={
-  language:"en"|"ru"|"uk"|"auto";
+  language:TextLanguage|"auto";
   method:SimilarityMethodLocal;
   tokenCounts:{a:number;b:number};
   top:number;
@@ -95,6 +95,7 @@ export default function TextSimilarityCalculatorTool({uiLang="en"}:{uiLang?:UiLa
         en:typeof saved.en==="string"?saved.en:current.en,
         uk:typeof saved.uk==="string"?saved.uk:current.uk,
         ru:typeof saved.ru==="string"?saved.ru:current.ru,
+        es:typeof saved.es==="string"?saved.es:current.es,
       }));
     }catch{}},0);
     return()=>window.clearTimeout(timer);
@@ -104,6 +105,7 @@ export default function TextSimilarityCalculatorTool({uiLang="en"}:{uiLang?:UiLa
     en:parseStopwordText(stopwordLists.en),
     uk:parseStopwordText(stopwordLists.uk),
     ru:parseStopwordText(stopwordLists.ru),
+    es:parseStopwordText(stopwordLists.es),
   }),[stopwordLists]);
 
   const filteredRows=useMemo(()=>{
@@ -241,14 +243,14 @@ export default function TextSimilarityCalculatorTool({uiLang="en"}:{uiLang?:UiLa
 
       <aside className="comparison-settings-card">
         <div className="section-head simple"><div><span>03</span><h2>{copy.settings}</h2></div></div>
-        <label className="field"><span>{copy.language}</span><select value={language} onChange={event=>changeLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option></select></label>
+        <label className="field"><span>{copy.language}</span><select value={language} onChange={event=>changeLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option></select></label>
         <label className="field"><span>{copy.method}</span><select value={method} onChange={event=>setMethod(event.target.value==="bow"?"bow":"tfidf")}>
           <option value="tfidf">TF-IDF</option>
           <option value="bow">Bag of Words</option>
         </select></label>
         <label className="field"><span>{copy.top}</span><input type="number" min="1" max="100" value={top} onChange={event=>setTop(Math.max(1,Math.min(100,Number(event.target.value)||100)))} /></label>
         <label className="check"><input type="checkbox" checked={keepStopwords} onChange={event=>setKeepStopwords(event.target.checked)}/><span><b>{copy.keepStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
-        <details className="stopword-editor"><summary>{copy.editStops} <span>{parsedStopwords[editorLanguage].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru"] as TextLanguage[]).map((item)=><button type="button" key={item} className={editorLanguage===item?"active":""} onClick={()=>changeEditorLanguage(item)}>{item.toUpperCase()}</button>)}</div><p>{copy.editorHelp}</p><textarea value={stopwordLists[editorLanguage]} onChange={event=>updateStopwords(event.target.value)} aria-label={`${copy.editAria}: ${editorLanguage.toUpperCase()}`}/><div className="stopword-actions"><small>{parsedStopwords[editorLanguage].length} {copy.saved}</small><button type="button" onClick={resetStopwords}>{copy.restore}</button></div></div></details>
+        <details className="stopword-editor"><summary>{copy.editStops} <span>{parsedStopwords[editorLanguage].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru","es"] as TextLanguage[]).map((item)=><button type="button" key={item} className={editorLanguage===item?"active":""} onClick={()=>changeEditorLanguage(item)}>{item.toUpperCase()}</button>)}</div><p>{copy.editorHelp}</p><textarea value={stopwordLists[editorLanguage]} onChange={event=>updateStopwords(event.target.value)} aria-label={`${copy.editAria}: ${editorLanguage.toUpperCase()}`}/><div className="stopword-actions"><small>{parsedStopwords[editorLanguage].length} {copy.saved}</small><button type="button" onClick={resetStopwords}>{copy.restore}</button></div></div></details>
         <button className="analyze-button" disabled={loading||!sourceA.trim()||!sourceB.trim()}><span>{loading?copy.loading:`${copy.submit} ${methodLabel}`}</span><b>→</b></button>
         {error&&<p className="error" role="alert">{error}</p>}
       </aside>

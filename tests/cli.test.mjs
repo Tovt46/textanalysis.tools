@@ -52,6 +52,17 @@ test("frequency reads stdin and returns deterministic local JSON",async()=>{
   assert.deepEqual(data.result.rows[0],{term:"alpha",count:2,percentage:50,per1000:500});
 });
 
+test("frequency supports Spanish detection and default stop words",async()=>{
+  const response=await runCli(["frequency","-","--language","auto","--format","json"],{
+    input:"El análisis de texto permite comparar palabras y encontrar patrones en el contenido.",
+  });
+  assert.equal(response.code,0,response.stderr);
+  const data=JSON.parse(response.stdout);
+  assert.equal(data.result.language,"es");
+  assert.equal(data.result.rows.some((row)=>row.term==="el"),false);
+  assert.ok(data.result.rows.some((row)=>row.term==="análisis"));
+});
+
 test("analyze, density, ngram, and bow commands expose their focused results",async()=>{
   const source="text analysis makes text analysis measurable and text evidence useful";
   const [analyze,density,ngram,bow]=await Promise.all([
