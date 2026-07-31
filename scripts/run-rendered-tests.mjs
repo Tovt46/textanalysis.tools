@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { readdir } from "node:fs/promises";
 import { setTimeout as wait } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
@@ -41,7 +42,12 @@ const testCommand = async () => {
       throw new Error("Next.js server did not become ready for rendered tests.");
     }
 
-    const testRunner = spawn(process.execPath, ["--test", "tests/cli.test.mjs", "tests/rendered-html.test.mjs"], {
+    const testDirectory=new URL("../tests/",import.meta.url);
+    const testFiles=(await readdir(testDirectory))
+      .filter(file=>file.endsWith(".test.mjs"))
+      .sort()
+      .map(file=>fileURLToPath(new URL(file,testDirectory)));
+    const testRunner = spawn(process.execPath, ["--test", ...testFiles], {
       stdio: "inherit",
       env: {
         ...process.env,

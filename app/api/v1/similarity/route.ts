@@ -1,5 +1,7 @@
 import { API_VERSION,apiErrorResponse,apiJson,apiOptions,enforceRateLimit,normalizeAnalyzeBody,PublicApiError,readJsonBody } from "../../../lib/public-api";
 import { analyzeBagOfWords, calculateTextSimilarity } from "../../../lib/analyze";
+import { limitIdfRows,parseResultRowLimit } from "../../../lib/api-result-limits";
+import { createCompoundFetchContext } from "../../../lib/api-request-budget";
 import { sendServerAnalyticsEvent } from "../../../lib/server-analytics";
 
 export function OPTIONS(){return apiOptions();}
@@ -29,27 +31,36 @@ function parseTop(value:unknown){
 }
 
 export async function POST(request:Request){
+  let rateHeaders:Record<string,string>={};
   try{
-    enforceRateLimit(request);
-    const body=await readJsonBody(request) as {a?:unknown;b?:unknown;method?:unknown;top?:unknown};
+    rateHeaders=enforceRateLimit(request,2);
+    const body=await readJsonBody(request) as {a?:unknown;b?:unknown;method?:unknown;top?:unknown;limit?:unknown};
     if(!body.a||typeof body.a!=="object"||Array.isArray(body.a)||!body.b||typeof body.b!=="object"||Array.isArray(body.b)){
       throw new PublicApiError(400,"INVALID_ARGUMENT","Both a and b analysis inputs are required.");
     }
     const method=parseSimilarityMethod(body.method);
     const top=parseTop(body.top);
-    const leftInput=await normalizeAnalyzeBody(body.a as Record<string,unknown>);
-    const rightInput=await normalizeAnalyzeBody(body.b as Record<string,unknown>);
+    const resultLimit=parseResultRowLimit(body.limit);
+    const sources=[body.a,body.b] as const;
+    const context=createCompoundFetchContext(sources);
+    const [leftInput,rightInput]=await Promise.all([
+      normalizeAnalyzeBody(body.a as Record<string,unknown>,context),
+      normalizeAnalyzeBody(body.b as Record<string,unknown>,context),
+    ]);
     const documentA=analyzeBagOfWords(leftInput);
     const documentB=analyzeBagOfWords(rightInput);
-    const result=calculateTextSimilarity(documentA,documentB,method,top);
+    const analysis=calculateTextSimilarity(documentA,documentB,method,top);
+    const result=analysis.idfTable
+      ?limitIdfRows(analysis as typeof analysis&{idfTable:NonNullable<typeof analysis.idfTable>},resultLimit)
+      :analysis;
     await sendServerAnalyticsEvent("api_analysis",{operation:`text_similarity_${method}`,source_type:"mixed",text_language:result.language});
     return apiJson({
       apiVersion:API_VERSION,
       storage:"none",
       result,
-    });
+    },200,rateHeaders);
   }catch(error){
     await sendServerAnalyticsEvent("api_error",{operation:"text_similarity"});
-    return apiErrorResponse(error);
+    return apiErrorResponse(error,rateHeaders);
   }
 }

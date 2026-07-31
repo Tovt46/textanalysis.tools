@@ -1,5 +1,7 @@
 import { API_VERSION,apiErrorResponse,apiJson,apiOptions,enforceRateLimit,normalizeAnalyzeBody,readJsonBody,PublicApiError } from "../../../lib/public-api";
 import { analyzeBagOfWords, calculateTfIdfCorpus } from "../../../lib/analyze";
+import { limitIdfRows,parseResultRowLimit } from "../../../lib/api-result-limits";
+import { createCompoundFetchContext } from "../../../lib/api-request-budget";
 import { sendServerAnalyticsEvent } from "../../../lib/server-analytics";
 
 export function OPTIONS(){return apiOptions();}
@@ -23,32 +25,38 @@ function parseTop(value:unknown){
 }
 
 export async function POST(request:Request){
+  let rateHeaders:Record<string,string>={};
   try{
-    enforceRateLimit(request);
-    const body=await readJsonBody(request) as {documents?:unknown;top?:unknown};
+    rateHeaders=enforceRateLimit(request,5);
+    const body=await readJsonBody(request) as {documents?:unknown;top?:unknown;limit?:unknown};
     if(!Array.isArray(body.documents) || body.documents.length<2 || body.documents.length>10){
       throw new PublicApiError(400,"INVALID_ARGUMENT","documents must be an array of 2 to 10 analyzed inputs.");
     }
+    if(body.documents.some(entry=>!entry||typeof entry!=="object"||Array.isArray(entry))){
+      throw new PublicApiError(400,"INVALID_ARGUMENT","Every documents entry must be an analysis input object.");
+    }
     const top=parseTop(body.top);
-    const bagDocs=await Promise.all(body.documents.map(async (entry)=>analyzeBagOfWords(await normalizeAnalyzeBody(entry as Record<string,unknown>))));
+    const context=createCompoundFetchContext(body.documents);
+    const bagDocs=await Promise.all(body.documents.map(async (entry)=>analyzeBagOfWords(await normalizeAnalyzeBody(entry as Record<string,unknown>,context))));
     const result=calculateTfIdfCorpus(bagDocs,top);
     const language = bagDocs.every((doc)=>doc.language===bagDocs[0].language) ? bagDocs[0].language : "auto";
     await sendServerAnalyticsEvent("api_analysis",{operation:"tf_idf",source_type:"mixed",text_language:language,document_count:bagDocs.length,top});
+    const publicResult=limitIdfRows({
+      language,
+      documentCount:bagDocs.length,
+      top,
+      totalVocabularySize:result.totalVocabularySize,
+      averageDocumentFrequency:result.averageDocumentFrequency,
+      documents:result.documents,
+      idfTable:result.idfTable,
+    },parseResultRowLimit(body.limit));
     return apiJson({
       apiVersion:API_VERSION,
       storage:"none",
-      result:{
-        language,
-        documentCount:bagDocs.length,
-        top,
-        totalVocabularySize:result.totalVocabularySize,
-        averageDocumentFrequency:result.averageDocumentFrequency,
-        documents:result.documents,
-        idfTable:result.idfTable,
-      },
-    });
+      result:publicResult,
+    },200,rateHeaders);
   }catch(error){
     await sendServerAnalyticsEvent("api_error",{operation:"tf_idf"});
-    return apiErrorResponse(error);
+    return apiErrorResponse(error,rateHeaders);
   }
 }

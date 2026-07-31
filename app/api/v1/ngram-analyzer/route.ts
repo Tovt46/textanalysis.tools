@@ -1,5 +1,6 @@
 import { API_VERSION, apiErrorResponse, apiJson, apiOptions, enforceRateLimit, normalizeAnalyzeBody, PublicApiError, readJsonBody } from "../../../lib/public-api";
 import { analyzeNgram } from "../../../lib/analyze";
+import { limitRows,parseResultRowLimit } from "../../../lib/api-result-limits";
 import { sendServerAnalyticsEvent } from "../../../lib/server-analytics";
 
 export function OPTIONS(){return apiOptions();}
@@ -16,8 +17,9 @@ export function GET(){
 }
 
 export async function POST(request:Request){
+  let rateHeaders:Record<string,string>={};
   try{
-    enforceRateLimit(request);
+    rateHeaders=enforceRateLimit(request);
     const body=await readJsonBody(request);
     const sizeValue = body.ngramSize===undefined ? 2 : body.ngramSize;
     if(typeof sizeValue!=="number"||!Number.isInteger(sizeValue)||sizeValue<1||sizeValue>10){
@@ -25,11 +27,11 @@ export async function POST(request:Request){
     }
 
     const input=await normalizeAnalyzeBody(body);
-    const result=analyzeNgram(input,sizeValue);
+    const result=limitRows(analyzeNgram(input,sizeValue),parseResultRowLimit(body.limit));
     await sendServerAnalyticsEvent("api_analysis",{operation:"ngram_analyzer",source_type:body.sourceType==="url"?"url":"text",text_language:result.language,ngram_size:sizeValue});
-    return apiJson({apiVersion:API_VERSION,storage:"none",result});
+    return apiJson({apiVersion:API_VERSION,storage:"none",result},200,rateHeaders);
   }catch(error){
     await sendServerAnalyticsEvent("api_error",{operation:"ngram-analyzer"});
-    return apiErrorResponse(error);
+    return apiErrorResponse(error,rateHeaders);
   }
 }

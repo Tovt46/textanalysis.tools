@@ -18,10 +18,46 @@ type Analysis = {
 type Lang = TextLanguage;
 type AnalysisSettings = { language:string; focus:string; top:number; tolerance:number; keepStopwords:boolean; stopwordLists:Record<Lang,string[]> };
 type SavedResult = { version:3; result:Analysis; settings:AnalysisSettings; savedAt:string; label:string };
+type ApiError = { code?:unknown; message?:unknown };
 
 const CACHE_KEY = "bow-zipf-baseline-v3";
 const STOPWORDS_KEY = "bow-zipf-stopwords-v1";
 type T = (key:string, vars?:Record<string,string|number>)=>string;
+
+function objectValue(value:unknown):Record<string,unknown>|null{
+  return value!==null&&typeof value==="object"&&!Array.isArray(value)?value as Record<string,unknown>:null;
+}
+
+function readVersionedAnalysis(payload:unknown):Analysis|null{
+  const envelope=objectValue(payload);
+  const result=objectValue(envelope?.result);
+  const zones=objectValue(result?.zoneCounts);
+  if(
+    !envelope||typeof envelope.apiVersion!=="string"||envelope.storage!=="none"||!result||!zones||
+    !["en","ru","uk","es"].includes(String(result.language))||
+    typeof result.tokenCount!=="number"||typeof result.vocabularySize!=="number"||
+    typeof result.fittedExponent!=="number"||typeof result.rSquared!=="number"||
+    typeof zones.above!=="number"||typeof zones.within!=="number"||
+    typeof zones.below!=="number"||typeof zones.sparseTail!=="number"||
+    !Array.isArray(result.rows)||!Array.isArray(result.bigrams)||
+    !Array.isArray(result.focusCoverage)||typeof result.stopwordCount!=="number"||
+    !Array.isArray(result.notes)
+  )return null;
+  return result as unknown as Analysis;
+}
+
+function localizedApiError(payload:unknown,status:number,t:T){
+  const envelope=objectValue(payload);
+  const error=objectValue(envelope?.error) as ApiError|null;
+  const code=typeof error?.code==="string"?error.code:"";
+  if(code==="MISSING_SOURCE")return t("addSource");
+  if(code==="INVALID_URL"||code==="UNSAFE_URL")return t("badUrl");
+  if(code==="REQUEST_TOO_LARGE"||code==="TEXT_TOO_LARGE"||code==="REMOTE_CONTENT_TOO_LARGE")return t("tooLarge");
+  if(code==="INSUFFICIENT_TEXT")return t("tooLittle");
+  if(code==="FETCH_FAILED"||code==="TOO_MANY_REDIRECTS"||code==="UNSUPPORTED_REMOTE_TYPE")return t("requestBlocked");
+  if(status===413)return t("tooLarge");
+  return t("failed");
+}
 
 function Tip({ children }: { children:React.ReactNode }) {
   const [open,setOpen]=useState(false);
@@ -157,12 +193,14 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
         const {_allUnigrams,_allBigrams,...visibleResult}=localResult;void _allUnigrams;void _allBigrams;
         data=visibleResult;
       }else{
-        const response=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({sourceType,source,language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang})});
+        const response=await fetch("/api/v1/analyze",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({sourceType,source,language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords})});
         const raw=await response.text();
         let payload:unknown;
         try{payload=JSON.parse(raw);}catch{throw new Error(response.status===403?t("requestBlocked"):t("invalidResponse"));}
-        if(!response.ok){const message=typeof payload==="object"&&payload&&"error" in payload?String((payload as {error:unknown}).error):t("failed");throw new Error(message);}
-        data=payload as Analysis;
+        if(!response.ok)throw new Error(localizedApiError(payload,response.status,t));
+        const versionedResult=readVersionedAnalysis(payload);
+        if(!versionedResult)throw new Error(t("invalidResponse"));
+        data=versionedResult;
       }
       setResult(data);trackEvent("analysis_completed",{tool:"bow_analyzer",source_type:sourceType,text_language:data.language,word_count:data.tokenCount});if(baseline)trackEvent("comparison_completed",{tool:"bow_analyzer",source_type:sourceType});if(language==="auto"&&["ru","uk","en","es"].includes(data.language))setStopwordEditorLang(data.language as Lang);setTimeout(()=>document.getElementById("result")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
     }catch(err){const message=err instanceof Error?err.message:t("unknownError");setError(message);trackEvent("analysis_error",{tool:"bow_analyzer",source_type:sourceType,error_message:message.slice(0,100)});}finally{setLoading(false);}

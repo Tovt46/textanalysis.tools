@@ -4,6 +4,7 @@ import test from "node:test";
 
 const TEST_BASE_URL = process.env.TEST_BASE_URL?.trim();
 let workerCache;
+let postSequence = 0;
 
 async function requestFromWorker(path, init = {}) {
   if (!workerCache) {
@@ -26,9 +27,14 @@ const request = TEST_BASE_URL
   : requestFromWorker;
 
 function post(path, body) {
+  postSequence += 1;
   return request(path, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      // Keep unrelated endpoint assertions from sharing one in-memory rate bucket.
+      "x-real-ip": `203.0.113.${postSequence}`,
+    },
     body: JSON.stringify(body),
   });
 }
@@ -98,6 +104,20 @@ test("counts tracked phrases as exact token sequences and allows overlaps", asyn
   assert.equal(data.result.focusCoverage.find((row) => row.term === "alpha alpha").count, 2);
 });
 
+test("preserves commas inside array-based focus phrases",async()=>{
+  const response=await post("/api/v1/analyze",{
+    source:"Quality safety checks improve quality safety reviews.",
+    language:"en",
+    keepStopwords:true,
+    focus:["quality, safety"],
+  });
+  assert.equal(response.status,200);
+  const data=await response.json();
+  assert.equal(data.result.focusCoverage.length,1);
+  assert.equal(data.result.focusCoverage[0].term,"quality, safety");
+  assert.equal(data.result.focusCoverage[0].count,2);
+});
+
 test("counts focus phrases across stop words without synthesizing adjacency",async()=>{
   const response=await post("/api/v1/analyze",{
     source:"Analysis of text improves clarity. Analysis of text supports review. Analysis text is a different sequence.",
@@ -106,6 +126,9 @@ test("counts focus phrases across stop words without synthesizing adjacency",asy
     focus:["analysis of text","analysis text"],
   });
   assert.equal(response.status,200);
+  assert.equal(response.headers.get("ratelimit-limit"),"30");
+  assert.ok(Number(response.headers.get("ratelimit-remaining"))>=0);
+  assert.ok(Number(response.headers.get("ratelimit-reset"))>=1);
   const data=await response.json();
   assert.equal(data.result.focusCoverage.find(row=>row.term==="analysis of text").count,2);
   assert.equal(data.result.focusCoverage.find(row=>row.term==="analysis text").count,1);
@@ -152,10 +175,11 @@ test("comparison uses full term counts instead of false zeros outside top", asyn
 });
 
 test("returns a client error for text that is too short", async () => {
-  const response = await post("/api/analyze", { source: "one two", language: "en", keepStopwords: true, uiLanguage: "en" });
+  const response = await post("/api/v1/analyze", { source: "one two", language: "en", keepStopwords: true });
   assert.equal(response.status, 422);
   const data = await response.json();
-  assert.match(data.error, /too little text/i);
+  assert.equal(data.error.code,"INSUFFICIENT_TEXT");
+  assert.match(data.error.message, /too little text/i);
 });
 
 test("runs pasted-text analysis locally and handles non-JSON URL errors", async () => {
@@ -251,13 +275,15 @@ test("limits shared-cache lifetime for every sitemap page",async()=>{
   }
 });
 
-test("word frequency endpoint handles short text and returns the full vocabulary", async () => {
+test("versioned word frequency endpoint handles short text and reports the complete returned vocabulary", async () => {
   const terms=Array.from({length:130},(_,index)=>`term${String(index).padStart(3,"0")}`);
-  const response=await post("/api/word-frequency",{source:[...terms,"term000","term000"].join(" "),language:"en",keepStopwords:true});
+  const response=await post("/api/v1/word-frequency",{source:[...terms,"term000","term000"].join(" "),language:"en",keepStopwords:true});
   assert.equal(response.status,200);
   const data=await response.json();
   assert.equal(data.result.tokenCount,132);
   assert.equal(data.result.rows.length,130);
+  assert.equal(data.result.totalRows,130);
+  assert.equal(data.result.truncated,false);
   assert.deepEqual(data.result.rows[0],{term:"term000",count:3,percentage:(3/132)*100,per1000:(3/132)*1000});
 });
 
@@ -405,7 +431,7 @@ test("standalone comparison keeps pasted text local and reuses the public API fo
 });
 
 test("keyword density uses total words and counts exact tracked phrases", async () => {
-  const response=await post("/api/keyword-density",{
+  const response=await post("/api/v1/keyword-density",{
     source:"keyword density is useful keyword density checks keyword density",
     language:"en",
     keepStopwords:true,
@@ -422,7 +448,7 @@ test("keyword density uses total words and counts exact tracked phrases", async 
 });
 
 test("keyword density stop-word filtering preserves real phrase adjacency", async () => {
-  const response=await post("/api/keyword-density",{
+  const response=await post("/api/v1/keyword-density",{
     source:"seo and content seo and content",
     language:"en",
     keepStopwords:false,
@@ -619,15 +645,20 @@ test("tf-idf similarity uses weighted vectors instead of raw term frequency",asy
   assert.ok(tfidf.result.documents[0].rows.some((row)=>row.term==="alpha"&&row.idf>1));
 });
 
-test("rate limits the legacy URL-analysis endpoint", async () => {
-  const headers={"content-type":"application/json","x-forwarded-for":"198.51.100.77"};
+test("rate limits the versioned analysis endpoint", async () => {
+  const headers={"content-type":"application/json","x-real-ip":"198.51.100.77"};
   for(let attempt=0;attempt<30;attempt+=1){
-    const response=await request("/api/analyze",{method:"POST",headers,body:"{"});
+    const response=await request("/api/v1/analyze",{method:"POST",headers,body:"{"});
     assert.equal(response.status,400);
   }
-  const limited=await request("/api/analyze",{method:"POST",headers,body:"{"});
+  const limited=await request("/api/v1/analyze",{method:"POST",headers,body:"{"});
   assert.equal(limited.status,429);
-  assert.equal(limited.headers.get("retry-after"),"60");
+  const retryAfter=Number(limited.headers.get("retry-after"));
+  const resetAfter=Number(limited.headers.get("ratelimit-reset"));
+  assert.ok(retryAfter>=1&&retryAfter<=60);
+  assert.equal(limited.headers.get("ratelimit-limit"),"30");
+  assert.equal(limited.headers.get("ratelimit-remaining"),"0");
+  assert.ok(resetAfter>=1&&resetAfter<=60);
   const data=await limited.json();
   assert.equal(data.error.code,"RATE_LIMITED");
 });

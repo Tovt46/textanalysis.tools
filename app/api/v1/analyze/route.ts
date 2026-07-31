@@ -8,11 +8,12 @@ export function GET(){
 }
 
 export async function POST(request:Request){
+  let rateHeaders:Record<string,string>={};
   try{
-    enforceRateLimit(request);
+    rateHeaders=enforceRateLimit(request);
     const body=await readJsonBody(request);
     const result=await runPublicAnalysis(body);
     await sendServerAnalyticsEvent("api_analysis",{operation:"analyze",source_type:body.sourceType==="url"?"url":"text",text_language:result.language});
-    return apiJson({apiVersion:API_VERSION,storage:"none",result});
-  }catch(error){await sendServerAnalyticsEvent("api_error",{operation:"analyze"});return apiErrorResponse(error);}
+    return apiJson({apiVersion:API_VERSION,storage:"none",result},200,rateHeaders);
+  }catch(error){await sendServerAnalyticsEvent("api_error",{operation:"analyze"});return apiErrorResponse(error,rateHeaders);}
 }

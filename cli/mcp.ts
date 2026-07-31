@@ -160,13 +160,17 @@ export function createMcpServer(version:string){
       runComparisonAnalysis({...b,...analysisOptions}),
     ]);
     const comparison=compareResults(analysisA,analysisB);
+    const wordChanges=comparison.wordChanges.slice(0,top);
+    const bigramChanges=comparison.bigramChanges.slice(0,top);
     return {
       resultA:analysisA.result,
       resultB:analysisB.result,
       comparison:{
         ...comparison,
-        wordChanges:comparison.wordChanges.slice(0,top),
-        bigramChanges:comparison.bigramChanges.slice(0,top),
+        wordChanges,
+        bigramChanges,
+        returnedRows:{wordChanges:wordChanges.length,bigramChanges:bigramChanges.length},
+        truncated:wordChanges.length<comparison.totalRows.wordChanges||bigramChanges.length<comparison.totalRows.bigramChanges,
       },
     };
   }));

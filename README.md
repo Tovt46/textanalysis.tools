@@ -4,6 +4,9 @@ A multilingual text analysis engine with web tools for people, a public API
 for applications, and local CLI and MCP interfaces for automation and AI
 agents.
 
+See [`ROADMAP.md`](./ROADMAP.md) for the English-language product and technical
+development roadmap.
+
 ## Features
 
 - complete English, Ukrainian, Russian, and Spanish interfaces across all tools, guides,
@@ -145,10 +148,10 @@ when an agent or application should use the public HTTP API instead.
 
 - `POST /api/v1/analyze` analyzes one text or public URL.
 - `POST /api/v1/compare` analyzes and compares two inputs.
-- `POST /api/v1/word-frequency` returns the complete vocabulary table.
-- `POST /api/v1/keyword-density` returns unigram, bigram, trigram, and tracked-phrase density.
-- `POST /api/v1/ngram-analyzer` returns n-grams for a selected phrase length.
-- `POST /api/v1/bag-of-words` returns a full Bag-of-Words vector with term frequencies.
+- `POST /api/v1/word-frequency` returns a bounded vocabulary table with truncation metadata.
+- `POST /api/v1/keyword-density` returns bounded unigram, bigram, and trigram tables plus up to 100 requested tracked-phrase counts.
+- `POST /api/v1/ngram-analyzer` returns bounded n-grams for a selected phrase length.
+- `POST /api/v1/bag-of-words` returns a bounded Bag-of-Words vector with term frequencies.
 - `POST /api/v1/tf-idf` scores documents with corpus-aware TF-IDF values.
 - `POST /api/v1/similarity` returns cosine similarity and top contributing terms (BoW or TF-IDF).
 
@@ -161,7 +164,7 @@ curl -X POST http://localhost:3000/api/v1/analyze \
 ```
 
 See `/api-docs` and `/openapi.json` for the complete request and response
-formats.
+formats, table limits, and rate-limit headers.
 
 ## Production smoke check
 

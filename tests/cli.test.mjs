@@ -76,6 +76,19 @@ test("MCP exposes eight local read-only tools with structured results",async(t)=
     per1000:500,
   });
   assert.equal(response.structuredContent.storage,"local");
+
+  const comparisonResponse=await client.callTool({
+    name:"compare_texts",
+    arguments:{
+      a:{source:"alpha beta gamma delta epsilon zeta eta theta",language:"en",keepStopwords:true},
+      b:{source:"alpha beta iota kappa lambda mu nu xi",language:"en",keepStopwords:true},
+      top:5,
+    },
+  });
+  const mcpComparison=comparisonResponse.structuredContent.result.comparison;
+  assert.equal(mcpComparison.wordChanges.length,5);
+  assert.equal(mcpComparison.returnedRows.wordChanges,5);
+  assert.equal(mcpComparison.truncated,true);
 });
 
 test("focus phrases preserve stop-word adjacency when table stop words are hidden",async()=>{
@@ -167,18 +180,20 @@ test("TF-IDF, similarity, and comparison accept file pairs",async(t)=>{
     writeFile(fileB,"common common common beta beta beta","utf8"),
   ]);
 
-  const [tfidf,bowSimilarity,tfidfSimilarity,comparison]=await Promise.all([
+  const [tfidf,bowSimilarity,tfidfSimilarity,comparison,limitedComparison]=await Promise.all([
     runCli(["tfidf",fileA,fileB,"--language","en","--format","json"]),
     runCli(["similarity",fileA,fileB,"--language","en","--method","bow","--format","json"]),
     runCli(["similarity",fileA,fileB,"--language","en","--method","tfidf","--format","json"]),
     runCli(["compare",fileA,fileB,"--language","en","--keep-stopwords","--format","json"]),
+    runCli(["compare","--text-a","alpha beta gamma delta epsilon zeta eta theta","--text-b","alpha beta iota kappa lambda mu nu xi","--language","en","--keep-stopwords","--top","5","--format","json"]),
   ]);
-  for(const result of [tfidf,bowSimilarity,tfidfSimilarity,comparison]) assert.equal(result.code,0,result.stderr);
+  for(const result of [tfidf,bowSimilarity,tfidfSimilarity,comparison,limitedComparison]) assert.equal(result.code,0,result.stderr);
 
   const tfidfData=JSON.parse(tfidf.stdout);
   const bowData=JSON.parse(bowSimilarity.stdout);
   const similarityData=JSON.parse(tfidfSimilarity.stdout);
   const comparisonData=JSON.parse(comparison.stdout);
+  const limitedComparisonData=JSON.parse(limitedComparison.stdout);
   assert.equal(tfidfData.result.documentCount,2);
   assert.equal(tfidfData.result.documents.length,2);
   assert.equal(similarityData.result.method,"tfidf");
@@ -186,6 +201,9 @@ test("TF-IDF, similarity, and comparison accept file pairs",async(t)=>{
   assert.ok(similarityData.result.documents[0].rows.some((row)=>row.idf>1));
   assert.equal(comparisonData.comparison.metrics.tokenCount.delta,0);
   assert.ok(comparisonData.comparison.wordChanges.some((row)=>row.term==="alpha"));
+  assert.equal(limitedComparisonData.comparison.wordChanges.length,5);
+  assert.equal(limitedComparisonData.comparison.returnedRows.wordChanges,5);
+  assert.equal(limitedComparisonData.comparison.truncated,true);
 });
 
 test("similarity CSV includes the score even when documents have no shared terms",async()=>{

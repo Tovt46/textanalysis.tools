@@ -54,7 +54,7 @@ export default function BagOfWordsGeneratorPage(){
         <p className="section-number">NEXT TOOLS</p>
         <h2>Move from vectors to comparison and weighting</h2>
         <p>Pass the generated vectors into TF-IDF scoring or direct similarity checks when you want to compare documents at feature level instead of only raw frequency.</p>
-        <div><Link href="/tools/tf-idf-calculator">TF-IDF Calculator <span>→</span></Link><Link href="/tools/text-similarity-calculator">Text Similarity Calculator <span>→</span></Link><Link href="/api-docs#focus">Focused API endpoints <span>→</span></Link></div>
+        <div><Link href="/tools/tf-idf-calculator">TF-IDF Calculator <span>→</span></Link><Link href="/tools/text-similarity-calculator">Text Similarity Calculator <span>→</span></Link><Link href="/api-docs#focused">Focused API endpoints <span>→</span></Link></div>
       </section>
     </article>
     <SiteFooter locale="en"/>

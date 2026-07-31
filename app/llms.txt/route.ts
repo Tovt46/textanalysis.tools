@@ -10,14 +10,14 @@ const content=`# Text Analysis Tools
 - Human-readable API documentation: ${SITE_URL}/api-docs
 - Analyze one input: POST ${SITE_URL}/api/v1/analyze
 - Compare two inputs: POST ${SITE_URL}/api/v1/compare
-- Count the complete vocabulary: POST ${SITE_URL}/api/v1/word-frequency
+- Count bounded vocabulary rows with explicit truncation metadata: POST ${SITE_URL}/api/v1/word-frequency
 - Measure unigram, bigram, trigram, and tracked-phrase density: POST ${SITE_URL}/api/v1/keyword-density
 - Analyze recurring phrases by n-gram length: POST ${SITE_URL}/api/v1/ngram-analyzer
 - Build term-frequency vectors: POST ${SITE_URL}/api/v1/bag-of-words
 - Score corpus-aware terms (TF-IDF): POST ${SITE_URL}/api/v1/tf-idf
 - Measure text similarity (BoW or TF-IDF): POST ${SITE_URL}/api/v1/similarity
 
-Requests use application/json. Supported languages are English, Russian, Ukrainian, and Spanish. The API is public, rate-limited, and requires no API key. Use it for analysis, not for claims about search-engine rankings.
+Requests use application/json. Supported languages are English, Russian, Ukrainian, and Spanish. Pasted source fields are limited to 500,000 characters; remote downloads may contain up to 2,000,000 bytes or characters; every resolved source is limited to 100,000 analyzable words. Compound operations also have aggregate budgets. Word-frequency, Bag-of-Words, and n-gram operations accept limit for their rows; density applies it to generated n-gram tables; TF-IDF and similarity with method tf-idf apply it to idfTable. Analyze uses top, and compare returns up to 1,000 word changes plus 1,000 bigram changes with truncation metadata. Serialized responses are capped at 5 MB. The API is public, rate-limited, and requires no API key. Use it for analysis, not for claims about search-engine rankings.
 
 ## Local CLI
 

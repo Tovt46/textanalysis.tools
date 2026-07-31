@@ -197,6 +197,10 @@ async function runCompare(parsed:ParsedCliArgs,stdin:StdinReader,settings:CliSet
     runComparisonAnalysis(bodyForSource(sourceB,settings,true)),
   ]);
   const comparison=compareResults(analysisA,analysisB);
+  const wordChanges=limitedRows(comparison.wordChanges.map((row)=>({...row,count:Math.max(row.countA,row.countB)})),settings)
+    .map(({count,...row})=>{void count;return row;});
+  const bigramChanges=limitedRows(comparison.bigramChanges.map((row)=>({...row,count:Math.max(row.countA,row.countB)})),settings)
+    .map(({count,...row})=>{void count;return row;});
   return {
     labels:[sourceA.label,sourceB.label],
     payload:{
@@ -204,10 +208,10 @@ async function runCompare(parsed:ParsedCliArgs,stdin:StdinReader,settings:CliSet
       resultB:analysisB.result,
       comparison:{
         ...comparison,
-        wordChanges:limitedRows(comparison.wordChanges.map((row)=>({...row,count:Math.max(row.countA,row.countB)})),settings)
-          .map(({count,...row})=>{void count;return row;}),
-        bigramChanges:limitedRows(comparison.bigramChanges.map((row)=>({...row,count:Math.max(row.countA,row.countB)})),settings)
-          .map(({count,...row})=>{void count;return row;}),
+        wordChanges,
+        bigramChanges,
+        returnedRows:{wordChanges:wordChanges.length,bigramChanges:bigramChanges.length},
+        truncated:wordChanges.length<comparison.totalRows.wordChanges||bigramChanges.length<comparison.totalRows.bigramChanges,
       },
     },
   };

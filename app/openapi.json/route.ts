@@ -5,14 +5,39 @@ const sourceSchema={
   required:["source"],
   properties:{
     sourceType:{type:"string",enum:["text","url"],default:"text",description:"Whether source contains raw text/HTML or a public URL."},
-    source:{type:"string",description:"Text, HTML, or a public HTTP(S) URL."},
+    source:{type:"string",minLength:1,maxLength:500000,description:"Text, HTML, or a public HTTP(S) URL. URL values are limited to 2,048 characters; each resolved source is limited to 100,000 analyzable words."},
     language:{type:"string",enum:["auto","en","ru","uk","es"],default:"auto"},
-    focus:{oneOf:[{type:"string"},{type:"array",items:{type:"string"},maxItems:100}],description:"Phrases whose coverage should be measured."},
+    focus:{oneOf:[{type:"string",maxLength:20000},{type:"array",items:{type:"string",minLength:1,maxLength:200},maxItems:100}],description:"Phrases whose coverage should be measured."},
     top:{type:"integer",minimum:5,maximum:100,default:20},
     tolerance:{type:"number",minimum:1.2,maximum:4,default:2,description:"Multiplier used for above/below Zipf model zones."},
     keepStopwords:{type:"boolean",default:false},
-    stopwordLists:{type:"object",properties:{en:{type:"array",items:{type:"string"}},ru:{type:"array",items:{type:"string"}},uk:{type:"array",items:{type:"string"}},es:{type:"array",items:{type:"string"}}}},
+    stopwordLists:{type:"object",properties:{en:{type:"array",maxItems:1000,items:{type:"string",maxLength:100}},ru:{type:"array",maxItems:1000,items:{type:"string",maxLength:100}},uk:{type:"array",maxItems:1000,items:{type:"string",maxLength:100}},es:{type:"array",maxItems:1000,items:{type:"string",maxLength:100}}}},
   },
+  allOf:[{oneOf:[
+    {properties:{sourceType:{type:"string",const:"text",default:"text"}}},
+    {required:["sourceType"],properties:{
+      sourceType:{type:"string",const:"url"},
+      source:{type:"string",format:"uri",maxLength:2048,pattern:"^[Hh][Tt][Tt][Pp][Ss]?://(?:[^/?#:@]+|\\[[0-9A-Fa-f:.]+\\])(?::(?:80|443))?(?:[/?#]|$)"},
+    }},
+  ]}],
+};
+
+const resultLimitProperty={
+  limit:{type:"integer",minimum:1,maximum:5000,default:5000,description:"Maximum rows returned in the operation's bounded result table. Totals and truncation metadata remain available."},
+};
+
+const densityResultLimitProperty={
+  limit:{...resultLimitProperty.limit,default:2000,description:"Maximum rows returned in each generated unigram, bigram, and trigram table. Up to 100 explicitly tracked phrases are always preserved."},
+};
+
+const idfResultLimitProperty={
+  limit:{...resultLimitProperty.limit,description:"Maximum rows returned in idfTable. Per-document and contribution rows are controlled by top."},
+};
+
+const tableLimitProperties={
+  totalRows:{type:"integer",minimum:0},
+  returnedRows:{type:"integer",minimum:0,maximum:5000},
+  truncated:{type:"boolean"},
 };
 
 const analysisResult={
@@ -27,6 +52,25 @@ const analysisResult={
   },
 };
 
+const comparisonChange={
+  type:"object",
+  required:["term","countA","countB","countDelta","shareA","shareB","shareDelta"],
+  properties:{term:{type:"string"},countA:{type:"integer"},countB:{type:"integer"},countDelta:{type:"integer"},shareA:{type:"number"},shareB:{type:"number"},shareDelta:{type:"number"}},
+};
+
+const comparisonResult={
+  type:"object",
+  required:["metrics","wordChanges","bigramChanges","totalRows","returnedRows","truncated"],
+  properties:{
+    metrics:{type:"object"},
+    wordChanges:{type:"array",maxItems:1000,items:comparisonChange},
+    bigramChanges:{type:"array",maxItems:1000,items:comparisonChange},
+    totalRows:{type:"object",required:["wordChanges","bigramChanges"],properties:{wordChanges:{type:"integer",minimum:0},bigramChanges:{type:"integer",minimum:0}}},
+    returnedRows:{type:"object",required:["wordChanges","bigramChanges"],properties:{wordChanges:{type:"integer",minimum:0,maximum:1000},bigramChanges:{type:"integer",minimum:0,maximum:1000}}},
+    truncated:{type:"boolean"},
+  },
+};
+
 const frequencyRow={
   type:"object",
   required:["term","count","percentage","per1000"],
@@ -35,25 +79,26 @@ const frequencyRow={
 
 const wordFrequencyResult={
   type:"object",
-  required:["language","tokenCount","vocabularySize","stopwordCount","rows"],
+  required:["language","tokenCount","vocabularySize","stopwordCount","rows","totalRows","returnedRows","truncated"],
   properties:{
     language:{type:"string",enum:["en","ru","uk","es"]},
     tokenCount:{type:"integer",description:"Words remaining after the selected stop-word rule."},
     vocabularySize:{type:"integer"},
     stopwordCount:{type:"integer"},
-    rows:{type:"array",items:frequencyRow,description:"The complete vocabulary ordered by descending count."},
+    rows:{type:"array",maxItems:5000,items:frequencyRow,description:"Vocabulary rows ordered by descending count, up to the requested limit."},
+    ...tableLimitProperties,
   },
 };
 
 const densityRow={
   type:"object",
   required:["term","count","n","percentage","per1000"],
-  properties:{term:{type:"string"},count:{type:"integer"},n:{type:"integer",minimum:1,maximum:3},percentage:{type:"number"},per1000:{type:"number"}},
+  properties:{term:{type:"string"},count:{type:"integer"},n:{type:"integer",minimum:1},percentage:{type:"number"},per1000:{type:"number"}},
 };
 
 const keywordDensityResult={
   type:"object",
-  required:["language","wordCount","vocabularySize","stopwordCount","keepStopwords","trackedKeywords","unigrams","bigrams","trigrams"],
+  required:["language","wordCount","vocabularySize","stopwordCount","keepStopwords","trackedKeywords","unigrams","bigrams","trigrams","totalRows","returnedRows","truncated"],
   properties:{
     language:{type:"string",enum:["en","ru","uk","es"]},
     wordCount:{type:"integer",description:"Total normalized words used as the density denominator."},
@@ -61,15 +106,18 @@ const keywordDensityResult={
     stopwordCount:{type:"integer"},
     keepStopwords:{type:"boolean"},
     trackedKeywords:{type:"array",items:densityRow},
-    unigrams:{type:"array",items:densityRow},
-    bigrams:{type:"array",items:densityRow},
-    trigrams:{type:"array",items:densityRow},
+    unigrams:{type:"array",maxItems:5000,items:densityRow},
+    bigrams:{type:"array",maxItems:5000,items:densityRow},
+    trigrams:{type:"array",maxItems:5000,items:densityRow},
+    totalRows:{type:"object",required:["trackedKeywords","unigrams","bigrams","trigrams"],properties:{trackedKeywords:{type:"integer"},unigrams:{type:"integer"},bigrams:{type:"integer"},trigrams:{type:"integer"}}},
+    returnedRows:{type:"object",required:["trackedKeywords","unigrams","bigrams","trigrams"],properties:{trackedKeywords:{type:"integer"},unigrams:{type:"integer"},bigrams:{type:"integer"},trigrams:{type:"integer"}}},
+    truncated:{type:"boolean"},
   },
 };
 
 const ngramResult={
   type:"object",
-  required:["language","tokenCount","ngramCount","vocabularySize","stopwordCount","keepStopwords","n","rows"],
+  required:["language","tokenCount","ngramCount","vocabularySize","stopwordCount","keepStopwords","n","rows","totalRows","returnedRows","truncated"],
   properties:{
     language:{type:"string",enum:["en","ru","uk","es"]},
     tokenCount:{type:"integer",description:"Tokenized words used as source for sliding-window extraction."},
@@ -78,7 +126,8 @@ const ngramResult={
     stopwordCount:{type:"integer"},
     keepStopwords:{type:"boolean"},
     n:{type:"integer",minimum:1,maximum:10},
-    rows:{type:"array",items:{type:"object",required:["term","count","percentage","per1000"],properties:{term:{type:"string"},count:{type:"integer"},percentage:{type:"number"},per1000:{type:"number"}}}},
+    rows:{type:"array",maxItems:5000,items:{type:"object",required:["term","count","percentage","per1000"],properties:{term:{type:"string"},count:{type:"integer"},percentage:{type:"number"},per1000:{type:"number"}}}},
+    ...tableLimitProperties,
   },
 };
 
@@ -96,13 +145,14 @@ const bagOfWordsTerm={
 
 const bagOfWordsResult={
   type:"object",
-  required:["language","tokenCount","vocabularySize","stopwordCount","rows"],
+  required:["language","tokenCount","vocabularySize","stopwordCount","rows","totalRows","returnedRows","truncated"],
   properties:{
     language:{type:"string",enum:["en","ru","uk","es"]},
     tokenCount:{type:"integer",description:"Words remaining after the selected stop-word rule."},
     vocabularySize:{type:"integer"},
     stopwordCount:{type:"integer"},
-    rows:{type:"array",items:bagOfWordsTerm},
+    rows:{type:"array",maxItems:5000,items:bagOfWordsTerm},
+    ...tableLimitProperties,
   },
 };
 
@@ -129,6 +179,7 @@ const tfIdfDocument={
     vocabularySize:{type:"integer"},
     stopwordCount:{type:"integer"},
     rows:{type:"array",items:{$ref:"#/components/schemas/TfIdfTerm"}},
+    vectorNorm:{type:"number",description:"Norm of the complete TF-IDF vector. Present in TF-IDF corpus responses and omitted from similarity support documents."},
   },
 };
 
@@ -140,7 +191,7 @@ const idfTerm={
 
 const tfIdfResult={
   type:"object",
-  required:["language","documentCount","top","totalVocabularySize","averageDocumentFrequency","documents","idfTable"],
+  required:["language","documentCount","top","totalVocabularySize","averageDocumentFrequency","documents","idfTable","totalIdfRows","returnedIdfRows","idfTableTruncated"],
   properties:{
     language:{type:"string",enum:["en","ru","uk","es","auto"]},
     documentCount:{type:"integer"},
@@ -148,15 +199,22 @@ const tfIdfResult={
     totalVocabularySize:{type:"integer"},
     averageDocumentFrequency:{type:"number"},
     documents:{type:"array",items:{$ref:"#/components/schemas/TfIdfDocument"}},
-    idfTable:{type:"array",items:{$ref:"#/components/schemas/IdfTerm"}},
+    idfTable:{type:"array",maxItems:5000,items:{$ref:"#/components/schemas/IdfTerm"}},
+    totalIdfRows:{type:"integer",minimum:0},
+    returnedIdfRows:{type:"integer",minimum:0,maximum:5000},
+    idfTableTruncated:{type:"boolean"},
   },
 };
 
 const similarityTerm={
   type:"object",
-  required:["term","weightA","weightB","contribution"],
+  required:["term","count","frequency","percentage","per1000","weightA","weightB","contribution"],
   properties:{
     term:{type:"string"},
+    count:{type:"integer"},
+    frequency:{type:"number"},
+    percentage:{type:"number"},
+    per1000:{type:"number"},
     weightA:{type:"number"},
     weightB:{type:"number"},
     contribution:{type:"number"},
@@ -178,19 +236,49 @@ const similarityResult={
     overlapTerms:{type:"integer"},
     topTerms:{type:"array",items:{$ref:"#/components/schemas/SimilarityTerm"}},
     documents:{type:"array",items:{$ref:"#/components/schemas/TfIdfDocument"}},
-    idfTable:{type:"array",items:{$ref:"#/components/schemas/IdfTerm"}},
+    idfTable:{type:"array",maxItems:5000,items:{$ref:"#/components/schemas/IdfTerm"}},
+    totalIdfRows:{type:"integer",minimum:0},
+    returnedIdfRows:{type:"integer",minimum:0,maximum:5000},
+    idfTableTruncated:{type:"boolean"},
   },
+};
+
+const errorResponse={
+  type:"object",
+  required:["apiVersion","error"],
+  properties:{
+    apiVersion:{type:"string"},
+    error:{type:"object",required:["code","message"],properties:{code:{type:"string"},message:{type:"string"}}},
+  },
+};
+
+const rateLimitResponseHeaders={
+  "RateLimit-Limit":{schema:{type:"integer"},description:"Maximum request-cost units allowed in the active window."},
+  "RateLimit-Remaining":{schema:{type:"integer"},description:"Request-cost units remaining in the active window."},
+  "RateLimit-Reset":{schema:{type:"integer"},description:"Seconds until the active window resets."},
+};
+
+const errorContent={"application/json":{schema:{$ref:"#/components/schemas/ErrorResponse"}}};
+const commonErrorResponses={
+  "400":{description:"Invalid input",headers:rateLimitResponseHeaders,content:errorContent},
+  "413":{description:"Input, remote content, combined workload, or serialized result is too large",headers:rateLimitResponseHeaders,content:errorContent},
+  "415":{description:"Unsupported request or remote content type",headers:rateLimitResponseHeaders,content:errorContent},
+  "422":{description:"The input or remote resource could not be analyzed",headers:rateLimitResponseHeaders,content:errorContent},
+  "429":{description:"Rate limited",headers:{...rateLimitResponseHeaders,"Retry-After":{schema:{type:"integer"}}},content:errorContent},
+  "500":{description:"Unexpected analysis failure",headers:rateLimitResponseHeaders,content:errorContent},
 };
 
 const document={
   openapi:"3.1.0",
-  info:{title:"Text Analysis Tools API",version:"1.0.0",description:"Stateless Bag of Words, word-frequency, keyword-density, n-gram, focus-phrase, Zipf-distribution, and comparison analysis for text and public webpages. Submitted content is not stored."},
+  info:{title:"Text Analysis Tools API",version:"1.0.0",description:"Stateless Bag of Words, word-frequency, keyword-density, n-gram, focus-phrase, Zipf-distribution, and comparison analysis for text and public webpages. Submitted content is not stored. JSON request bodies are limited to approximately 2 MB and serialized responses to 5 MB."},
   servers:[{url:SITE_URL}],
   components:{schemas:{
     AnalyzeInput:sourceSchema,
+    ErrorResponse:errorResponse,
     AnalysisResult:analysisResult,
+    ComparisonResult:comparisonResult,
     AnalyzeResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/AnalysisResult"}}},
-    CompareResponse:{type:"object",required:["apiVersion","storage","resultA","resultB","comparison"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},resultA:{$ref:"#/components/schemas/AnalysisResult"},resultB:{$ref:"#/components/schemas/AnalysisResult"},comparison:{type:"object"}}},
+    CompareResponse:{type:"object",required:["apiVersion","storage","resultA","resultB","comparison"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},resultA:{$ref:"#/components/schemas/AnalysisResult"},resultB:{$ref:"#/components/schemas/AnalysisResult"},comparison:{$ref:"#/components/schemas/ComparisonResult"}}},
     WordFrequencyResult:wordFrequencyResult,
     WordFrequencyResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/WordFrequencyResult"}}},
     KeywordDensityResult:keywordDensityResult,
@@ -219,10 +307,8 @@ const document={
           content:{"application/json":{schema:{$ref:"#/components/schemas/AnalyzeInput"}}},
         },
         responses:{
-          "200":{description:"Analysis completed",content:{"application/json":{schema:{$ref:"#/components/schemas/AnalyzeResponse"}}}},
-          "400":{description:"Invalid input"},
-          "413":{description:"Input too large"},
-          "429":{description:"Rate limited"},
+          "200":{description:"Analysis completed",headers:rateLimitResponseHeaders,content:{"application/json":{schema:{$ref:"#/components/schemas/AnalyzeResponse"}}}},
+          ...commonErrorResponses,
         },
       },
     },
@@ -236,6 +322,7 @@ const document={
             "application/json":{
               schema:{
                 type:"object",
+                description:"The two pasted sources may contain at most 2,000,000 characters and 250,000 analyzable words in total. Remote sources share a 5,000,000-byte fetch budget.",
                 required:["a","b"],
                 properties:{
                   a:{$ref:"#/components/schemas/AnalyzeInput"},
@@ -246,36 +333,30 @@ const document={
           },
         },
         responses:{
-          "200":{description:"Both analyses and their differences",content:{"application/json":{schema:{$ref:"#/components/schemas/CompareResponse"}}}},
-          "400":{description:"Invalid input"},
-          "413":{description:"Input too large"},
-          "429":{description:"Rate limited"},
+          "200":{description:"Both analyses and their differences",headers:rateLimitResponseHeaders,content:{"application/json":{schema:{$ref:"#/components/schemas/CompareResponse"}}}},
+          ...commonErrorResponses,
         },
       },
     },
     "/api/v1/word-frequency":{
       post:{
         operationId:"countWordFrequency",
-        summary:"Return the complete word-frequency table",
-        requestBody:{required:true,content:{"application/json":{schema:{$ref:"#/components/schemas/AnalyzeInput"}}}},
+        summary:"Return a bounded word-frequency table",
+        requestBody:{required:true,content:{"application/json":{schema:{allOf:[{$ref:"#/components/schemas/AnalyzeInput"},{type:"object",properties:resultLimitProperty}]}}}},
         responses:{
-          "200":{description:"Frequency analysis completed",content:{"application/json":{schema:{$ref:"#/components/schemas/WordFrequencyResponse"}}}},
-          "400":{description:"Invalid input"},
-          "413":{description:"Input too large"},
-          "429":{description:"Rate limited"},
+          "200":{description:"Frequency analysis completed",headers:rateLimitResponseHeaders,content:{"application/json":{schema:{$ref:"#/components/schemas/WordFrequencyResponse"}}}},
+          ...commonErrorResponses,
         },
       },
     },
     "/api/v1/bag-of-words":{
       post:{
         operationId:"analyzeBagOfWords",
-        summary:"Return a full Bag-of-Words term table",
-        requestBody:{required:true,content:{"application/json":{schema:{$ref:"#/components/schemas/AnalyzeInput"}}}},
+        summary:"Return a bounded Bag-of-Words term table",
+        requestBody:{required:true,content:{"application/json":{schema:{allOf:[{$ref:"#/components/schemas/AnalyzeInput"},{type:"object",properties:resultLimitProperty}]}}}},
         responses:{
-          "200":{description:"Bag-of-Words analysis completed",content:{"application/json":{schema:{$ref:"#/components/schemas/BagOfWordsResponse"}}}},
-          "400":{description:"Invalid input"},
-          "413":{description:"Input too large"},
-          "429":{description:"Rate limited"},
+          "200":{description:"Bag-of-Words analysis completed",headers:rateLimitResponseHeaders,content:{"application/json":{schema:{$ref:"#/components/schemas/BagOfWordsResponse"}}}},
+          ...commonErrorResponses,
         },
       },
     },
@@ -287,14 +368,12 @@ const document={
           required:true,
           content:{"application/json":{schema:{allOf:[
             {$ref:"#/components/schemas/AnalyzeInput"},
-            {type:"object",properties:{trackedKeywords:{type:"string",description:"Comma, semicolon, or newline-separated exact phrases.",maxLength:20000}}},
+            {type:"object",properties:{trackedKeywords:{type:"string",description:"Up to 100 distinct comma-, semicolon-, or newline-separated exact phrases, each up to 200 characters.",maxLength:20000},...densityResultLimitProperty}},
           ]}}},
         },
         responses:{
-          "200":{description:"Density analysis completed",content:{"application/json":{schema:{$ref:"#/components/schemas/KeywordDensityResponse"}}}},
-          "400":{description:"Invalid input"},
-          "413":{description:"Input too large"},
-          "429":{description:"Rate limited"},
+          "200":{description:"Density analysis completed",headers:rateLimitResponseHeaders,content:{"application/json":{schema:{$ref:"#/components/schemas/KeywordDensityResponse"}}}},
+          ...commonErrorResponses,
         },
       },
     },
@@ -308,6 +387,7 @@ const document={
             "application/json":{
               schema:{
                 type:"object",
+                description:"The collection may contain at most 2,000,000 pasted characters and 250,000 analyzable words in total. Remote sources share a 5,000,000-byte fetch budget.",
                 required:["documents"],
                 properties:{
                   documents:{
@@ -316,17 +396,16 @@ const document={
                     maxItems:10,
                     items:{$ref:"#/components/schemas/AnalyzeInput"},
                   },
-                  top:{type:"integer",minimum:1,maximum:100},
+                  top:{type:"integer",minimum:1,maximum:100,default:100},
+                  ...idfResultLimitProperty,
                 },
               },
             },
           },
         },
         responses:{
-          "200":{description:"TF-IDF results completed",content:{"application/json":{schema:{$ref:"#/components/schemas/TfIdfResponse"}}}},
-          "400":{description:"Invalid input"},
-          "413":{description:"Input too large"},
-          "429":{description:"Rate limited"},
+          "200":{description:"TF-IDF results completed",headers:rateLimitResponseHeaders,content:{"application/json":{schema:{$ref:"#/components/schemas/TfIdfResponse"}}}},
+          ...commonErrorResponses,
         },
       },
     },
@@ -338,14 +417,12 @@ const document={
           required:true,
         content:{"application/json":{schema:{allOf:[
             {$ref:"#/components/schemas/AnalyzeInput"},
-            {type:"object",properties:{ngramSize:{type:"integer",minimum:1,maximum:10,default:2,description:"N-gram size used for sliding extraction."}}},
+            {type:"object",properties:{ngramSize:{type:"integer",minimum:1,maximum:10,default:2,description:"N-gram size used for sliding extraction."},...resultLimitProperty}},
           ]}}},
         },
         responses:{
-          "200":{description:"N-gram analysis completed",content:{"application/json":{schema:{$ref:"#/components/schemas/NgramAnalyzerResponse"}}}},
-          "400":{description:"Invalid input"},
-          "413":{description:"Input too large"},
-          "429":{description:"Rate limited"},
+          "200":{description:"N-gram analysis completed",headers:rateLimitResponseHeaders,content:{"application/json":{schema:{$ref:"#/components/schemas/NgramAnalyzerResponse"}}}},
+          ...commonErrorResponses,
         },
       },
     },
@@ -359,22 +436,22 @@ const document={
             "application/json":{
               schema:{
                 type:"object",
+                description:"The two pasted sources may contain at most 2,000,000 characters and 250,000 analyzable words in total. Remote sources share a 5,000,000-byte fetch budget.",
                 required:["a","b"],
                 properties:{
                   a:{$ref:"#/components/schemas/AnalyzeInput"},
                   b:{$ref:"#/components/schemas/AnalyzeInput"},
-                  method:{type:"string",enum:["bow","tf-idf"]},
-                  top:{type:"integer",minimum:1,maximum:100},
+                  method:{type:"string",enum:["bow","tf-idf"],default:"bow"},
+                  top:{type:"integer",minimum:1,maximum:100,default:100},
+                  ...idfResultLimitProperty,
                 },
               },
             },
           },
         },
         responses:{
-          "200":{description:"Similarity results completed",content:{"application/json":{schema:{$ref:"#/components/schemas/SimilarityResponse"}}}},
-          "400":{description:"Invalid input"},
-          "413":{description:"Input too large"},
-          "429":{description:"Rate limited"},
+          "200":{description:"Similarity results completed",headers:rateLimitResponseHeaders,content:{"application/json":{schema:{$ref:"#/components/schemas/SimilarityResponse"}}}},
+          ...commonErrorResponses,
         },
       },
     },

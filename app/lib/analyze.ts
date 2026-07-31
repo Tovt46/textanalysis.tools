@@ -13,7 +13,7 @@ const STOPWORDS: Record<Lang, Set<string>> = {
 export type AnalyzeInput = {
   text: string;
   language?: "auto" | Lang;
-  focus?: string;
+  focus?: string | string[];
   top?: number;
   tolerance?: number;
   keepStopwords?: boolean;
@@ -68,6 +68,18 @@ function tokenize(text: string, lang: Lang, keepStopwords: boolean, stopwords = 
     .map((token) => token.replace(/^'+|'+$/g, ""))
     .filter((token) => token.length > 0 && !/^\d+$/.test(token))
     .filter((token) => keepStopwords || !stopwords.has(token));
+}
+
+export function countAnalysisTokens(text:string,stopAfter=Number.MAX_SAFE_INTEGER){
+  let count=0;
+  const normalized=cleanHtml(text).normalize("NFKC").toLowerCase().replaceAll("’", "'");
+  for(const match of normalized.matchAll(/[a-záéíóúüñа-яёіїєґ0-9']+/gi)){
+    const token=match[0].replace(/^'+|'+$/g,"");
+    if(!token||/^\d+$/.test(token))continue;
+    count+=1;
+    if(count>=stopAfter)break;
+  }
+  return count;
 }
 
 function countTerms(tokens: string[], n = 1) {
@@ -474,7 +486,9 @@ export function analyzeText(input: AnalyzeInput) {
   });
   const rows = allRows.slice(0, top);
 
-  const focusTerms = (input.focus || "").split(",").map((term) => term.trim().toLowerCase()).filter(Boolean);
+  const focusTerms = (Array.isArray(input.focus)?input.focus:(input.focus||"").split(","))
+    .map((term) => term.trim().toLowerCase())
+    .filter(Boolean);
   const focusCoverage = focusTerms.map((term) => {
     const phraseTokens = tokenize(term, language, true, activeStopwords);
     const count=exactPhraseCount(rawTokens,phraseTokens);
