@@ -236,6 +236,21 @@ test("renders the word frequency tool as a canonical English search page", async
   assert.match(html, /hrefLang="ru" href="https:\/\/textanalysis\.tools\/ru\/tools\/word-frequency-counter/i);
 });
 
+test("limits shared-cache lifetime for every sitemap page",async()=>{
+  const sitemapResponse=await request("/sitemap.xml");
+  const sitemap=await sitemapResponse.text();
+  const paths=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]).pathname);
+  assert.equal(paths.length,88);
+  for(let offset=0;offset<paths.length;offset+=12){
+    await Promise.all(paths.slice(offset,offset+12).map(async path=>{
+      const response=await request(path,{headers:{accept:"text/html"}});
+      assert.equal(response.status,200,path);
+      assert.match(response.headers.get("cache-control")||"",/s-maxage=300(?:\D|$)/i,path);
+      await response.body?.cancel();
+    }));
+  }
+});
+
 test("word frequency endpoint handles short text and returns the full vocabulary", async () => {
   const terms=Array.from({length:130},(_,index)=>`term${String(index).padStart(3,"0")}`);
   const response=await post("/api/word-frequency",{source:[...terms,"term000","term000"].join(" "),language:"en",keepStopwords:true});

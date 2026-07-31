@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 const baseUrl=new URL(process.env.SMOKE_BASE_URL||"https://textanalysis.tools/");
 const canonicalOrigin=new URL(process.env.SMOKE_CANONICAL_ORIGIN||"https://textanalysis.tools/").origin;
 const expectedGaId=process.env.EXPECT_GA_MEASUREMENT_ID?.trim();
+const pageConcurrency=Number(process.env.SMOKE_PAGE_CONCURRENCY||8);
 const toolPages=[
   "/tools/bag-of-words-analyzer",
   "/tools/word-frequency-counter",
@@ -50,21 +51,43 @@ function assertDeploySafeCache(response,label){
   assert.ok(!staleWindow||Number(staleWindow[1])<=300,`${label} stale cache window is too long: ${cacheControl}`);
 }
 
-function scriptsFromHtml(html){
-  return [...html.matchAll(/<script[^>]+src="([^"]+)"/gi)].map(match=>new URL(match[1],baseUrl));
-}
-
-async function checkScriptUrls(scripts,label){
-  assert.ok(scripts.length>0,`${label} did not declare any JavaScript assets.`);
-  await Promise.all(scripts.map(async script=>{
-    const asset=await fetch(script,{method:"HEAD",redirect:"manual",signal:AbortSignal.timeout(15_000)});
-    assert.equal(asset.status,200,`JavaScript asset is unavailable for ${label}: ${script.pathname}`);
-    assert.match(asset.headers.get("content-type")||"",/javascript/i,`Unexpected content type for ${script.pathname}`);
+async function mapConcurrent(items,limit,worker){
+  assert.ok(Number.isInteger(limit)&&limit>0,`Invalid smoke-test concurrency: ${limit}`);
+  const results=new Array(items.length);
+  let cursor=0;
+  await Promise.all(Array.from({length:Math.min(limit,items.length)},async()=>{
+    while(cursor<items.length){
+      const index=cursor;
+      cursor+=1;
+      results[index]=await worker(items[index],index);
+    }
   }));
+  return results;
 }
 
-async function checkScripts(html,label){
-  await checkScriptUrls(scriptsFromHtml(html),label);
+function assetsFromHtml(html){
+  const references=[
+    ...html.matchAll(/<script[^>]+src="([^"]+)"/gi),
+    ...html.matchAll(/<link[^>]+href="([^"]+)"/gi),
+  ];
+  return references
+    .map(match=>new URL(match[1],baseUrl))
+    .filter(asset=>asset.origin===baseUrl.origin&&asset.pathname.startsWith("/_next/static/"));
+}
+
+async function checkAssetUrls(assets,label){
+  assert.ok(assets.length>0,`${label} did not declare any Next.js static assets.`);
+  await mapConcurrent(assets,12,async asset=>{
+    const response=await fetch(asset,{method:"GET",redirect:"manual",signal:AbortSignal.timeout(15_000)});
+    assert.equal(response.status,200,`Static asset is unavailable for ${label}: ${asset.pathname}`);
+    const contentType=response.headers.get("content-type")||"";
+    if(asset.pathname.endsWith(".js")){
+      assert.match(contentType,/javascript/i,`Unexpected content type for ${asset.pathname}`);
+    }else if(asset.pathname.endsWith(".css")){
+      assert.match(contentType,/text\/css/i,`Unexpected content type for ${asset.pathname}`);
+    }
+    await response.body?.cancel();
+  });
 }
 
 async function checkHomepage(){
@@ -74,7 +97,6 @@ async function checkHomepage(){
   assert.match(html,/Free text analysis tools\./i,"The bare homepage is not the current product homepage.");
   assert.doesNotMatch(html,/Free Bag of Words SEO analyzer\./i,"The bare homepage still contains the retired analyzer hero.");
   assertDeploySafeCache(response,"Homepage");
-  await checkScripts(html,"Homepage");
 
   if(expectedGaId){
     assert.match(html,new RegExp(`googletagmanager\\.com/gtag/js\\?id=${expectedGaId.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}`),"Expected GA4 script is missing from the homepage.");
@@ -88,7 +110,7 @@ async function checkRedirect(){
 }
 
 async function checkToolPages(){
-  const pageScripts=await Promise.all(toolPages.map(async path=>{
+  await Promise.all(toolPages.map(async path=>{
     const response=await request(path);
     assert.equal(response.status,200,`${path} must return HTTP 200.`);
     const html=await response.text();
@@ -96,10 +118,7 @@ async function checkToolPages(){
     assert.match(html,/<textarea\b/i,`${path} did not render a text input.`);
     assert.match(html,/class="[^"]*analyze-button/i,`${path} did not render its analysis action.`);
     assertDeploySafeCache(response,path);
-    return scriptsFromHtml(html);
   }));
-  const uniqueScripts=[...new Map(pageScripts.flat().map(script=>[script.href,script])).values()];
-  await checkScriptUrls(uniqueScripts,"Tool pages");
 }
 
 async function checkAgentPage(){
@@ -111,7 +130,30 @@ async function checkAgentPage(){
   assert.match(html,/analyze_text/i,"Agent integration page does not list MCP tools.");
   assert.match(html,/href="\/openapi\.json"/i,"Agent integration page is missing OpenAPI discovery.");
   assertDeploySafeCache(response,"Agent integration page");
-  await checkScripts(html,"Agent integration page");
+}
+
+async function checkSitemapPagesAndAssets(){
+  const sitemapResponse=await request("/sitemap.xml");
+  assert.equal(sitemapResponse.status,200,"Sitemap must return HTTP 200.");
+  const sitemap=await sitemapResponse.text();
+  const locations=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/gi)].map(match=>match[1]);
+  assert.equal(locations.length,88,"Sitemap URL count changed unexpectedly.");
+
+  const pageAssets=await mapConcurrent(locations,pageConcurrency,async location=>{
+    const canonicalUrl=new URL(location);
+    assert.equal(canonicalUrl.origin,canonicalOrigin,`Sitemap contains a non-canonical origin: ${location}`);
+    const path=`${canonicalUrl.pathname}${canonicalUrl.search}`;
+    const response=await request(path);
+    assert.equal(response.status,200,`${path} must return HTTP 200.`);
+    assert.match(response.headers.get("content-type")||"",/text\/html/i,`${path} did not return HTML.`);
+    assertDeploySafeCache(response,path);
+    const html=await response.text();
+    assert.match(html,/href="\/(?:ru\/|uk\/|es\/)?agents"/i,`${path} appears to be stale and is missing the Agents navigation link.`);
+    return assetsFromHtml(html);
+  });
+
+  const uniqueAssets=[...new Map(pageAssets.flat().map(asset=>[asset.href,asset])).values()];
+  await checkAssetUrls(uniqueAssets,"Sitemap pages");
 }
 
 async function checkCors(path){
@@ -214,6 +256,7 @@ await checkHomepage();
 await checkRedirect();
 await checkToolPages();
 await checkAgentPage();
+await checkSitemapPagesAndAssets();
 await checkApis();
 
-console.log(`Production smoke check passed for ${baseUrl.origin}.`);
+console.log(`Production smoke check passed for ${baseUrl.origin}: 88 pages, linked assets, 8 tools, and 8 APIs.`);

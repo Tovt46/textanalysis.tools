@@ -171,12 +171,13 @@ After each deployment run:
 npm run smoke:production
 ```
 
-The smoke check verifies the homepage contract, canonical `/en`
-redirect, versioned API operations, CORS preflight responses, and current
-JavaScript assets. Set `SMOKE_BASE_URL` to test another environment. Set
-`SMOKE_CANONICAL_ORIGIN` only when that environment uses a different canonical
-domain. Set `EXPECT_GA_MEASUREMENT_ID` when the deployment is expected to load
-GA4.
+The smoke check verifies all 88 sitemap pages, a shared-cache lifetime of no
+more than five minutes, the current navigation marker, every linked Next.js
+static asset (including JavaScript and CSS), the canonical `/en` redirect,
+versioned API operations, and CORS preflight responses. Set `SMOKE_BASE_URL` to
+test another environment. Set `SMOKE_CANONICAL_ORIGIN` only when that
+environment uses a different canonical domain. Set `EXPECT_GA_MEASUREMENT_ID`
+when the deployment is expected to load GA4.
 
 For local verification against a production build:
 
@@ -196,6 +197,11 @@ connected to this repository and automatically builds and deploys every push to
 No repository SSH secrets, deploy key, PM2 workflow, Cloudflare token, or custom
 GitHub Actions deployment job is required. Build status and logs are available
 in hPanel under `Websites → textanalysis.tools → Deployments`.
+
+If the post-deployment smoke check reports a one-year page TTL or missing
+`/_next/static/` assets, clear both the website cache and CDN cache in hPanel
+before running the check again. A cache-busted URL is useful for diagnosis but
+does not prove that the canonical URL is fixed.
 
 Before pushing production changes, run:
 
