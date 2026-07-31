@@ -2,7 +2,7 @@ import type { UiLang } from "../i18n";
 import { languagePaths,localizedPath } from "../localization";
 import { SITE_URL } from "../seo-metadata";
 
-const LAST_MODIFIED="2026-07-27";
+const LAST_MODIFIED="2026-07-31";
 const LANGUAGES=["en","ru","uk","es"] as const satisfies readonly UiLang[];
 const PATHS=[
   "/",
@@ -10,6 +10,7 @@ const PATHS=[
   "/guides",
   "/api-docs",
   "/cli",
+  "/agents",
   "/tools/word-frequency-counter",
   "/tools/keyword-density-checker",
   "/tools/bag-of-words-analyzer",

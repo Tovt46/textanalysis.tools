@@ -441,7 +441,10 @@ export function analyzeNgram(input:AnalyzeInput,n=2){
 
 export function analyzeText(input: AnalyzeInput) {
   const uiLanguage = input.uiLanguage || "ru";
-  const {language,tokens,stopwordCount}=prepareTokens(input);
+  const {language,rawTokens,activeStopwords,stopwordCount}=prepareRawTokens(input);
+  const tokens=input.keepStopwords
+    ?rawTokens
+    :rawTokens.filter(token=>!activeStopwords.has(token));
   if (tokens.length < 3) throw new Error(translate(uiLanguage, "tooLittle"));
   const unigramCounts = countTerms(tokens);
   const bigramCounts = countTerms(tokens, 2);
@@ -473,14 +476,9 @@ export function analyzeText(input: AnalyzeInput) {
 
   const focusTerms = (input.focus || "").split(",").map((term) => term.trim().toLowerCase()).filter(Boolean);
   const focusCoverage = focusTerms.map((term) => {
-    const phraseTokens = tokenize(term, language, true);
-    let count = 0;
-    if (phraseTokens.length) {
-      for (let index = 0; index <= tokens.length - phraseTokens.length; index += 1) {
-        if (phraseTokens.every((token, offset) => tokens[index + offset] === token)) count += 1;
-      }
-    }
-    return { term, count, per1000: tokens.length ? (count / tokens.length) * 1000 : 0 };
+    const phraseTokens = tokenize(term, language, true, activeStopwords);
+    const count=exactPhraseCount(rawTokens,phraseTokens);
+    return { term, count, per1000: rawTokens.length ? (count / rawTokens.length) * 1000 : 0 };
   });
 
   const zoneCounts = {

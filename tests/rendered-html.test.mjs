@@ -41,6 +41,8 @@ test("renders the English product homepage with live tools and production SEO me
   assert.match(html, /rel="canonical" href="https:\/\/textanalysis\.tools\/?"/i);
   assert.match(html, /property="og:image" content="https:\/\/textanalysis\.tools\/og\.png"/i);
   assert.match(html, /<h1>Free text analysis tools\./i);
+  assert.match(html, /For people, code, and AI agents\./i);
+  assert.match(html, /href="\/agents"/i);
   assert.match(html, /Word Frequency Counter/i);
   assert.match(html, /Keyword Density Checker/i);
   assert.match(html, /Bag of Words Analyzer/i);
@@ -94,6 +96,19 @@ test("counts tracked phrases as exact token sequences and allows overlaps", asyn
   const data = await response.json();
   assert.equal(data.result.focusCoverage.find((row) => row.term === "art").count, 1);
   assert.equal(data.result.focusCoverage.find((row) => row.term === "alpha alpha").count, 2);
+});
+
+test("counts focus phrases across stop words without synthesizing adjacency",async()=>{
+  const response=await post("/api/v1/analyze",{
+    source:"Analysis of text improves clarity. Analysis of text supports review. Analysis text is a different sequence.",
+    language:"en",
+    keepStopwords:false,
+    focus:["analysis of text","analysis text"],
+  });
+  assert.equal(response.status,200);
+  const data=await response.json();
+  assert.equal(data.result.focusCoverage.find(row=>row.term==="analysis of text").count,2);
+  assert.equal(data.result.focusCoverage.find(row=>row.term==="analysis text").count,1);
 });
 
 test("decodes HTML entities without counting entity names as words", async () => {
@@ -180,11 +195,13 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/compare-texts-by-word-frequency<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/cli<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/ru\/cli<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/agents<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/es\/agents<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk\/tf-idf-formula<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/es\/tf-idf-formula<\/loc>/);
   assert.match(xml, /hreflang="es" href="https:\/\/textanalysis\.tools\/es\/tools\/tf-idf-calculator"/);
   assert.match(xml, /hreflang="x-default" href="https:\/\/textanalysis\.tools\/tools\/tf-idf-calculator"/);
-  assert.equal((xml.match(/<url>/g)||[]).length,84);
+  assert.equal((xml.match(/<url>/g)||[]).length,88);
 });
 
 test("documents every tool page as a free WebApplication", async () => {
@@ -653,13 +670,37 @@ test("renders versioned npm CLI documentation and advertises it in llms.txt", as
   assert.match(html,/<h1>Text Analysis from the Command Line<\/h1>/i);
   assert.match(html,/npm install --global textanalysis-tools/i);
   assert.match(html,/"@type":"SoftwareSourceCode"/i);
-  assert.match(html,/"version":"0\.1\.1"/i);
+  assert.match(html,/"version":"0\.1\.2"/i);
+  assert.match(html,/textanalysis-tools@0\.1\.2.*mcp/i);
 
   assert.equal(llms.status,200);
   const llmsText=await llms.text();
   assert.match(llmsText,/## Local CLI/);
+  assert.match(llmsText,/## Local MCP/);
   assert.match(llmsText,/https:\/\/textanalysis\.tools\/cli/);
+  assert.match(llmsText,/https:\/\/textanalysis\.tools\/agents/);
   assert.match(llmsText,/https:\/\/textanalysis\.tools\/tf-idf-formula/);
+});
+
+test("renders localized AI-agent integration pages with MCP and OpenAPI discovery",async()=>{
+  const checks=[
+    ["/agents","Text Analysis Tools for AI Agents"],
+    ["/ru/agents","Инструменты анализа текста для AI-агентов"],
+    ["/uk/agents","Інструменти аналізу тексту для AI-агентів"],
+    ["/es/agents","Herramientas de análisis de texto para agentes de IA"],
+  ];
+  const responses=await Promise.all(checks.map(([path])=>request(path,{headers:{accept:"text/html"}})));
+  for(let index=0;index<checks.length;index+=1){
+    const [path,heading]=checks[index];
+    assert.equal(responses[index].status,200,path);
+    const html=await responses[index].text();
+    assert.match(html,new RegExp(`<h1>${heading}<\\/h1>`,"i"),path);
+    assert.match(html,/textanalysis-tools@0\.1\.2.*mcp/i,path);
+    assert.match(html,/analyze_text/i,path);
+    assert.match(html,/word_frequency/i,path);
+    assert.match(html,/href="\/openapi\.json"/i,path);
+    assert.match(html,/"@type":"SoftwareApplication"/i,path);
+  }
 });
 
 test("renders every tool with complete Russian, Ukrainian, and Spanish UI localization", async () => {
@@ -709,6 +750,7 @@ test("renders every informational route in Russian, Ukrainian, and Spanish with 
     "guides",
     "api-docs",
     "cli",
+    "agents",
     "how-to-calculate-word-frequency",
     "keyword-density-formula",
     "bag-of-words-model",
@@ -762,6 +804,7 @@ test("localized homepages link only to localized tools, guides, API, and CLI", a
     assert.match(html,new RegExp(`href="\\/${locale}\\/tf-idf-formula"`,"i"));
     assert.match(html,new RegExp(`href="\\/${locale}\\/api-docs"`,"i"));
     assert.match(html,new RegExp(`href="\\/${locale}\\/cli"`,"i"));
+    assert.match(html,new RegExp(`href="\\/${locale}\\/agents"`,"i"));
     assert.doesNotMatch(html,/Интерфейс EN|Інтерфейс EN|ГАЙД · EN/i);
   }
 });

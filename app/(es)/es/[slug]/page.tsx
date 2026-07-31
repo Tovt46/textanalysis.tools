@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import LocalizedInfoPage,{ isLocalizedInfoSlug,LOCALIZED_INFO_SLUGS,localizedInfoMetadata } from "../../../LocalizedInfoPage";
 
+export const revalidate=300;
+
 export function generateStaticParams(){
   return LOCALIZED_INFO_SLUGS.map(slug=>({slug}));
 }

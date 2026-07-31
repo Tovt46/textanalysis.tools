@@ -34,16 +34,17 @@ type HomeCopy={
   apiCopy:string;
   apiCta:string;
   cliCta:string;
+  agentCta:string;
 };
 
 const COPY:Record<UiLang,HomeCopy>={
   en:{
-    eyebrow:"TEXT ANALYSIS, WITHOUT BLACK BOXES",
+    eyebrow:"WEB · API · CLI · MCP",
     title:"Free text analysis tools.",
-    accent:"Count. Compare. Understand.",
-    intro:"Inspect word frequency, keyword density, and differences between texts with calculations you can see and results you can export.",
+    accent:"For people, code, and AI agents.",
+    intro:"Use transparent text analysis in the browser, automate it through a stateless API, or run the same deterministic methods locally from a terminal or AI agent.",
     primary:"Choose a tool",
-    secondary:"Explore the API",
+    secondary:"For AI agents",
     privacy:"Pasted text is processed without server storage.",
     live:"live tools",
     languages:"analysis languages",
@@ -84,19 +85,20 @@ const COPY:Record<UiLang,HomeCopy>={
       {label:"NLP GUIDE",title:"What Are N-grams?",description:"Unigrams through longer phrase windows, denominators, filtering, and practical uses."},
       {label:"WORKFLOW GUIDE",title:"Compare Texts by Word Frequency",description:"Measure normalized vocabulary changes without confusing them with a character diff."},
     ],
-    apiEye:"FOR DEVELOPERS",
-    apiTitle:"Use the same analysis through API or CLI",
-    apiCopy:"Call the stateless JSON API from an application or run eight local-first commands from npm. Both interfaces expose the same transparent analysis methods.",
+    apiEye:"ONE ENGINE · MULTIPLE INTERFACES",
+    apiTitle:"Use the same analysis from code, a terminal, or an AI agent",
+    apiCopy:"Call the stateless JSON API, run eight local-first npm commands, or expose the same read-only operations through MCP. Every interface uses the same transparent analysis methods.",
     apiCta:"Read API documentation",
     cliCta:"Open CLI documentation",
+    agentCta:"Explore agent integrations",
   },
   ru:{
-    eyebrow:"АНАЛИЗ ТЕКСТА БЕЗ ЧЁРНОГО ЯЩИКА",
+    eyebrow:"WEB · API · CLI · MCP",
     title:"Бесплатные инструменты анализа текста.",
-    accent:"Считайте. Сравнивайте. Понимайте.",
-    intro:"Проверяйте частотность слов, плотность ключевых фраз и различия между текстами с понятными расчётами и экспортируемыми результатами.",
+    accent:"Для людей, кода и AI-агентов.",
+    intro:"Используйте прозрачный анализ в браузере, автоматизируйте его через API или запускайте те же детерминированные методы локально из терминала и AI-агентов.",
     primary:"Выбрать инструмент",
-    secondary:"Открыть API",
+    secondary:"Для AI-агентов",
     privacy:"Вставленный текст обрабатывается без хранения на сервере.",
     live:"рабочих инструмента",
     languages:"языка анализа",
@@ -137,19 +139,20 @@ const COPY:Record<UiLang,HomeCopy>={
       {label:"NLP-ГАЙД",title:"Что такое N-граммы?",description:"Последовательности слов, знаменатели, фильтрация и практические сценарии."},
       {label:"ГАЙД",title:"Сравнение текстов по частотности",description:"Нормализованные изменения словаря без подмены анализа посимвольным diff."},
     ],
-    apiEye:"ДЛЯ РАЗРАБОТЧИКОВ",
-    apiTitle:"Используйте анализ через API или CLI",
-    apiCopy:"Вызывайте JSON API из приложения или запускайте восемь локальных команд из npm. Оба интерфейса используют те же прозрачные методы анализа.",
+    apiEye:"ОДИН ДВИЖОК · НЕСКОЛЬКО ИНТЕРФЕЙСОВ",
+    apiTitle:"Используйте анализ из кода, терминала или AI-агента",
+    apiCopy:"Вызывайте JSON API, запускайте восемь локальных npm-команд или подключайте те же read-only операции через MCP. Везде используются одинаковые прозрачные методы.",
     apiCta:"Открыть документацию API",
     cliCta:"Открыть документацию CLI",
+    agentCta:"Интеграции для агентов",
   },
   uk:{
-    eyebrow:"АНАЛІЗ ТЕКСТУ БЕЗ ЧОРНОЇ СКРИНЬКИ",
+    eyebrow:"WEB · API · CLI · MCP",
     title:"Безкоштовні інструменти аналізу тексту.",
-    accent:"Рахуйте. Порівнюйте. Розумійте.",
-    intro:"Перевіряйте частотність слів, щільність ключових фраз і відмінності між текстами з прозорими розрахунками та експортом результатів.",
+    accent:"Для людей, коду й AI-агентів.",
+    intro:"Використовуйте прозорий аналіз у браузері, автоматизуйте його через API або запускайте ті самі детерміновані методи локально з термінала й AI-агентів.",
     primary:"Вибрати інструмент",
-    secondary:"Відкрити API",
+    secondary:"Для AI-агентів",
     privacy:"Вставлений текст обробляється без зберігання на сервері.",
     live:"робочі інструменти",
     languages:"мови аналізу",
@@ -190,19 +193,20 @@ const COPY:Record<UiLang,HomeCopy>={
       {label:"NLP-ГАЙД",title:"Що таке N-грами?",description:"Послідовності слів, знаменники, фільтрація та практичні сценарії."},
       {label:"ГАЙД",title:"Порівняння текстів за частотністю",description:"Нормалізовані зміни словника без підміни аналізу посимвольним diff."},
     ],
-    apiEye:"ДЛЯ РОЗРОБНИКІВ",
-    apiTitle:"Використовуйте аналіз через API або CLI",
-    apiCopy:"Викликайте JSON API з програми або запускайте вісім локальних команд із npm. Обидва інтерфейси використовують ті самі прозорі методи аналізу.",
+    apiEye:"ОДИН РУШІЙ · КІЛЬКА ІНТЕРФЕЙСІВ",
+    apiTitle:"Використовуйте аналіз із коду, термінала або AI-агента",
+    apiCopy:"Викликайте JSON API, запускайте вісім локальних npm-команд або підключайте ті самі read-only операції через MCP. Усі інтерфейси використовують однакові прозорі методи.",
     apiCta:"Відкрити документацію API",
     cliCta:"Відкрити документацію CLI",
+    agentCta:"Інтеграції для агентів",
   },
   es:{
-    eyebrow:"ANÁLISIS DE TEXTO SIN CAJAS NEGRAS",
+    eyebrow:"WEB · API · CLI · MCP",
     title:"Herramientas gratuitas de análisis de texto.",
-    accent:"Cuenta. Compara. Comprende.",
-    intro:"Examina la frecuencia de palabras, la densidad de frases clave y las diferencias entre textos con cálculos visibles y resultados exportables.",
+    accent:"Para personas, código y agentes de IA.",
+    intro:"Usa análisis transparente en el navegador, automatízalo mediante la API o ejecuta los mismos métodos deterministas localmente desde una terminal o un agente de IA.",
     primary:"Elegir una herramienta",
-    secondary:"Explorar la API",
+    secondary:"Para agentes de IA",
     privacy:"El texto pegado se procesa sin almacenarse en el servidor.",
     live:"herramientas activas",
     languages:"idiomas de análisis",
@@ -243,11 +247,12 @@ const COPY:Record<UiLang,HomeCopy>={
       {label:"GUÍA NLP",title:"¿Qué son los N-gramas?",description:"Secuencias de palabras, denominadores, filtrado y usos prácticos."},
       {label:"GUÍA",title:"Comparar textos por frecuencia",description:"Cambios normalizados de vocabulario sin confundirlos con un diff carácter por carácter."},
     ],
-    apiEye:"PARA DESARROLLADORES",
-    apiTitle:"Usa el mismo análisis mediante API o CLI",
-    apiCopy:"Llama a la API JSON sin estado desde una aplicación o ejecuta ocho comandos locales desde npm. Ambas interfaces exponen los mismos métodos transparentes.",
+    apiEye:"UN MOTOR · VARIAS INTERFACES",
+    apiTitle:"Usa el análisis desde código, una terminal o un agente de IA",
+    apiCopy:"Llama a la API JSON, ejecuta ocho comandos npm locales o expón las mismas operaciones de solo lectura mediante MCP. Todas las interfaces usan los mismos métodos transparentes.",
     apiCta:"Leer la documentación de la API",
     cliCta:"Abrir la documentación de CLI",
+    agentCta:"Integraciones para agentes",
   },
 };
 
@@ -292,7 +297,7 @@ export default function HomePage({locale}:{locale:UiLang}){
       <h1>{copy.title}<br/><em>{copy.accent}</em></h1>
       <div className="home-hero-aside">
         <p>{copy.intro}</p>
-        <div className="home-actions"><a className="home-primary" href="#available-tools">{copy.primary}<span>↓</span></a><Link href={localizedPath(locale,"/api-docs")}>{copy.secondary}<span>→</span></Link></div>
+        <div className="home-actions"><a className="home-primary" href="#available-tools">{copy.primary}<span>↓</span></a><Link href={localizedPath(locale,"/agents")}>{copy.secondary}<span>→</span></Link></div>
         <span className="privacy-note"><b/>{copy.privacy}</span>
       </div>
     </section>
@@ -311,7 +316,7 @@ export default function HomePage({locale}:{locale:UiLang}){
     </section>
     <section className="home-api">
       <div><p className="eyebrow">{copy.apiEye}</p><h2>{copy.apiTitle}</h2></div>
-      <div><p>{copy.apiCopy}</p><div className="home-developer-links"><Link href={localizedPath(locale,"/api-docs")}>{copy.apiCta}<span>→</span></Link><Link href={localizedPath(locale,"/cli")}>{copy.cliCta}<span>→</span></Link></div></div>
+      <div><p>{copy.apiCopy}</p><div className="home-developer-links"><Link href={localizedPath(locale,"/api-docs")}>{copy.apiCta}<span>→</span></Link><Link href={localizedPath(locale,"/cli")}>{copy.cliCta}<span>→</span></Link><Link href={localizedPath(locale,"/agents")}>{copy.agentCta}<span>→</span></Link></div></div>
     </section>
     <SiteFooter locale={locale}/>
   </main>;

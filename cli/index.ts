@@ -3,6 +3,7 @@
 import {writeFile} from "node:fs/promises";
 import packageInfo from "../packages/cli/package.json";
 import {booleanOption,CliUsageError,parseCliArgs} from "./arguments";
+import {startMcpServer} from "./mcp";
 import {runOperation} from "./operations";
 import {renderCliOutput} from "./output";
 import {StdinReader} from "./sources";
@@ -23,6 +24,7 @@ Commands:
   bow           Generate a Bag of Words vector
   tfidf         Calculate TF-IDF across 2 to 10 documents
   similarity    Calculate BoW or TF-IDF cosine similarity
+  mcp           Start a local MCP server with all eight analysis tools
 
 Inputs:
   A positional input can be a local file, an HTTP(S) URL, or - for stdin.
@@ -54,6 +56,7 @@ Examples:
   textanalysis ngram https://example.com/article --size 3 --format csv
   textanalysis tfidf draft.txt competitor.txt --output tfidf.json --format json
   textanalysis similarity a.txt b.txt --method tfidf
+  textanalysis mcp
 `;
 
 function writeStdout(value:string){
@@ -70,6 +73,13 @@ async function main(){
   }
   if(booleanOption(parsed,"help")||!parsed.command){
     await writeStdout(HELP);
+    return;
+  }
+  if(parsed.command==="mcp"){
+    if(parsed.positionals.length||Object.keys(parsed.options).length){
+      throw new CliUsageError("The mcp command does not accept inputs or options.");
+    }
+    await startMcpServer(packageInfo.version);
     return;
   }
 

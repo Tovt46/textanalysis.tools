@@ -1,7 +1,8 @@
 # Text Analysis Tools
 
-A multilingual toolkit for word frequency, keyword density, Bag of Words,
-bigrams, focus phrases, Zipf distribution, and side-by-side text comparison.
+A multilingual text analysis engine with web tools for people, a public API
+for applications, and local CLI and MCP interfaces for automation and AI
+agents.
 
 ## Features
 
@@ -18,6 +19,7 @@ bigrams, focus phrases, Zipf distribution, and side-by-side text comparison.
 - Bag-of-Words and Zipf distribution metrics
 - stateless JSON API for text and public URLs
 - OpenAPI schema, `llms.txt`, sitemap, and multilingual SEO metadata
+- local stdio MCP server with eight read-only tools and structured results
 
 Submitted text is not stored on the server.
 
@@ -70,8 +72,9 @@ textanalysis --help
 ```
 
 Available commands are `analyze`, `frequency`, `density`, `compare`, `ngram`,
-`bow`, `tfidf`, and `similarity`. Analysis is performed locally by default;
-only URL inputs are downloaded. Use `--language auto|en|ru|uk|es`,
+`bow`, `tfidf`, and `similarity`; `mcp` starts the local agent server. Analysis
+is performed locally by default; only URL inputs are downloaded. Use
+`--language auto|en|ru|uk|es`,
 `--keep-stopwords`, `--stopwords <file>`, `--top <number>`, and
 `--format table|json|csv` to control common behavior.
 
@@ -93,15 +96,28 @@ npm run build:hostinger
 npm run start:hostinger
 ```
 
+## MCP for AI agents
+
+Start the local stdio server:
+
+```bash
+npx --yes textanalysis-tools mcp
+```
+
+The server exposes the same eight deterministic operations as read-only tools.
+See `/agents` for a copy-ready MCP client configuration and `/openapi.json`
+when an agent or application should use the public HTTP API instead.
+
 ## Main routes
 
-- `/`, `/uk`, `/ru` — localized product homepages
+- `/`, `/uk`, `/ru`, `/es` — localized product homepages
 - `/tools/*`, `/uk/tools/*`, `/ru/tools/*`, `/es/tools/*` — all eight tools in
   English, Ukrainian, Russian, and Spanish
-- `/guides`, `/uk/guides`, `/ru/guides` — localized guide directories
+- `/guides`, `/uk/guides`, `/ru/guides`, `/es/guides` — localized guide directories
 - `/<guide>`, `/uk/<guide>`, `/ru/<guide>`, `/es/<guide>` — all eight guides in each language
-- `/api-docs`, `/uk/api-docs`, `/ru/api-docs` — localized API documentation
-- `/cli`, `/uk/cli`, `/ru/cli` — localized npm CLI documentation
+- `/api-docs`, `/uk/api-docs`, `/ru/api-docs`, `/es/api-docs` — localized API documentation
+- `/cli`, `/uk/cli`, `/ru/cli`, `/es/cli` — localized npm CLI and MCP documentation
+- `/agents`, `/uk/agents`, `/ru/agents`, `/es/agents` — integrations for AI agents
 - `/bag-of-words-model` — Bag-of-Words guide
 - `/bag-of-words-vs-word2vec` — Bag-of-Words and Word2Vec comparison
 - `/api-docs` — public API documentation
@@ -121,6 +137,7 @@ npm run start:hostinger
 - `/what-are-n-grams` — unigram through 10-token window methodology
 - `/compare-texts-by-word-frequency` — normalized A/B text-comparison workflow
 - `/cli` — npm CLI installation, commands, inputs, output formats, and exit codes
+- `/agents` — Web, API, CLI, OpenAPI, and local MCP integration guide
 - `/openapi.json` — OpenAPI 3.1 schema
 - `/llms.txt` — machine-readable agent guidance
 

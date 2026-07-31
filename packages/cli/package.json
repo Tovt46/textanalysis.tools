@@ -1,7 +1,7 @@
 {
   "name": "textanalysis-tools",
-  "version": "0.1.1",
-  "description": "Local-first word frequency, keyword density, Bag of Words, TF-IDF, n-gram, comparison, and text similarity CLI.",
+  "version": "0.1.2",
+  "description": "Local-first text analysis CLI and MCP server for people, automation, and AI agents.",
   "type": "module",
   "bin": {
     "textanalysis": "dist/textanalysis.mjs"
@@ -13,6 +13,10 @@
     "node": ">=22.13.0"
   },
   "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.4.3"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Tovt46/textanalysis.tools.git",
@@ -30,7 +34,10 @@
     "tf-idf",
     "ngrams",
     "text-similarity",
-    "cli"
+    "cli",
+    "mcp",
+    "ai-agents",
+    "automation"
   ],
   "publishConfig": {
     "access": "public"

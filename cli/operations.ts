@@ -21,6 +21,7 @@ import type {SourceSpec} from "./sources";
 import {resolveCorpusSources,resolvePairSources,resolveSingleSource,StdinReader} from "./sources";
 
 type OutputFormat="table"|"json"|"csv";
+type CliAnalysisCommand=Exclude<CliCommand,"mcp">;
 
 export type CliSettings={
   format:OutputFormat;
@@ -47,7 +48,7 @@ const COMMON_OPTIONS=[
   "language","format","output","top","keep-stopwords","stopwords","help","version",
 ];
 
-const COMMAND_OPTIONS:Record<CliCommand,string[]>={
+const COMMAND_OPTIONS:Record<CliAnalysisCommand,string[]>={
   analyze:["text","url","focus","tolerance"],
   frequency:["text","url","min-count"],
   density:["text","url","keywords","min-count"],
@@ -58,7 +59,7 @@ const COMMAND_OPTIONS:Record<CliCommand,string[]>={
   similarity:["text-a","url-a","text-b","url-b","method"],
 };
 
-function validateCommandOptions(command:CliCommand,parsed:ParsedCliArgs){
+function validateCommandOptions(command:CliAnalysisCommand,parsed:ParsedCliArgs){
   const allowed=new Set([...COMMON_OPTIONS,...COMMAND_OPTIONS[command]]);
   const unsupported=Object.keys(parsed.options).find((name)=>!allowed.has(name));
   if(unsupported){
@@ -77,7 +78,7 @@ function numberOption(parsed:ParsedCliArgs,name:string,defaultValue:number,min:n
   return value;
 }
 
-async function parseSettings(command:CliCommand,parsed:ParsedCliArgs):Promise<CliSettings>{
+async function parseSettings(command:CliAnalysisCommand,parsed:ParsedCliArgs):Promise<CliSettings>{
   const formatValue=stringOption(parsed,"format")??"table";
   if(!["table","json","csv"].includes(formatValue)){
     throw new CliUsageError("Option --format must be table, json, or csv.");
@@ -247,7 +248,7 @@ async function runSimilarity(parsed:ParsedCliArgs,stdin:StdinReader,settings:Cli
   };
 }
 
-export async function runOperation(command:CliCommand,parsed:ParsedCliArgs,stdin:StdinReader):Promise<OperationResult>{
+export async function runOperation(command:CliAnalysisCommand,parsed:ParsedCliArgs,stdin:StdinReader):Promise<OperationResult>{
   validateCommandOptions(command,parsed);
   const settings=await parseSettings(command,parsed);
   let operation:{labels:string[];payload:Record<string,unknown>};

@@ -2,6 +2,7 @@
   "name": "textanalysis-tools",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "bin": {
     "textanalysis": "./packages/cli/dist/textanalysis.mjs"
   },
@@ -14,7 +15,7 @@
     "build": "next build",
     "build:hostinger": "next build",
     "cli": "npm run cli:build --silent && node packages/cli/dist/textanalysis.mjs",
-    "cli:build": "esbuild cli/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=packages/cli/dist/textanalysis.mjs",
+    "cli:build": "esbuild cli/index.ts --bundle --platform=node --format=esm --target=node22 --external:@modelcontextprotocol/sdk --external:@modelcontextprotocol/sdk/* --external:zod --external:zod/* --outfile=packages/cli/dist/textanalysis.mjs",
     "start": "next start",
     "start:hostinger": "next start",
     "test": "npm run cli:build && npm run build:hostinger && node scripts/run-rendered-tests.mjs",
@@ -27,26 +28,28 @@
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
-    "next": "16.2.11",
-    "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "next": "16.2.12",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.26",
     "drizzle-kit": "0.31.10",
     "esbuild": "0.28.1",
     "eslint": "9.39.4",
-    "eslint-config-next": "16.2.11",
+    "eslint-config-next": "16.2.12",
     "postcss": "8.5.22",
-    "react-server-dom-webpack": "19.2.6",
+    "react-server-dom-webpack": "19.2.8",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
-    "vite": "8.1.5"
+    "vite": "8.1.5",
+    "zod": "4.4.3"
   },
   "overrides": {
     "esbuild": "0.28.1",

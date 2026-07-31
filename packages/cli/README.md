@@ -1,7 +1,7 @@
 # textanalysis-tools
 
-Local-first command-line tools for word frequency, keyword density, Bag of
-Words, TF-IDF, n-grams, text comparison, and cosine similarity.
+Local-first command-line tools and an MCP server for word frequency, keyword
+density, Bag of Words, TF-IDF, n-grams, text comparison, and cosine similarity.
 
 The CLI accepts UTF-8 files, public HTTP(S) URLs, inline text, or piped stdin.
 Pasted text and local files stay on your machine. Only URL inputs are
@@ -33,6 +33,21 @@ npx --yes textanalysis-tools frequency article.txt
 - `tfidf` — calculate TF-IDF across 2 to 10 documents
 - `similarity` — calculate BoW or TF-IDF cosine similarity
 
+## MCP for AI agents
+
+Start a local stdio MCP server with the same eight deterministic analysis
+operations:
+
+```bash
+npx --yes textanalysis-tools mcp
+```
+
+The server exposes `analyze_text`, `word_frequency`, `keyword_density`,
+`ngram_analysis`, `bag_of_words`, `compare_texts`, `tfidf`, and
+`text_similarity` as read-only tools with validated inputs and structured
+results. Text arguments stay in the local process. Explicit public URL inputs
+are downloaded for analysis.
+
 ## Examples
 
 ```bash
@@ -49,7 +64,9 @@ Common options include `--language auto|en|ru|uk|es`, `--keep-stopwords`,
 
 Full CLI documentation is available at
 [textanalysis.tools/cli](https://textanalysis.tools/cli). The same analysis
-methods are also available through the web tools and public API.
+methods are also available through the web tools and public API. See the
+[agent integration guide](https://textanalysis.tools/agents) for MCP and
+OpenAPI setup.
 
 ## License
 

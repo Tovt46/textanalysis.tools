@@ -26,7 +26,7 @@ const schema={
       description,
       inLanguage:"en",
       datePublished:"2026-07-26",
-      dateModified:"2026-07-26",
+      dateModified:"2026-07-31",
       mainEntityOfPage:`${SITE_URL}${path}`,
       publisher:{"@type":"Organization",name:SITE_NAME,url:SITE_URL},
     },
@@ -62,6 +62,14 @@ const options=`--language auto|en|ru|uk|es
 --top <number>
 --keep-stopwords
 --stopwords <file>`;
+const mcpConfig=`{
+  "mcpServers": {
+    "textanalysis": {
+      "command": "npx",
+      "args": ["--yes", "textanalysis-tools@${cliPackage.version}", "mcp"]
+    }
+  }
+}`;
 
 export default function CliDocumentationPage(){
   return <main className="article-page">
@@ -86,6 +94,7 @@ export default function CliDocumentationPage(){
           <a href="#options">Common options</a>
           <a href="#outputs">Output and exit codes</a>
           <a href="#privacy">Privacy and URL behavior</a>
+          <a href="#mcp">Local MCP server</a>
           <a href="#api">CLI versus API</a>
         </aside>
         <div className="article-body api-docs-body">
@@ -156,10 +165,19 @@ export default function CliDocumentationPage(){
             <p>Inline text, local files, and stdin are analyzed inside the CLI process and are not sent to textanalysis.tools. When a command receives a public URL, the CLI downloads that page directly, removes non-content markup, and analyzes the extracted text locally.</p>
             <p>Only public HTTP and HTTPS URLs are accepted. Private and local-network destinations are rejected. Follow the source site&apos;s terms, access rules, and applicable data requirements when processing remote content.</p>
           </section>
-          <section id="api">
+          <section id="mcp">
             <p className="section-number">08</p>
-            <h2>Choose CLI for Local Workflows and API for Applications</h2>
-            <p>The CLI is suitable for files, shell pipelines, scheduled local jobs, and analysis that should remain on one machine. The public API is suitable when a web application or agent needs structured HTTP responses, OpenAPI discovery, and CORS.</p>
+            <h2>Expose the Eight Operations to AI Agents through MCP</h2>
+            <p>The <code>mcp</code> command starts a local stdio server with eight read-only tools, validated input schemas, and structured results. Text arguments stay in the local process. Explicit public URL inputs are fetched and then analyzed locally.</p>
+            <pre className="api-code"><code>{`npx --yes textanalysis-tools@${cliPackage.version} mcp`}</code></pre>
+            <p>Add the server to an MCP client that supports local stdio commands:</p>
+            <pre className="api-code"><code>{mcpConfig}</code></pre>
+            <p>See the <Link href="/agents">agent integration guide</Link> for the complete tool list, OpenAPI alternative, and data boundaries.</p>
+          </section>
+          <section id="api">
+            <p className="section-number">09</p>
+            <h2>Choose CLI or MCP for Local Workflows and API for Applications</h2>
+            <p>The CLI is suitable for files, shell pipelines, and scheduled jobs. MCP exposes the local engine directly to AI agents. The public API is suitable when an application or remote agent needs structured HTTP responses, OpenAPI discovery, and CORS.</p>
             <div className="article-callout subtle"><b>Same analysis primitives</b><p>The CLI and versioned API share the project&apos;s analysis implementation, but their transport, limits, and input handling are documented separately.</p></div>
             <p>Read the <Link href="/api-docs">API documentation</Link> or import the <a href="/openapi.json">OpenAPI specification</a> when HTTP integration is the better fit.</p>
           </section>
@@ -172,9 +190,9 @@ export default function CliDocumentationPage(){
             </ul>
           </section>
           <section className="article-final-cta">
-            <p className="eyebrow">VERSION {cliPackage.version} · EIGHT COMMANDS</p>
-            <h2>Run one analysis without installing anything</h2>
-            <p>Use npx with a local file, public URL, inline string, or piped text.</p>
+            <p className="eyebrow">VERSION {cliPackage.version} · CLI + MCP</p>
+            <h2>Run one analysis or connect a local agent</h2>
+            <p>Use npx with a local file, public URL, inline string, piped text, or the MCP server command.</p>
             <a href="https://www.npmjs.com/package/textanalysis-tools" rel="noreferrer">Open the npm package <span>→</span></a>
           </section>
         </div>

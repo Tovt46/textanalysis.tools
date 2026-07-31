@@ -7,6 +7,7 @@ export const COMMANDS=[
   "bow",
   "tfidf",
   "similarity",
+  "mcp",
 ] as const;
 
 export type CliCommand=typeof COMMANDS[number];
@@ -37,6 +38,7 @@ const COMMAND_ALIASES:Record<string,CliCommand>={
   "tf-idf":"tfidf",
   similarity:"similarity",
   "text-similarity":"similarity",
+  mcp:"mcp",
 };
 
 const BOOLEAN_OPTIONS=new Set([
@@ -159,4 +161,3 @@ export function stringOption(parsed:ParsedCliArgs,name:string){
 export function booleanOption(parsed:ParsedCliArgs,name:string){
   return parsed.options[name]===true;
 }
-

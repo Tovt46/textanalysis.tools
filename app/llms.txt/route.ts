@@ -22,11 +22,17 @@ Requests use application/json. Supported languages are English, Russian, Ukraini
 ## Local CLI
 
 - CLI documentation: ${SITE_URL}/cli
+- Agent integration guide: ${SITE_URL}/agents
 - npm package: https://www.npmjs.com/package/textanalysis-tools
 - Executable: textanalysis
-- Commands: analyze, frequency, density, compare, ngram, bow, tfidf, similarity
+- Analysis commands: analyze, frequency, density, compare, ngram, bow, tfidf, similarity
+- Local MCP server: npx --yes textanalysis-tools mcp
 
 The CLI accepts UTF-8 files, public HTTP(S) URLs, inline text, and piped stdin. Local files and stdin are processed on the user's machine. Results can be returned as tables, JSON, or CSV.
+
+## Local MCP
+
+The npm package exposes the same eight deterministic analysis operations as read-only MCP tools over stdio. Start it with \`npx --yes textanalysis-tools mcp\`. Text arguments stay in the local process; explicit URL inputs require a request to that public page.
 
 ## Main pages
 
@@ -50,6 +56,7 @@ The CLI accepts UTF-8 files, public HTTP(S) URLs, inline text, and piped stdin. 
 - N-gram guide: ${SITE_URL}/what-are-n-grams
 - Text comparison by normalized word frequency: ${SITE_URL}/compare-texts-by-word-frequency
 - Command-line interface documentation: ${SITE_URL}/cli
+- AI agent and MCP documentation: ${SITE_URL}/agents
 
 ## Russian pages
 

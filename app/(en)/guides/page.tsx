@@ -49,7 +49,7 @@ export default function GuidesPage(){
     </section>
     <section className="tools-directory planned-tools">
       <div className="directory-heading"><p className="section-number">PUT THE METHOD TO WORK</p><h2>Analyze manually or automate the same calculation</h2></div>
-      <div className="planned-grid developer-grid"><Link href="/tools"><span>EIGHT WEB TOOLS</span><h3>Interactive tools</h3><p>Paste text, inspect formulas and full tables, compare results, and export the evidence.</p></Link><Link href="/cli"><span>NPM · LOCAL-FIRST</span><h3>Command-line interface</h3><p>Run the same methods against files, URLs, inline text, or stdin with JSON and CSV output.</p></Link></div>
+      <div className="planned-grid developer-grid"><Link href="/tools"><span>EIGHT WEB TOOLS</span><h3>Interactive tools</h3><p>Paste text, inspect formulas and full tables, compare results, and export the evidence.</p></Link><Link href="/cli"><span>NPM · LOCAL-FIRST</span><h3>Command-line interface</h3><p>Run the same methods against files, URLs, inline text, or stdin with JSON and CSV output.</p></Link><Link href="/agents"><span>MCP · OPENAPI</span><h3>AI agent integrations</h3><p>Give agents the same deterministic operations through local MCP tools or the public API.</p></Link></div>
     </section>
     <SiteFooter locale="en"/>
   </main>;

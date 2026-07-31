@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import cliPackage from "../packages/cli/package.json";
+import AgentPage,{AGENT_COPY} from "./AgentPage";
 import type { UiLang } from "./i18n";
 import { languagePaths,localizedMetadata,localizedPath } from "./localization";
 import { SiteFooter,SiteHeader } from "./SiteChrome";
@@ -10,6 +11,7 @@ export const LOCALIZED_INFO_SLUGS=[
   "guides",
   "api-docs",
   "cli",
+  "agents",
   "how-to-calculate-word-frequency",
   "keyword-density-formula",
   "bag-of-words-vs-word2vec",
@@ -21,7 +23,7 @@ export const LOCALIZED_INFO_SLUGS=[
 
 export type LocalizedInfoSlug=(typeof LOCALIZED_INFO_SLUGS)[number];
 type LocalizedLocale=Exclude<UiLang,"en">;
-type ArticleSlug=Exclude<LocalizedInfoSlug,"guides"|"api-docs"|"cli">;
+type ArticleSlug=Exclude<LocalizedInfoSlug,"guides"|"api-docs"|"cli"|"agents">;
 
 type ArticleSection={
   id:string;
@@ -280,9 +282,13 @@ function metadataCopy(locale:LocalizedLocale,slug:LocalizedInfoSlug){
     return {title:"API de análisis de texto: documentación y ejemplos",description:"Documentación de la API JSON pública para frecuencia, densidad, N-gramas, Bag of Words, TF-IDF, similitud y comparación de textos.",type:"article" as const};
   }
   if(slug==="cli"){
-    if(locale==="ru")return {title:"CLI для анализа текста: установка и команды",description:"Установите textanalysis-tools из npm и запускайте восемь команд анализа для файлов, URL, текста и stdin с выводом таблиц, JSON и CSV.",type:"article" as const};
-    if(locale==="uk")return {title:"CLI для аналізу тексту: встановлення й команди",description:"Встановіть textanalysis-tools із npm і запускайте вісім команд аналізу для файлів, URL, тексту та stdin із виведенням таблиць, JSON і CSV.",type:"article" as const};
-    return {title:"CLI de análisis de texto: instalación y comandos",description:"Instala textanalysis-tools desde npm y ejecuta ocho comandos para archivos, URL, texto y stdin con salida de tabla, JSON o CSV.",type:"article" as const};
+    if(locale==="ru")return {title:"CLI и MCP для анализа текста: npm и AI-агенты",description:"Установите textanalysis-tools из npm, запускайте восемь CLI-команд и подключайте локальный MCP-сервер к AI-агентам.",type:"article" as const};
+    if(locale==="uk")return {title:"CLI та MCP для аналізу тексту: npm і AI-агенти",description:"Встановіть textanalysis-tools із npm, запускайте вісім CLI-команд і підключайте локальний MCP-сервер до AI-агентів.",type:"article" as const};
+    return {title:"CLI y MCP de análisis de texto: npm y agentes de IA",description:"Instala textanalysis-tools desde npm, ejecuta ocho comandos CLI y conecta el servidor MCP local a agentes de IA.",type:"article" as const};
+  }
+  if(slug==="agents"){
+    const copy=AGENT_COPY[locale];
+    return {title:copy.title,description:copy.description,type:"article" as const};
   }
   const copy=articleCopy(locale,slug);
   return {title:copy.title,description:copy.description,type:"article" as const};
@@ -357,11 +363,11 @@ function CliDocs({locale}:{locale:LocalizedLocale}){
   const ru=locale==="ru";
   const es=locale==="es";
   const copy=ru?{
-    eyebrow:"NPM · MIT · ЛОКАЛЬНАЯ ОБРАБОТКА",title:"CLI для анализа текста",deck:"Запускайте те же восемь методов из терминала для UTF-8-файлов, публичных URL, строк и stdin. Локальные файлы и stdin не отправляются на сервер.",install:"Установка и первый запуск",commands:"Восемь команд",inputs:"Способы ввода",options:"Общие параметры",outputs:"Форматы и коды завершения",privacy:"Локальная обработка и URL",api:"Когда выбрать API",apiText:"Используйте API, если анализ должен выполняться на сервере приложения или нужен стабильный HTTP-контракт.",openApi:"Открыть документацию API",
+    eyebrow:"NPM · MIT · ЛОКАЛЬНАЯ ОБРАБОТКА",title:"CLI и MCP для анализа текста",deck:"Запускайте восемь методов из терминала или подключайте их к AI-агентам через локальный MCP. Файлы, stdin и MCP-текст не отправляются на сервер.",install:"Установка и первый запуск",commands:"Восемь команд",inputs:"Способы ввода",options:"Общие параметры",outputs:"Форматы и коды завершения",privacy:"Локальная обработка и URL",mcp:"Локальный MCP для AI-агентов",mcpText:"Команда textanalysis mcp запускает stdio-сервер с восемью read-only tools, проверяемыми входными схемами и структурированными результатами.",api:"Когда выбрать API",apiText:"Используйте API, если анализ должен выполняться на сервере приложения или нужен стабильный HTTP-контракт.",openApi:"Открыть документацию API",
   }:es?{
-    eyebrow:"NPM · MIT · PROCESAMIENTO LOCAL",title:"CLI de análisis de texto",deck:"Ejecuta los mismos ocho métodos desde la terminal para archivos UTF-8, URL públicas, cadenas y stdin. Los archivos locales y stdin no se envían al servidor.",install:"Instalación y primer uso",commands:"Ocho comandos",inputs:"Métodos de entrada",options:"Opciones comunes",outputs:"Formatos y códigos de salida",privacy:"Procesamiento local y URL",api:"Cuándo elegir la API",apiText:"Usa la API cuando el análisis deba ejecutarse en el servidor de una aplicación o necesites un contrato HTTP estable.",openApi:"Abrir documentación de la API",
+    eyebrow:"NPM · MIT · PROCESAMIENTO LOCAL",title:"CLI y MCP de análisis de texto",deck:"Ejecuta ocho métodos desde la terminal o conéctalos a agentes de IA mediante MCP local. Los archivos, stdin y el texto MCP no se envían al servidor.",install:"Instalación y primer uso",commands:"Ocho comandos",inputs:"Métodos de entrada",options:"Opciones comunes",outputs:"Formatos y códigos de salida",privacy:"Procesamiento local y URL",mcp:"MCP local para agentes de IA",mcpText:"El comando textanalysis mcp inicia un servidor stdio con ocho tools de solo lectura, esquemas de entrada validados y resultados estructurados.",api:"Cuándo elegir la API",apiText:"Usa la API cuando el análisis deba ejecutarse en el servidor de una aplicación o necesites un contrato HTTP estable.",openApi:"Abrir documentación de la API",
   }:{
-    eyebrow:"NPM · MIT · ЛОКАЛЬНА ОБРОБКА",title:"CLI для аналізу тексту",deck:"Запускайте ті самі вісім методів із термінала для UTF-8-файлів, публічних URL, рядків і stdin. Локальні файли та stdin не надсилаються на сервер.",install:"Встановлення й перший запуск",commands:"Вісім команд",inputs:"Способи введення",options:"Спільні параметри",outputs:"Формати й коди завершення",privacy:"Локальна обробка та URL",api:"Коли вибрати API",apiText:"Використовуйте API, якщо аналіз має виконуватися на сервері програми або потрібен стабільний HTTP-контракт.",openApi:"Відкрити документацію API",
+    eyebrow:"NPM · MIT · ЛОКАЛЬНА ОБРОБКА",title:"CLI та MCP для аналізу тексту",deck:"Запускайте вісім методів із термінала або підключайте їх до AI-агентів через локальний MCP. Файли, stdin і MCP-текст не надсилаються на сервер.",install:"Встановлення й перший запуск",commands:"Вісім команд",inputs:"Способи введення",options:"Спільні параметри",outputs:"Формати й коди завершення",privacy:"Локальна обробка та URL",mcp:"Локальний MCP для AI-агентів",mcpText:"Команда textanalysis mcp запускає stdio-сервер із вісьмома read-only tools, перевіреними вхідними схемами та структурованими результатами.",api:"Коли вибрати API",apiText:"Використовуйте API, якщо аналіз має виконуватися на сервері програми або потрібен стабільний HTTP-контракт.",openApi:"Відкрити документацію API",
   };
   const commands=[
     ["analyze",ru?"Полный Bag of Words-анализ и показатели Ципфа":es?"Análisis Bag of Words completo y métricas de Zipf":"Повний Bag of Words-аналіз і показники Ципфа"],
@@ -378,13 +384,14 @@ function CliDocs({locale}:{locale:LocalizedLocale}){
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
     <SiteHeader locale={locale} active="api" languagePaths={languagePaths("/cli")}/>
     <article><div className="article-hero"><nav className="breadcrumbs" aria-label={CHROME_COPY[locale].breadcrumb}><Link href={localizedPath(locale,"/")}>{CHROME_COPY[locale].home}</Link><span>/</span><span>CLI</span></nav><p className="eyebrow">{copy.eyebrow}</p><h1>{copy.title}</h1><p className="article-deck">{copy.deck}</p><div className="article-actions"><a className="primary-article-cta" href="#install">{copy.install}</a><a href="https://www.npmjs.com/package/textanalysis-tools" rel="noreferrer">npm v{cliPackage.version} →</a></div></div>
-      <div className="article-layout"><aside className="article-toc"><b>{CHROME_COPY[locale].contents}</b><a href="#install">{copy.install}</a><a href="#commands">{copy.commands}</a><a href="#inputs">{copy.inputs}</a><a href="#options">{copy.options}</a><a href="#outputs">{copy.outputs}</a><a href="#privacy">{copy.privacy}</a></aside><div className="article-body api-docs-body">
+      <div className="article-layout"><aside className="article-toc"><b>{CHROME_COPY[locale].contents}</b><a href="#install">{copy.install}</a><a href="#commands">{copy.commands}</a><a href="#inputs">{copy.inputs}</a><a href="#options">{copy.options}</a><a href="#outputs">{copy.outputs}</a><a href="#privacy">{copy.privacy}</a><a href="#mcp">{copy.mcp}</a></aside><div className="article-body api-docs-body">
         <section id="install"><p className="section-number">01</p><h2>{copy.install}</h2><pre className="api-code"><code>{`npm install --global textanalysis-tools\ntextanalysis frequency --file article.txt --language auto\n\n# without global install\nnpx textanalysis-tools frequency --text "alpha beta alpha"`}</code></pre><p>{ru?"Требуется Node.js 22.13 или новее. Пакет устанавливает команду textanalysis.":es?"Requiere Node.js 22.13 o posterior. El paquete instala el comando textanalysis.":"Потрібен Node.js 22.13 або новіший. Пакет встановлює команду textanalysis."}</p></section>
         <section id="commands"><p className="section-number">02</p><h2>{copy.commands}</h2><div className="feature-list">{commands.map(([command,description])=><div key={command}><h3>textanalysis {command}</h3><p>{description}</p></div>)}</div></section>
         <section id="inputs"><p className="section-number">03</p><h2>{copy.inputs}</h2><div className="feature-list"><div><h3>--file path.txt</h3><p>{ru?"Локальный UTF-8-файл.":es?"Archivo UTF-8 local.":"Локальний UTF-8-файл."}</p></div><div><h3>--text &quot;...&quot;</h3><p>{ru?"Строка из аргумента командной строки.":es?"Cadena proporcionada como argumento.":"Рядок з аргументу командного рядка."}</p></div><div><h3>--url https://...</h3><p>{ru?"Публичная HTTP/HTTPS-страница.":es?"Página HTTP/HTTPS pública.":"Публічна HTTP/HTTPS-сторінка."}</p></div><div><h3>stdin</h3><p>{ru?"Конвейер или перенаправленный ввод.":es?"Entrada canalizada o redirigida.":"Конвеєр або перенаправлене введення."}</p></div></div><pre className="api-code"><code>{`cat article.txt | textanalysis ngram --n 2 --format csv\ntextanalysis compare --file draft.txt --file-b final.txt --format json\ntextanalysis tfidf --file a.txt --file-b b.txt --file-c c.txt`}</code></pre></section>
         <section id="options"><p className="section-number">04</p><h2>{copy.options}</h2><div className="vector-table"><div className="vector-row vector-head"><span>{ru?"Параметр":es?"Opción":"Параметр"}</span><span>{ru?"Назначение":es?"Finalidad":"Призначення"}</span></div><div className="vector-row"><b>--language</b><span>auto, en, ru, uk, es</span></div><div className="vector-row"><b>--keep-stopwords</b><span>{ru?"Оставить служебные слова":es?"Conservar palabras vacías":"Залишити службові слова"}</span></div><div className="vector-row"><b>--format</b><span>table, json, csv</span></div><div className="vector-row"><b>--top</b><span>{ru?"Ограничить число строк":es?"Limitar el número de filas":"Обмежити кількість рядків"}</span></div></div></section>
         <section id="outputs"><p className="section-number">05</p><h2>{copy.outputs}</h2><p>{ru?"Таблица предназначена для чтения в терминале, JSON — для скриптов, CSV — для таблиц и конвейеров. Код 0 означает успех, ненулевой код — ошибку аргументов, чтения, сети или анализа.":es?"La tabla está pensada para la terminal, JSON para scripts y CSV para hojas de cálculo y canalizaciones. El código 0 indica éxito; otro código indica un error de argumentos, lectura, red o análisis.":"Таблиця призначена для читання в терміналі, JSON — для скриптів, CSV — для таблиць і конвеєрів. Код 0 означає успіх, ненульовий код — помилку аргументів, читання, мережі чи аналізу."}</p></section>
         <section id="privacy"><p className="section-number">06</p><h2>{copy.privacy}</h2><p>{ru?"Файлы, строка --text и stdin обрабатываются локально. URL требует сетевого запроса к указанной странице, но содержимое не сохраняется инструментом. Выбирайте локальный ввод для закрытых или неопубликованных материалов.":es?"Los archivos, --text y stdin se procesan localmente. Una URL requiere una solicitud de red a la página indicada, pero la herramienta no almacena el contenido. Usa entradas locales para material privado o sin publicar.":"Файли, рядок --text і stdin обробляються локально. URL потребує мережевого запиту до вказаної сторінки, але вміст не зберігається інструментом. Вибирайте локальне введення для закритих або неопублікованих матеріалів."}</p></section>
+        <section id="mcp"><p className="section-number">07</p><h2>{copy.mcp}</h2><p>{copy.mcpText}</p><pre className="api-code"><code>{`npx --yes textanalysis-tools@${cliPackage.version} mcp`}</code></pre><p><Link href={localizedPath(locale,"/agents")}>{ru?"Открыть руководство для агентов":es?"Abrir la guía para agentes":"Відкрити гайд для агентів"} →</Link></p></section>
         <section className="article-final-cta"><p className="eyebrow">HTTP · OPENAPI</p><h2>{copy.api}</h2><p>{copy.apiText}</p><Link href={localizedPath(locale,"/api-docs")}>{copy.openApi} <span>→</span></Link></section>
       </div></div>
     </article><SiteFooter locale={locale}/>
@@ -413,5 +420,6 @@ export default function LocalizedInfoPage({locale,slug}:{locale:LocalizedLocale;
   if(slug==="guides")return <GuidesDirectory locale={locale}/>;
   if(slug==="api-docs")return <ApiDocs locale={locale}/>;
   if(slug==="cli")return <CliDocs locale={locale}/>;
+  if(slug==="agents")return <AgentPage locale={locale}/>;
   return <ArticlePage locale={locale} slug={slug}/>;
 }

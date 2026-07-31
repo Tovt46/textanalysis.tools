@@ -102,6 +102,18 @@ async function checkToolPages(){
   await checkScriptUrls(uniqueScripts,"Tool pages");
 }
 
+async function checkAgentPage(){
+  const response=await request("/agents");
+  assert.equal(response.status,200,"Agent integration page must return HTTP 200.");
+  const html=await response.text();
+  assert.match(html,/Text Analysis Tools for AI Agents/i,"Agent integration page has the wrong heading.");
+  assert.match(html,/textanalysis-tools@0\.1\.2/i,"Agent integration page does not advertise the current npm release.");
+  assert.match(html,/analyze_text/i,"Agent integration page does not list MCP tools.");
+  assert.match(html,/href="\/openapi\.json"/i,"Agent integration page is missing OpenAPI discovery.");
+  assertDeploySafeCache(response,"Agent integration page");
+  await checkScripts(html,"Agent integration page");
+}
+
 async function checkCors(path){
   const response=await request(path,{
     method:"OPTIONS",
@@ -201,6 +213,7 @@ async function checkApis(){
 await checkHomepage();
 await checkRedirect();
 await checkToolPages();
+await checkAgentPage();
 await checkApis();
 
 console.log(`Production smoke check passed for ${baseUrl.origin}.`);

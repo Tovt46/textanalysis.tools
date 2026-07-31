@@ -26,25 +26,25 @@ const HOME_COPY: Record<UiLang,{ path:string; title:string; description:string; 
   ru: {
     path: "/ru",
     title: "Бесплатные инструменты анализа текста | Text Analysis Tools",
-    description: "Анализируйте частотность слов, плотность ключевых фраз и различия между текстами. Прозрачные расчёты, работа без регистрации и хранения текста.",
+    description: "Прозрачный анализ частотности, плотности и сходства для людей и AI-агентов: Web, API, локальный CLI и MCP без хранения текста.",
     locale: "ru_RU",
   },
   en: {
     path: "/",
     title: "Free Text Analysis Tools for Words, Keywords & Comparison",
-    description: "Analyze word frequency, keyword density, Bag of Words, and text differences with transparent browser-based tools. No sign-up and no server storage.",
+    description: "Transparent word frequency, density, Bag of Words, and similarity for people and AI agents through Web, API, local CLI, and MCP.",
     locale: "en_US",
   },
   uk: {
     path: "/uk",
     title: "Безкоштовні інструменти аналізу тексту | Text Analysis Tools",
-    description: "Аналізуйте частотність слів, щільність ключових фраз і відмінності між текстами. Прозорі розрахунки без реєстрації та зберігання тексту.",
+    description: "Прозорий аналіз частотності, щільності й подібності для людей та AI-агентів: Web, API, локальний CLI і MCP без зберігання тексту.",
     locale: "uk_UA",
   },
   es: {
     path: "/es",
     title: "Herramientas gratuitas de análisis de texto | Text Analysis Tools",
-    description: "Analiza frecuencia de palabras, densidad de palabras clave y diferencias entre textos con cálculos transparentes, sin registro ni almacenamiento.",
+    description: "Análisis transparente de frecuencia, densidad y similitud para personas y agentes de IA mediante Web, API, CLI local y MCP.",
     locale: "es_ES",
   },
 };

@@ -4,6 +4,8 @@ import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {spawn} from "node:child_process";
 import test from "node:test";
+import {Client} from "@modelcontextprotocol/sdk/client/index.js";
+import {StdioClientTransport} from "@modelcontextprotocol/sdk/client/stdio.js";
 
 const CLI_PATH=new URL("../packages/cli/dist/textanalysis.mjs",import.meta.url);
 const CLI_PACKAGE=JSON.parse(await readFile(new URL("../packages/cli/package.json",import.meta.url),"utf8"));
@@ -35,8 +37,59 @@ test("CLI exposes help and version",async()=>{
   assert.equal(help.code,0);
   assert.match(help.stdout,/Commands:\s+analyze/);
   assert.match(help.stdout,/similarity/);
+  assert.match(help.stdout,/mcp/);
   assert.equal(version.code,0);
   assert.equal(version.stdout,`${CLI_PACKAGE.version}\n`);
+});
+
+test("MCP exposes eight local read-only tools with structured results",async(t)=>{
+  const transport=new StdioClientTransport({
+    command:process.execPath,
+    args:[CLI_PATH.pathname,"mcp"],
+    stderr:"pipe",
+  });
+  const client=new Client({name:"textanalysis-tools-test",version:"1.0.0"});
+  t.after(async()=>client.close());
+  await client.connect(transport);
+
+  const listed=await client.listTools();
+  assert.equal(listed.tools.length,8);
+  assert.deepEqual(
+    listed.tools.map(tool=>tool.name),
+    ["analyze_text","word_frequency","keyword_density","ngram_analysis","bag_of_words","compare_texts","tfidf","text_similarity"],
+  );
+  assert.ok(listed.tools.every(tool=>tool.annotations?.readOnlyHint===true));
+
+  const response=await client.callTool({
+    name:"word_frequency",
+    arguments:{
+      source:"alpha beta alpha gamma",
+      language:"en",
+      keepStopwords:true,
+    },
+  });
+  assert.equal(response.isError,undefined);
+  assert.deepEqual(response.structuredContent.result.rows[0],{
+    term:"alpha",
+    count:2,
+    percentage:50,
+    per1000:500,
+  });
+  assert.equal(response.structuredContent.storage,"local");
+});
+
+test("focus phrases preserve stop-word adjacency when table stop words are hidden",async()=>{
+  const response=await runCli([
+    "analyze",
+    "--text","Analysis of text improves clarity. Analysis of text supports review. Analysis of text provides evidence.",
+    "--language","en",
+    "--focus","analysis of text",
+    "--format","json",
+  ]);
+  assert.equal(response.code,0,response.stderr);
+  const data=JSON.parse(response.stdout);
+  assert.equal(data.result.focusCoverage[0].count,3);
+  assert.equal(data.result.focusCoverage[0].per1000,200);
 });
 
 test("frequency reads stdin and returns deterministic local JSON",async()=>{
