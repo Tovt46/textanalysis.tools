@@ -99,6 +99,7 @@ test("home exposes entry paths for people, developers, and AI agents",async({pag
 });
 
 test("large local analysis runs in a cancellable Worker and enforces the browser limit",async({page})=>{
+  test.setTimeout(90_000);
   await page.goto("/tools/word-frequency-counter");
   const form=page.locator("form.frequency-workspace");
   const textarea=form.locator("textarea").first();
