@@ -2,12 +2,13 @@
 
 import { FormEvent,useMemo,useState } from "react";
 import Link from "next/link";
-import { analyzeText } from "./lib/analyze";
-import { compareAnalysisResults } from "./lib/comparison";
+import type { compareAnalysisResults } from "./lib/comparison";
+import { AnalysisProgress,hasPartialBrowserResult,isAnalysisAbort,PartialResultNotice,useBrowserAnalysis,validateBrowserInputs } from "./lib/browser-analysis";
 import { DEFAULT_STOPWORD_LISTS,type TextLanguage } from "./lib/stopwords";
 import type { UiLang } from "./i18n";
 import { BREADCRUMB_LABELS,formatNumber,localizedPath,localizeApiError } from "./localization";
 import { TEXT_COMPARISON_UI } from "./tool-ui-copy";
+import { CopyResultAction,ExampleAction,type ToolExample } from "./ToolWorkflowActions";
 
 type SourceType="text"|"url";
 type ComparisonView="words"|"bigrams";
@@ -65,8 +66,8 @@ export default function TextComparisonTool({uiLang="en"}:{uiLang?:UiLang}){
   const [result,setResult]=useState<ComparisonPayload|null>(null);
   const [view,setView]=useState<ComparisonView>("words");
   const [query,setQuery]=useState("");
-  const [loading,setLoading]=useState(false);
   const [error,setError]=useState("");
+  const {busy:loading,progress,runWorker,runRemote,cancel}=useBrowserAnalysis();
 
   const filteredRows=useMemo(()=>{
     if(!result)return [];
@@ -76,50 +77,48 @@ export default function TextComparisonTool({uiLang="en"}:{uiLang?:UiLang}){
   },[query,result,view]);
 
   function selectSource(side:"a"|"b",value:SourceType){
+    cancel();
     if(side==="a"){setSourceTypeA(value);setSourceA("");}
     else{setSourceTypeB(value);setSourceB("");}
     setResult(null);setError("");
+  }
+  function loadExample(example:ToolExample){
+    cancel();setSourceTypeA("text");setSourceTypeB("text");setSourceA(example.sources[0]);setSourceB(example.sources[1]);setLanguage(uiLang);setResult(null);setError("");
   }
 
   async function runComparison(event:FormEvent){
     event.preventDefault();
     if(!sourceA.trim()||!sourceB.trim())return;
-    setLoading(true);setError("");setResult(null);
+    setError("");setResult(null);
     try{
       let next:ComparisonPayload;
       if(sourceTypeA==="text"&&sourceTypeB==="text"){
-        await new Promise<void>(resolve=>window.setTimeout(resolve,0));
+        validateBrowserInputs([sourceA,sourceB],uiLang);
         const shared={language,top:100,tolerance:2,keepStopwords,stopwordLists:DEFAULT_STOPWORD_LISTS,uiLanguage:uiLang};
-        const coreA=analyzeText({text:sourceA,...shared});
-        const coreB=analyzeText({text:sourceB,...shared});
-        next={
-          resultA:coreA,
-          resultB:coreB,
-          comparison:compareAnalysisResults(
-            {result:coreA,unigrams:coreA._allUnigrams,bigrams:coreA._allBigrams},
-            {result:coreB,unigrams:coreB._allUnigrams,bigrams:coreB._allBigrams},
-          ),
-        };
+        next=await runWorker<ComparisonPayload>("comparison",{a:{text:sourceA,...shared},b:{text:sourceB,...shared}});
       }else{
-        const response=await fetch("/api/v1/compare",{
-          method:"POST",
-          headers:{"Content-Type":"application/json","Accept":"application/json"},
-          body:JSON.stringify({
-            a:{sourceType:sourceTypeA,source:sourceA,language,top:100,tolerance:2,keepStopwords},
-            b:{sourceType:sourceTypeB,source:sourceB,language,top:100,tolerance:2,keepStopwords},
-          }),
+        next=await runRemote(async signal=>{
+          const response=await fetch("/api/v1/compare",{
+            method:"POST",signal,
+            headers:{"Content-Type":"application/json","Accept":"application/json"},
+            body:JSON.stringify({
+              a:{sourceType:sourceTypeA,source:sourceA,language,top:100,tolerance:2,keepStopwords},
+              b:{sourceType:sourceTypeB,source:sourceB,language,top:100,tolerance:2,keepStopwords},
+            }),
+          });
+          const raw=await response.text();
+          let payload:unknown;
+          try{payload=JSON.parse(raw);}catch{throw new Error(copy.invalid);}
+          if(!response.ok)throw new Error(localizeApiError(payload,copy.urlFailed,uiLang));
+          return payload as ComparisonPayload;
         });
-        const raw=await response.text();
-        let payload:unknown;
-        try{payload=JSON.parse(raw);}catch{throw new Error(copy.invalid);}
-        if(!response.ok)throw new Error(localizeApiError(payload,copy.urlFailed,uiLang));
-        next=payload as ComparisonPayload;
       }
       setResult(next);setView("words");setQuery("");
       window.setTimeout(()=>document.getElementById("comparison-results")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
     }catch(caught){
+      if(isAnalysisAbort(caught))return;
       setError(caught instanceof Error?caught.message:copy.failed);
-    }finally{setLoading(false);}
+    }
   }
 
   function exportCsv(){
@@ -159,36 +158,39 @@ export default function TextComparisonTool({uiLang="en"}:{uiLang?:UiLang}){
       <span className="privacy-note"><b/>{usesApi?copy.privacyApi:copy.privacyLocal}</span>
     </section>
 
-    <form className="comparison-workspace" onSubmit={runComparison}>
+    <form className="comparison-workspace" onSubmit={runComparison} aria-busy={loading}>
       <div className="comparison-source-grid">
         <section className="comparison-source-card">
           <div className="section-head"><div><span>A</span><h2>{copy.original}</h2></div><div className="tabs"><button type="button" className={sourceTypeA==="text"?"active":""} onClick={()=>selectSource("a","text")}>{copy.text}</button><button type="button" className={sourceTypeA==="url"?"active":""} onClick={()=>selectSource("a","url")}>{copy.url}</button></div></div>
           {sourceTypeA==="text"
-            ?<div className="textarea-wrap"><textarea value={sourceA} onChange={event=>setSourceA(event.target.value)} placeholder={copy.pasteA} aria-label={copy.ariaA}/><span>{formatNumber(sourceA.length,uiLang)} {copy.characters}</span></div>
-            :<><input className="url-input" type="url" value={sourceA} onChange={event=>setSourceA(event.target.value)} placeholder="https://example.com/original" aria-label={copy.urlA} required/><p className="url-help">{copy.urlHelpA}</p></>}
+            ?<div className="textarea-wrap"><textarea value={sourceA} onChange={event=>{cancel();setSourceA(event.target.value);setResult(null);setError("");}} placeholder={copy.pasteA} aria-label={copy.ariaA}/><span>{formatNumber(sourceA.length,uiLang)} {copy.characters}</span></div>
+            :<><input className="url-input" type="url" value={sourceA} onChange={event=>{cancel();setSourceA(event.target.value);setResult(null);setError("");}} placeholder="https://example.com/original" aria-label={copy.urlA} required/><p className="url-help">{copy.urlHelpA}</p></>}
         </section>
         <section className="comparison-source-card">
           <div className="section-head"><div><span>B</span><h2>{copy.updated}</h2></div><div className="tabs"><button type="button" className={sourceTypeB==="text"?"active":""} onClick={()=>selectSource("b","text")}>{copy.text}</button><button type="button" className={sourceTypeB==="url"?"active":""} onClick={()=>selectSource("b","url")}>{copy.url}</button></div></div>
           {sourceTypeB==="text"
-            ?<div className="textarea-wrap"><textarea value={sourceB} onChange={event=>setSourceB(event.target.value)} placeholder={copy.pasteB} aria-label={copy.ariaB}/><span>{formatNumber(sourceB.length,uiLang)} {copy.characters}</span></div>
-            :<><input className="url-input" type="url" value={sourceB} onChange={event=>setSourceB(event.target.value)} placeholder="https://example.com/updated" aria-label={copy.urlB} required/><p className="url-help">{copy.urlHelpB}</p></>}
+            ?<div className="textarea-wrap"><textarea value={sourceB} onChange={event=>{cancel();setSourceB(event.target.value);setResult(null);setError("");}} placeholder={copy.pasteB} aria-label={copy.ariaB}/><span>{formatNumber(sourceB.length,uiLang)} {copy.characters}</span></div>
+            :<><input className="url-input" type="url" value={sourceB} onChange={event=>{cancel();setSourceB(event.target.value);setResult(null);setError("");}} placeholder="https://example.com/updated" aria-label={copy.urlB} required/><p className="url-help">{copy.urlHelpB}</p></>}
         </section>
       </div>
+      <ExampleAction tool="text-comparison" locale={uiLang} onLoad={loadExample}/>
 
       <aside className="comparison-settings-card">
         <div className="comparison-settings-copy"><span>01</span><div><h2>{copy.settings}</h2><p>{copy.settingsHelp}</p></div></div>
-        <label className="field"><span>{copy.language}</span><select value={language} onChange={event=>setLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option></select></label>
-        <label className="check comparison-check"><input type="checkbox" checked={keepStopwords} onChange={event=>setKeepStopwords(event.target.checked)}/><span><b>{copy.keepStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
+        <label className="field"><span>{copy.language}</span><select value={language} onChange={event=>{cancel();setLanguage(event.target.value as "auto"|TextLanguage);}}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option></select></label>
+        <label className="check comparison-check"><input type="checkbox" checked={keepStopwords} onChange={event=>{cancel();setKeepStopwords(event.target.checked);}}/><span><b>{copy.keepStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
         <div className="comparison-submit">
           <p>{usesApi?copy.apiMode:copy.localMode}</p>
           <button className="analyze-button" disabled={loading||!sourceA.trim()||!sourceB.trim()}><span>{loading?copy.loading:copy.submit}</span><b>→</b></button>
+          <AnalysisProgress active={loading} progress={progress} label={copy.loading}/>
           {error&&<p className="error" role="alert">{error}</p>}
         </div>
       </aside>
     </form>
 
     {result&&<section className="frequency-results text-comparison-results" id="comparison-results">
-      <div className="results-title"><div><span>02</span><h2>{copy.results}</h2></div><div className="results-actions"><p>{copy.languages}: <b>A · {result.resultA.language.toUpperCase()}</b> / <b>B · {result.resultB.language.toUpperCase()}</b></p><div className="export-actions"><button type="button" onClick={exportCsv}>{copy.exportCsv}</button><button type="button" onClick={exportJson}>{copy.exportJson}</button></div></div></div>
+      <div className="results-title"><div><span>02</span><h2>{copy.results}</h2></div><div className="results-actions"><p>{copy.languages}: <b>A · {result.resultA.language.toUpperCase()}</b> / <b>B · {result.resultB.language.toUpperCase()}</b></p><CopyResultAction tool="text-comparison" locale={uiLang} value={result}/><div className="export-actions"><button type="button" onClick={exportCsv}>{copy.exportCsv}</button><button type="button" onClick={exportJson}>{copy.exportJson}</button></div></div></div>
+      <PartialResultNotice partial={hasPartialBrowserResult(result)} locale={uiLang}/>
       {result.resultA.language!==result.resultB.language&&<div className="comparison-language-warning"><b>{copy.languageWarning}</b><p>{copy.languageWarningText}</p></div>}
       <div className="comparison-metrics">{metricCards.map(metric=><div key={metric.label}><span>{metric.label}</span><div className="comparison-metric-values"><p><small>A</small><strong>{metric.a}</strong></p><p><small>B</small><strong>{metric.b}</strong></p></div><b className={deltaClass(metric.direction)}>B − A {metric.delta}</b></div>)}</div>
 

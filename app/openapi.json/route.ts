@@ -7,7 +7,7 @@ const sourceSchema={
     sourceType:{type:"string",enum:["text","url"],default:"text",description:"Whether source contains raw text/HTML or a public URL."},
     source:{type:"string",minLength:1,maxLength:500000,description:"Text, HTML, or a public HTTP(S) URL. URL values are limited to 2,048 characters; each resolved source is limited to 100,000 analyzable words."},
     language:{type:"string",enum:["auto","en","ru","uk","es"],default:"auto"},
-    focus:{oneOf:[{type:"string",maxLength:20000},{type:"array",items:{type:"string",minLength:1,maxLength:200},maxItems:100}],description:"Phrases whose coverage should be measured."},
+    focus:{oneOf:[{type:"string",maxLength:20099,description:"Up to 100 comma-separated phrases."},{type:"array",items:{type:"string",minLength:1,maxLength:200},maxItems:100}],description:"Up to 100 non-empty, analyzable phrases whose coverage should be measured. Each phrase is limited to 200 characters."},
     top:{type:"integer",minimum:5,maximum:100,default:20},
     tolerance:{type:"number",minimum:1.2,maximum:4,default:2,description:"Multiplier used for above/below Zipf model zones."},
     keepStopwords:{type:"boolean",default:false},
@@ -24,19 +24,25 @@ const sourceSchema={
 
 const resultLimitProperty={
   limit:{type:"integer",minimum:1,maximum:5000,default:5000,description:"Maximum rows returned in the operation's bounded result table. Totals and truncation metadata remain available."},
+  offset:{type:"integer",minimum:0,maximum:250000,default:0,description:"Zero-based row offset. Follow nextOffset until it is null to retrieve the complete ordered table."},
 };
 
 const densityResultLimitProperty={
   limit:{...resultLimitProperty.limit,default:2000,description:"Maximum rows returned in each generated unigram, bigram, and trigram table. Up to 100 explicitly tracked phrases are always preserved."},
+  offset:resultLimitProperty.offset,
 };
 
 const idfResultLimitProperty={
   limit:{...resultLimitProperty.limit,description:"Maximum rows returned in idfTable. Per-document and contribution rows are controlled by top."},
+  offset:{...resultLimitProperty.offset,description:"Zero-based idfTable offset. Follow nextIdfOffset until it is null to retrieve the complete ordered IDF table."},
 };
 
 const tableLimitProperties={
   totalRows:{type:"integer",minimum:0},
   returnedRows:{type:"integer",minimum:0,maximum:5000},
+  offset:{type:"integer",minimum:0,maximum:250000},
+  nextOffset:{oneOf:[{type:"integer",minimum:0,maximum:250000},{type:"null"}]},
+  hasMore:{type:"boolean"},
   truncated:{type:"boolean"},
 };
 
@@ -60,13 +66,16 @@ const comparisonChange={
 
 const comparisonResult={
   type:"object",
-  required:["metrics","wordChanges","bigramChanges","totalRows","returnedRows","truncated"],
+  required:["metrics","wordChanges","bigramChanges","totalRows","returnedRows","offset","nextOffset","hasMore","truncated"],
   properties:{
     metrics:{type:"object"},
-    wordChanges:{type:"array",maxItems:1000,items:comparisonChange},
-    bigramChanges:{type:"array",maxItems:1000,items:comparisonChange},
+    wordChanges:{type:"array",maxItems:5000,items:comparisonChange},
+    bigramChanges:{type:"array",maxItems:5000,items:comparisonChange},
     totalRows:{type:"object",required:["wordChanges","bigramChanges"],properties:{wordChanges:{type:"integer",minimum:0},bigramChanges:{type:"integer",minimum:0}}},
-    returnedRows:{type:"object",required:["wordChanges","bigramChanges"],properties:{wordChanges:{type:"integer",minimum:0,maximum:1000},bigramChanges:{type:"integer",minimum:0,maximum:1000}}},
+    returnedRows:{type:"object",required:["wordChanges","bigramChanges"],properties:{wordChanges:{type:"integer",minimum:0,maximum:5000},bigramChanges:{type:"integer",minimum:0,maximum:5000}}},
+    offset:{type:"integer",minimum:0,maximum:250000},
+    nextOffset:{oneOf:[{type:"integer",minimum:0,maximum:250000},{type:"null"}]},
+    hasMore:{type:"boolean"},
     truncated:{type:"boolean"},
   },
 };
@@ -79,7 +88,7 @@ const frequencyRow={
 
 const wordFrequencyResult={
   type:"object",
-  required:["language","tokenCount","vocabularySize","stopwordCount","rows","totalRows","returnedRows","truncated"],
+  required:["language","tokenCount","vocabularySize","stopwordCount","rows","totalRows","returnedRows","offset","nextOffset","hasMore","truncated"],
   properties:{
     language:{type:"string",enum:["en","ru","uk","es"]},
     tokenCount:{type:"integer",description:"Words remaining after the selected stop-word rule."},
@@ -98,7 +107,7 @@ const densityRow={
 
 const keywordDensityResult={
   type:"object",
-  required:["language","wordCount","vocabularySize","stopwordCount","keepStopwords","trackedKeywords","unigrams","bigrams","trigrams","totalRows","returnedRows","truncated"],
+  required:["language","wordCount","vocabularySize","stopwordCount","keepStopwords","trackedKeywords","unigrams","bigrams","trigrams","totalRows","returnedRows","offset","nextOffset","hasMore","truncated"],
   properties:{
     language:{type:"string",enum:["en","ru","uk","es"]},
     wordCount:{type:"integer",description:"Total normalized words used as the density denominator."},
@@ -111,13 +120,16 @@ const keywordDensityResult={
     trigrams:{type:"array",maxItems:5000,items:densityRow},
     totalRows:{type:"object",required:["trackedKeywords","unigrams","bigrams","trigrams"],properties:{trackedKeywords:{type:"integer"},unigrams:{type:"integer"},bigrams:{type:"integer"},trigrams:{type:"integer"}}},
     returnedRows:{type:"object",required:["trackedKeywords","unigrams","bigrams","trigrams"],properties:{trackedKeywords:{type:"integer"},unigrams:{type:"integer"},bigrams:{type:"integer"},trigrams:{type:"integer"}}},
+    offset:{type:"integer",minimum:0,maximum:250000},
+    nextOffset:{oneOf:[{type:"integer",minimum:0,maximum:250000},{type:"null"}]},
+    hasMore:{type:"boolean"},
     truncated:{type:"boolean"},
   },
 };
 
 const ngramResult={
   type:"object",
-  required:["language","tokenCount","ngramCount","vocabularySize","stopwordCount","keepStopwords","n","rows","totalRows","returnedRows","truncated"],
+  required:["language","tokenCount","ngramCount","vocabularySize","stopwordCount","keepStopwords","n","rows","totalRows","returnedRows","offset","nextOffset","hasMore","truncated"],
   properties:{
     language:{type:"string",enum:["en","ru","uk","es"]},
     tokenCount:{type:"integer",description:"Tokenized words used as source for sliding-window extraction."},
@@ -145,7 +157,7 @@ const bagOfWordsTerm={
 
 const bagOfWordsResult={
   type:"object",
-  required:["language","tokenCount","vocabularySize","stopwordCount","rows","totalRows","returnedRows","truncated"],
+  required:["language","tokenCount","vocabularySize","stopwordCount","rows","totalRows","returnedRows","offset","nextOffset","hasMore","truncated"],
   properties:{
     language:{type:"string",enum:["en","ru","uk","es"]},
     tokenCount:{type:"integer",description:"Words remaining after the selected stop-word rule."},
@@ -191,7 +203,7 @@ const idfTerm={
 
 const tfIdfResult={
   type:"object",
-  required:["language","documentCount","top","totalVocabularySize","averageDocumentFrequency","documents","idfTable","totalIdfRows","returnedIdfRows","idfTableTruncated"],
+  required:["language","documentCount","top","totalVocabularySize","averageDocumentFrequency","documents","idfTable","totalIdfRows","returnedIdfRows","idfOffset","nextIdfOffset","hasMoreIdfRows","idfTableTruncated"],
   properties:{
     language:{type:"string",enum:["en","ru","uk","es","auto"]},
     documentCount:{type:"integer"},
@@ -202,6 +214,9 @@ const tfIdfResult={
     idfTable:{type:"array",maxItems:5000,items:{$ref:"#/components/schemas/IdfTerm"}},
     totalIdfRows:{type:"integer",minimum:0},
     returnedIdfRows:{type:"integer",minimum:0,maximum:5000},
+    idfOffset:{type:"integer",minimum:0,maximum:250000},
+    nextIdfOffset:{oneOf:[{type:"integer",minimum:0,maximum:250000},{type:"null"}]},
+    hasMoreIdfRows:{type:"boolean"},
     idfTableTruncated:{type:"boolean"},
   },
 };
@@ -239,6 +254,9 @@ const similarityResult={
     idfTable:{type:"array",maxItems:5000,items:{$ref:"#/components/schemas/IdfTerm"}},
     totalIdfRows:{type:"integer",minimum:0},
     returnedIdfRows:{type:"integer",minimum:0,maximum:5000},
+    idfOffset:{type:"integer",minimum:0,maximum:250000},
+    nextIdfOffset:{oneOf:[{type:"integer",minimum:0,maximum:250000},{type:"null"}]},
+    hasMoreIdfRows:{type:"boolean"},
     idfTableTruncated:{type:"boolean"},
   },
 };
@@ -252,7 +270,10 @@ const errorResponse={
   },
 };
 
+const requestIdResponseHeader={schema:{type:"string",format:"uuid"},description:"Random correlation ID. It is not derived from submitted content, an analyzed URL, result terms, or a network address."};
+
 const rateLimitResponseHeaders={
+  "X-Request-ID":requestIdResponseHeader,
   "RateLimit-Limit":{schema:{type:"integer"},description:"Maximum request-cost units allowed in the active window."},
   "RateLimit-Remaining":{schema:{type:"integer"},description:"Request-cost units remaining in the active window."},
   "RateLimit-Reset":{schema:{type:"integer"},description:"Seconds until the active window resets."},
@@ -275,6 +296,7 @@ const document={
   components:{schemas:{
     AnalyzeInput:sourceSchema,
     ErrorResponse:errorResponse,
+    HealthResponse:{type:"object",required:["status","service","apiVersion","storage","rateLimit","revision"],properties:{status:{type:"string",const:"ok"},service:{type:"string",const:"textanalysis.tools"},apiVersion:{type:"string"},storage:{type:"string",const:"none"},rateLimit:{type:"string",enum:["shared","local","degraded"],description:"Current rate-limit backend state for this application worker. Degraded means the shared store is unavailable and bounded local fallback is active."},revision:{type:"string",description:"Git revision embedded at build time, or unknown when the build environment does not expose repository metadata."}}},
     AnalysisResult:analysisResult,
     ComparisonResult:comparisonResult,
     AnalyzeResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/AnalysisResult"}}},
@@ -298,6 +320,15 @@ const document={
     NgramAnalyzerResult:ngramResult,
   }},
   paths:{
+    "/api/health":{
+      get:{
+        operationId:"getApiHealth",
+        summary:"Check API process liveness",
+        responses:{
+          "200":{description:"The API process can return a response",headers:{"X-Request-ID":requestIdResponseHeader},content:{"application/json":{schema:{$ref:"#/components/schemas/HealthResponse"}}}},
+        },
+      },
+    },
     "/api/v1/analyze":{
       post:{
         operationId:"analyzeTextOrUrl",
@@ -327,6 +358,8 @@ const document={
                 properties:{
                   a:{$ref:"#/components/schemas/AnalyzeInput"},
                   b:{$ref:"#/components/schemas/AnalyzeInput"},
+                  limit:{...resultLimitProperty.limit,default:1000,description:"Maximum rows returned in each comparison change table."},
+                  offset:resultLimitProperty.offset,
                 },
               },
             },

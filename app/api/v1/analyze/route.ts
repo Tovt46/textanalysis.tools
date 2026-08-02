@@ -1,19 +1,23 @@
-import { API_VERSION,apiErrorResponse,apiJson,apiOptions,enforceRateLimit,readJsonBody,runPublicAnalysis } from "../../../lib/public-api";
+import { API_VERSION,apiErrorResponse,apiJson,apiOptions,enforceBodyRateLimit,enforceRateLimit,readJsonBody,runPublicAnalysis } from "../../../lib/public-api";
+import {observeApiRequest} from "../../../lib/api-observability";
 import { sendServerAnalyticsEvent } from "../../../lib/server-analytics";
 
-export function OPTIONS(){return apiOptions();}
+export function OPTIONS(request:Request){return observeApiRequest(request,"analyze",()=>apiOptions());}
 
-export function GET(){
-  return apiJson({apiVersion:API_VERSION,name:"Text Analysis Tools API",operation:"analyze",method:"POST",documentation:"/api-docs",openapi:"/openapi.json"});
+export function GET(request:Request){
+  return observeApiRequest(request,"analyze",()=>apiJson({apiVersion:API_VERSION,name:"Text Analysis Tools API",operation:"analyze",method:"POST",documentation:"/api-docs",openapi:"/openapi.json"}));
 }
 
-export async function POST(request:Request){
-  let rateHeaders:Record<string,string>={};
-  try{
-    rateHeaders=enforceRateLimit(request);
-    const body=await readJsonBody(request);
-    const result=await runPublicAnalysis(body);
-    await sendServerAnalyticsEvent("api_analysis",{operation:"analyze",source_type:body.sourceType==="url"?"url":"text",text_language:result.language});
-    return apiJson({apiVersion:API_VERSION,storage:"none",result},200,rateHeaders);
-  }catch(error){await sendServerAnalyticsEvent("api_error",{operation:"analyze"});return apiErrorResponse(error,rateHeaders);}
+export function POST(request:Request){
+  return observeApiRequest(request,"analyze",async()=>{
+    let rateHeaders:Record<string,string>={};
+    try{
+      rateHeaders=await enforceRateLimit(request);
+      const body=await readJsonBody(request);
+      rateHeaders=await enforceBodyRateLimit(request,body)??rateHeaders;
+      const result=await runPublicAnalysis(body);
+      await sendServerAnalyticsEvent("api_analysis",{operation:"analyze",source_type:body.sourceType==="url"?"url":"text",text_language:result.language});
+      return apiJson({apiVersion:API_VERSION,storage:"none",result},200,rateHeaders);
+    }catch(error){await sendServerAnalyticsEvent("api_error",{operation:"analyze"});return apiErrorResponse(error,rateHeaders);}
+  });
 }

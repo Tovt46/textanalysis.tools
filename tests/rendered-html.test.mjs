@@ -3,6 +3,8 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const TEST_BASE_URL = process.env.TEST_BASE_URL?.trim();
+const CLI_PACKAGE=JSON.parse(await readFile(new URL("../packages/cli/package.json",import.meta.url),"utf8"));
+const ESCAPED_CLI_VERSION=CLI_PACKAGE.version.replaceAll(/[.*+?^${}()|[\]\\]/g,"\\$&");
 let workerCache;
 let postSequence = 0;
 
@@ -184,7 +186,7 @@ test("returns a client error for text that is too short", async () => {
 
 test("runs pasted-text analysis locally and handles non-JSON URL errors", async () => {
   const source = await readFile(new URL("../app/BowApp.tsx", import.meta.url), "utf8");
-  assert.match(source, /if\(sourceType==="text"\)\{\s*const localResult=analyzeText/);
+  assert.match(source, /if\(sourceType==="text"\)\{\s*validateBrowserInputs\(\[source\],uiLang\);\s*data=await runWorker<Analysis>\("zipf"/);
   assert.match(source, /const raw=await response\.text\(\)/);
   assert.doesNotMatch(source, /const data=await response\.json\(\)/);
 });
@@ -220,12 +222,13 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/cli<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/ru\/cli<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/agents<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/privacy<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/es\/agents<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk\/tf-idf-formula<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/es\/tf-idf-formula<\/loc>/);
   assert.match(xml, /hreflang="es" href="https:\/\/textanalysis\.tools\/es\/tools\/tf-idf-calculator"/);
   assert.match(xml, /hreflang="x-default" href="https:\/\/textanalysis\.tools\/tools\/tf-idf-calculator"/);
-  assert.equal((xml.match(/<url>/g)||[]).length,88);
+  assert.equal((xml.match(/<url>/g)||[]).length,89);
 });
 
 test("documents every tool page as a free WebApplication", async () => {
@@ -264,7 +267,7 @@ test("limits shared-cache lifetime for every sitemap page",async()=>{
   const sitemapResponse=await request("/sitemap.xml");
   const sitemap=await sitemapResponse.text();
   const paths=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]).pathname);
-  assert.equal(paths.length,88);
+  assert.equal(paths.length,89);
   for(let offset=0;offset<paths.length;offset+=12){
     await Promise.all(paths.slice(offset,offset+12).map(async path=>{
       const response=await request(path,{headers:{accept:"text/html"}});
@@ -406,7 +409,7 @@ test("TF-IDF client supports a 2–10 document corpus and keeps pasted text loca
   const source=await readFile(new URL("../app/TfIdfCalculatorTool.tsx",import.meta.url),"utf8");
   assert.match(source,/sources\.length>=10/);
   assert.match(source,/sources\.every\(item=>item\.sourceType==="text"\)/);
-  assert.match(source,/sources\.map\(item=>analyzeBagOfWords/);
+  assert.match(source,/runWorker<TfIdfResult>\("tf-idf"/);
   assert.match(source,/fetch\("\/api\/v1\/tf-idf"/);
   assert.match(source,/<th>\{copy\.documentFrequency\}<\/th><th>IDF<\/th>/);
 });
@@ -425,9 +428,52 @@ test("renders the text similarity calculator page with canonical metadata and co
 test("standalone comparison keeps pasted text local and reuses the public API for URLs", async () => {
   const source=await readFile(new URL("../app/TextComparisonTool.tsx",import.meta.url),"utf8");
   assert.match(source,/if\(sourceTypeA==="text"&&sourceTypeB==="text"\)\{/);
-  assert.match(source,/comparison:compareAnalysisResults\(/);
+  assert.match(source,/runWorker<ComparisonPayload>\("comparison"/);
   assert.match(source,/fetch\("\/api\/v1\/compare"/);
   assert.doesNotMatch(source,/trackEvent/);
+});
+
+test("all browser tools share the cancellable Worker runner and client-side limits",async()=>{
+  const files=[
+    "BowApp.tsx","WordFrequencyTool.tsx","KeywordDensityTool.tsx","TextComparisonTool.tsx",
+    "NgramAnalyzerTool.tsx","BagOfWordsGeneratorTool.tsx","TfIdfCalculatorTool.tsx","TextSimilarityCalculatorTool.tsx",
+  ];
+  for(const file of files){
+    const source=await readFile(new URL(`../app/${file}`,import.meta.url),"utf8");
+    assert.match(source,/useBrowserAnalysis\(\)/,file);
+    assert.match(source,/validateBrowserInputs\(/,file);
+    assert.match(source,/aria-busy=\{loading\}/,file);
+    assert.match(source,/AnalysisProgress active=\{loading\}/,file);
+  }
+  const runner=await readFile(new URL("../app/lib/browser-analysis.tsx",import.meta.url),"utf8");
+  assert.match(runner,/new Worker\(new URL\("\.\/browser-analysis\.worker\.ts",import\.meta\.url\)/);
+  assert.match(runner,/controller\.abort\(reason\)/);
+  assert.match(runner,/active\?\.cancel\(\)/);
+  assert.match(runner,/MAX_BROWSER_TEXT_CHARS=500_000/);
+});
+
+test("browser result contracts cap large tables and disclose partial exports",async()=>{
+  const worker=await readFile(new URL("../app/lib/browser-analysis.worker.ts",import.meta.url),"utf8");
+  assert.match(worker,/capBrowserRows\(analyzeWordFrequency/);
+  assert.match(worker,/capBrowserDensity\(analyzeKeywordDensity/);
+  assert.match(worker,/capBrowserRows\(analyzeNgram/);
+  assert.match(worker,/capBrowserRows\(analyzeBagOfWords/);
+  assert.match(worker,/BROWSER_COMPARISON_ROW_LIMIT/);
+  assert.match(worker,/resultA:toPublicAnalysisResult\(coreA\)/);
+  assert.match(worker,/resultB:toPublicAnalysisResult\(coreB\)/);
+  assert.match(worker,/capBrowserIdf/);
+  const limits=await readFile(new URL("../app/lib/browser-result-limits.ts",import.meta.url),"utf8");
+  assert.match(limits,/BROWSER_ROW_LIMIT=5_000/);
+  assert.match(limits,/BROWSER_DENSITY_ROW_LIMIT=2_000/);
+  assert.match(limits,/BROWSER_COMPARISON_ROW_LIMIT=1_000/);
+  assert.match(limits,/BROWSER_IDF_ROW_LIMIT=5_000/);
+  for(const file of [
+    "WordFrequencyTool.tsx","KeywordDensityTool.tsx","NgramAnalyzerTool.tsx","BagOfWordsGeneratorTool.tsx",
+    "TextComparisonTool.tsx","TfIdfCalculatorTool.tsx","TextSimilarityCalculatorTool.tsx",
+  ]){
+    const source=await readFile(new URL(`../app/${file}`,import.meta.url),"utf8");
+    assert.match(source,/PartialResultNotice partial=\{hasPartialBrowserResult\(result\)\}/,file);
+  }
 });
 
 test("keyword density uses total words and counts exact tracked phrases", async () => {
@@ -716,8 +762,8 @@ test("renders versioned npm CLI documentation and advertises it in llms.txt", as
   assert.match(html,/<h1>Text Analysis from the Command Line<\/h1>/i);
   assert.match(html,/npm install --global textanalysis-tools/i);
   assert.match(html,/"@type":"SoftwareSourceCode"/i);
-  assert.match(html,/"version":"0\.1\.2"/i);
-  assert.match(html,/textanalysis-tools@0\.1\.2.*mcp/i);
+  assert.match(html,new RegExp(`"version":"${ESCAPED_CLI_VERSION}"`,"i"));
+  assert.match(html,new RegExp(`textanalysis-tools@${ESCAPED_CLI_VERSION}.*mcp`,"i"));
 
   assert.equal(llms.status,200);
   const llmsText=await llms.text();
@@ -741,7 +787,7 @@ test("renders localized AI-agent integration pages with MCP and OpenAPI discover
     assert.equal(responses[index].status,200,path);
     const html=await responses[index].text();
     assert.match(html,new RegExp(`<h1>${heading}<\\/h1>`,"i"),path);
-    assert.match(html,/textanalysis-tools@0\.1\.2.*mcp/i,path);
+    assert.match(html,new RegExp(`textanalysis-tools@${ESCAPED_CLI_VERSION}.*mcp`,"i"),path);
     assert.match(html,/analyze_text/i,path);
     assert.match(html,/word_frequency/i,path);
     assert.match(html,/href="\/openapi\.json"/i,path);

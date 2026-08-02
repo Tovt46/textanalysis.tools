@@ -70,7 +70,7 @@ export default function CompareTextsByWordFrequencyPage(){
               <div><span>3</span><h3>Compare document metrics</h3><p>Review token count and vocabulary size before interpreting individual term changes.</p></div>
               <div><span>4</span><h3>Sort normalized changes</h3><p>Start with the largest absolute percentage-point changes, not only raw count changes.</p></div>
               <div><span>5</span><h3>Inspect context manually</h3><p>Search the source for changed terms and decide whether the shift was intentional and useful.</p></div>
-              <div><span>6</span><h3>Export the evidence</h3><p>Save the full table when the comparison is part of editorial QA or a repeatable process.</p></div>
+              <div><span>6</span><h3>Export the evidence</h3><p>Save the returned rows, or follow API pagination when editorial QA needs the complete ordered tables.</p></div>
             </div>
           </section>
           <section id="normalization">
@@ -108,7 +108,7 @@ export default function CompareTextsByWordFrequencyPage(){
               <div><h3>Vocabulary size</h3><p>A larger vocabulary is not automatically better. Genre, length, names, and technical notation all affect it.</p></div>
               <div><h3>Zipf diagnostics</h3><p>Distribution changes can flag unusual repetition, but they need a second signal such as relevance or contextual review.</p></div>
             </div>
-            <p>For automated workflows, the public <Link href="/api-docs#compare">comparison API</Link> returns both analyses and the complete normalized change tables.</p>
+            <p>For automated workflows, the public <Link href="/api-docs#compare">comparison API</Link> returns both analyses and paginated normalized word and bigram change tables.</p>
           </section>
           <section id="limitations">
             <p className="section-number">07</p>

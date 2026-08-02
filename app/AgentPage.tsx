@@ -47,7 +47,7 @@ export const AGENT_COPY:Record<UiLang,AgentCopy>={
     eyebrow:"AGENT-READY · DETERMINISTIC · READ-ONLY",
     deck:"Give an agent transparent word frequency, keyword density, N-gram, Bag of Words, TF-IDF, comparison, and similarity tools without asking a language model to invent the measurements.",
     start:"Start with local MCP",contents:"On this page",interfaces:"Interfaces",interfacesTitle:"One analysis engine, four ways to use it",
-    webTitle:"Web for people",webText:"Paste text, inspect full tables, compare results, and export evidence in a visual interface.",
+    webTitle:"Web for people",webText:"Paste text, inspect bounded tables, compare results, and export evidence in a visual interface. Large tables are marked when only the returned page is shown.",
     apiTitle:"API for apps and agents",apiText:"Call eight stateless JSON operations with OpenAPI discovery, stable errors, and no API key.",
     cliTitle:"CLI for automation",cliText:"Analyze files, URLs, inline text, or stdin locally and return tables, JSON, or CSV.",
     mcpTitle:"MCP for AI agents",mcpText:"Expose the same eight local read-only operations as discoverable tools over stdio.",
@@ -64,7 +64,7 @@ export const AGENT_COPY:Record<UiLang,AgentCopy>={
     eyebrow:"ДЛЯ АГЕНТОВ · ДЕТЕРМИНИРОВАННО · READ-ONLY",
     deck:"Дайте агенту прозрачные инструменты частотности, плотности ключей, N-грамм, Bag of Words, TF-IDF, сравнения и сходства — без выдумывания метрик языковой моделью.",
     start:"Запустить локальный MCP",contents:"На этой странице",interfaces:"Интерфейсы",interfacesTitle:"Один движок, четыре способа использования",
-    webTitle:"Web для людей",webText:"Вставляйте текст, проверяйте полные таблицы, сравнивайте результаты и экспортируйте данные в визуальном интерфейсе.",
+    webTitle:"Web для людей",webText:"Вставляйте текст, проверяйте ограниченные таблицы, сравнивайте результаты и экспортируйте возвращённые строки в визуальном интерфейсе.",
     apiTitle:"API для приложений и агентов",apiText:"Вызывайте восемь stateless JSON-операций с OpenAPI, стабильными ошибками и без API-ключа.",
     cliTitle:"CLI для автоматизации",cliText:"Локально анализируйте файлы, URL, строки и stdin с выводом таблиц, JSON или CSV.",
     mcpTitle:"MCP для AI-агентов",mcpText:"Подключайте те же восемь локальных read-only операций как обнаруживаемые инструменты через stdio.",
@@ -81,7 +81,7 @@ export const AGENT_COPY:Record<UiLang,AgentCopy>={
     eyebrow:"ДЛЯ АГЕНТІВ · ДЕТЕРМІНОВАНО · READ-ONLY",
     deck:"Дайте агенту прозорі інструменти частотності, щільності ключів, N-грам, Bag of Words, TF-IDF, порівняння й подібності — без вигадування метрик мовною моделлю.",
     start:"Запустити локальний MCP",contents:"На цій сторінці",interfaces:"Інтерфейси",interfacesTitle:"Один рушій, чотири способи використання",
-    webTitle:"Web для людей",webText:"Вставляйте текст, перевіряйте повні таблиці, порівнюйте результати й експортуйте дані у візуальному інтерфейсі.",
+    webTitle:"Web для людей",webText:"Вставляйте текст, перевіряйте обмежені таблиці, порівнюйте результати й експортуйте повернуті рядки у візуальному інтерфейсі.",
     apiTitle:"API для програм і агентів",apiText:"Викликайте вісім stateless JSON-операцій з OpenAPI, стабільними помилками й без API-ключа.",
     cliTitle:"CLI для автоматизації",cliText:"Локально аналізуйте файли, URL, рядки та stdin із виведенням таблиць, JSON або CSV.",
     mcpTitle:"MCP для AI-агентів",mcpText:"Підключайте ті самі вісім локальних read-only операцій як доступні інструменти через stdio.",
@@ -98,7 +98,7 @@ export const AGENT_COPY:Record<UiLang,AgentCopy>={
     eyebrow:"PARA AGENTES · DETERMINISTA · SOLO LECTURA",
     deck:"Ofrece a un agente frecuencia, densidad, N-gramas, Bag of Words, TF-IDF, comparación y similitud transparentes sin pedir a un modelo de lenguaje que invente las métricas.",
     start:"Iniciar MCP local",contents:"En esta página",interfaces:"Interfaces",interfacesTitle:"Un motor de análisis, cuatro formas de usarlo",
-    webTitle:"Web para personas",webText:"Pega texto, revisa tablas completas, compara resultados y exporta datos en una interfaz visual.",
+    webTitle:"Web para personas",webText:"Pega texto, revisa tablas acotadas, compara resultados y exporta las filas devueltas en una interfaz visual.",
     apiTitle:"API para aplicaciones y agentes",apiText:"Llama a ocho operaciones JSON sin estado con OpenAPI, errores estables y sin clave API.",
     cliTitle:"CLI para automatización",cliText:"Analiza localmente archivos, URL, texto en línea o stdin y devuelve tablas, JSON o CSV.",
     mcpTitle:"MCP para agentes de IA",mcpText:"Expone las mismas ocho operaciones locales de solo lectura como herramientas detectables mediante stdio.",
@@ -112,6 +112,39 @@ export const AGENT_COPY:Record<UiLang,AgentCopy>={
 };
 
 const toolNames=["analyze_text","word_frequency","keyword_density","ngram_analysis","bag_of_words","compare_texts","tfidf","text_similarity"];
+
+const agentRecipes=[
+  {
+    title:"Repetition and density audit",
+    tools:"keyword_density → ngram_analysis → analyze_text",
+    goal:"Find repeated tracked phrases, recurring wording, and terms that sit well above the fitted frequency model.",
+    steps:[
+      "Call keyword_density with the phrases the draft is expected to cover.",
+      "Call ngram_analysis with ngramSize 2 or 3 to surface unplanned repetition.",
+      "Use analyze_text to inspect above-model terms, then cite counts and rates instead of inventing a quality score.",
+    ],
+  },
+  {
+    title:"Draft versus baseline regression",
+    tools:"compare_texts",
+    goal:"Detect vocabulary, length, and recurring-phrase changes between an approved baseline and a new draft.",
+    steps:[
+      "Send the approved document as a and the new draft as b with the same language and stop-word settings.",
+      "Rank wordChanges and bigramChanges by absolute shareDelta, not raw count alone.",
+      "Report the changed metric, both source values, and the normalized delta; route intentional editorial changes for human approval.",
+    ],
+  },
+  {
+    title:"Duplicate and near-duplicate detection",
+    tools:"text_similarity → compare_texts",
+    goal:"Screen a candidate against an existing document, then explain why a pair looks similar.",
+    steps:[
+      "Call text_similarity with method tfidf and a project-calibrated threshold; do not treat one universal cutoff as ground truth.",
+      "For flagged pairs, call compare_texts to expose shared and changed vocabulary rather than relying on the score alone.",
+      "Persist the cosine score, method, input identifiers, and top contributing terms, then send borderline cases to human review.",
+    ],
+  },
+];
 
 export function agentMetadata(locale:UiLang){
   const copy=AGENT_COPY[locale];
@@ -134,12 +167,13 @@ export default function AgentPage({locale}:{locale:UiLang}){
     <SiteHeader locale={locale} active="agents" languagePaths={languagePaths("/agents")}/>
     <article>
       <div className="article-hero"><nav className="breadcrumbs" aria-label={copy.contents}><Link href={localizedPath(locale,"/")}>textanalysis.tools</Link><span>/</span><span>{copy.title}</span></nav><p className="eyebrow">{copy.eyebrow}</p><h1>{copy.title}</h1><p className="article-deck">{copy.deck}</p><div className="article-actions"><a className="primary-article-cta" href="#mcp">{copy.start}</a><a href="/openapi.json">OpenAPI →</a><a href="/llms.txt">llms.txt →</a></div></div>
-      <div className="article-layout"><aside className="article-toc" aria-label={copy.contents}><b>{copy.contents}</b><a href="#interfaces">{copy.interfaces}</a><a href="#mcp">{copy.mcpSection}</a><a href="#tools">{copy.tools}</a><a href="#contracts">{copy.contracts}</a><a href="#boundaries">{copy.boundaries}</a></aside><div className="article-body api-docs-body">
+      <div className="article-layout"><aside className="article-toc" aria-label={copy.contents}><b>{copy.contents}</b><a href="#interfaces">{copy.interfaces}</a><a href="#mcp">{copy.mcpSection}</a><a href="#tools">{copy.tools}</a>{locale==="en"&&<a href="#recipes">Agent recipes</a>}<a href="#contracts">{copy.contracts}</a><a href="#boundaries">{copy.boundaries}</a></aside><div className="article-body api-docs-body">
         <section id="interfaces"><p className="section-number">01</p><h2>{copy.interfacesTitle}</h2><div className="cli-command-grid"><div><code>WEB</code><h3>{copy.webTitle}</h3><p>{copy.webText}</p></div><div><code>HTTP</code><h3>{copy.apiTitle}</h3><p>{copy.apiText}</p></div><div><code>CLI</code><h3>{copy.cliTitle}</h3><p>{copy.cliText}</p></div><div><code>MCP</code><h3>{copy.mcpTitle}</h3><p>{copy.mcpText}</p></div></div></section>
         <section id="mcp"><p className="section-number">02</p><h2>{copy.mcpSectionTitle}</h2><p>{copy.mcpIntro}</p><pre className="api-code"><code>{`npx --yes textanalysis-tools@${cliPackage.version} mcp`}</code></pre><pre className="api-code"><code>{mcpConfig}</code></pre></section>
         <section id="tools"><p className="section-number">03</p><h2>{copy.toolsTitle}</h2><p>{copy.toolsText}</p><div className="feature-list">{toolNames.map(name=><div key={name}><h3>{name}</h3><p>{copy.toolMeta}</p></div>)}</div></section>
-        <section id="contracts"><p className="section-number">04</p><h2>{copy.contractsTitle}</h2><p>{copy.contractsText}</p><div className="article-callout"><b>Machine-readable discovery</b><p><a href="/openapi.json">{SITE_URL}/openapi.json</a><br/><a href="/llms.txt">{SITE_URL}/llms.txt</a></p></div></section>
-        <section id="boundaries"><p className="section-number">05</p><h2>{copy.boundariesTitle}</h2><ul className="question-list">{copy.boundaryItems.map(item=><li key={item}>{item}</li>)}</ul></section>
+        {locale==="en"&&<section id="recipes"><p className="section-number">04</p><h2>Three practical agent recipes</h2><p>Use these sequences as auditable building blocks. Keep source identifiers beside every result and make decisions from measured fields, not generated impressions.</p><div className="cli-command-grid">{agentRecipes.map(recipe=><div key={recipe.title}><code>{recipe.tools}</code><h3>{recipe.title}</h3><p>{recipe.goal}</p><ol className="question-list">{recipe.steps.map(step=><li key={step}>{step}</li>)}</ol></div>)}</div></section>}
+        <section id="contracts"><p className="section-number">{locale==="en"?"05":"04"}</p><h2>{copy.contractsTitle}</h2><p>{copy.contractsText}</p><div className="article-callout"><b>Machine-readable discovery</b><p><a href="/openapi.json">{SITE_URL}/openapi.json</a><br/><a href="/llms.txt">{SITE_URL}/llms.txt</a></p></div></section>
+        <section id="boundaries"><p className="section-number">{locale==="en"?"06":"05"}</p><h2>{copy.boundariesTitle}</h2><ul className="question-list">{copy.boundaryItems.map(item=><li key={item}>{item}</li>)}</ul></section>
         <section className="article-final-cta"><p className="eyebrow">WEB · API · CLI · MCP</p><h2>{copy.ctaTitle}</h2><p>{copy.ctaText}</p><Link href={localizedPath(locale,"/cli")}>{copy.openCli} <span>→</span></Link></section>
       </div></div>
     </article>

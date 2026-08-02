@@ -1,0 +1,59 @@
+name: Publish npm package
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Use Node.js 24 with npm trusted publishing
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify tag and package versions
+        run: npm run release:verify -- --tag "$GITHUB_REF_NAME"
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test application, CLI, MCP, and SDK
+        run: npm test
+
+      - name: Install Chromium and run browser workflows
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:browser
+
+      - name: Pack the release artifact once
+        id: pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/textanalysis-package"
+          tarball_name="$(npm pack ./packages/cli --pack-destination "$RUNNER_TEMP/textanalysis-package" --silent)"
+          tarball="$RUNNER_TEMP/textanalysis-package/$tarball_name"
+          test -f "$tarball"
+          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+
+      - name: Install and test the exact npm tarball
+        run: node scripts/test-package.mjs --tarball "${{ steps.pack.outputs.tarball }}"
+
+      - name: Publish with OIDC and provenance
+        run: npm publish "${{ steps.pack.outputs.tarball }}" --access public --provenance

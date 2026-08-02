@@ -69,7 +69,7 @@ test("MCP exposes eight local read-only tools with structured results",async(t)=
     },
   });
   assert.equal(response.isError,undefined);
-  assert.deepEqual(response.structuredContent.result.rows[0],{
+  assert.deepEqual(response.structuredContent.outcome.result.rows[0],{
     term:"alpha",
     count:2,
     percentage:50,
@@ -85,10 +85,12 @@ test("MCP exposes eight local read-only tools with structured results",async(t)=
       top:5,
     },
   });
-  const mcpComparison=comparisonResponse.structuredContent.result.comparison;
+  const mcpComparison=comparisonResponse.structuredContent.outcome.result.comparison;
   assert.equal(mcpComparison.wordChanges.length,5);
   assert.equal(mcpComparison.returnedRows.wordChanges,5);
   assert.equal(mcpComparison.truncated,true);
+  assert.equal(mcpComparison.hasMore,true);
+  assert.equal(mcpComparison.nextOffset,5);
 });
 
 test("focus phrases preserve stop-word adjacency when table stop words are hidden",async()=>{
@@ -103,6 +105,19 @@ test("focus phrases preserve stop-word adjacency when table stop words are hidde
   const data=JSON.parse(response.stdout);
   assert.equal(data.result.focusCoverage[0].count,3);
   assert.equal(data.result.focusCoverage[0].per1000,200);
+});
+
+test("invalid focus option values exit with CLI usage status",async()=>{
+  const response=await runCli([
+    "analyze",
+    "--text","alpha beta gamma",
+    "--language","en",
+    "--focus",Array.from({length:101},(_,index)=>`phrase ${index}x`).join(","),
+    "--format","json",
+  ]);
+  assert.equal(response.code,2);
+  assert.match(response.stderr,/Option --focus must contain at most 100/);
+  assert.match(response.stderr,/Run textanalysis --help for usage/);
 });
 
 test("frequency reads stdin and returns deterministic local JSON",async()=>{
@@ -127,6 +142,31 @@ test("frequency supports Spanish detection and default stop words",async()=>{
   assert.equal(data.result.language,"es");
   assert.equal(data.result.rows.some((row)=>row.term==="el"),false);
   assert.ok(data.result.rows.some((row)=>row.term==="análisis"));
+});
+
+test("bounded single-source commands expose explicit truncation metadata",async()=>{
+  const source="alpha alpha beta beta gamma gamma";
+  const [frequency,ngram,bow,density]=await Promise.all([
+    runCli(["frequency","--text",source,"--language","en","--keep-stopwords","--top","1","--format","json"]),
+    runCli(["ngram","--text",source,"--language","en","--keep-stopwords","--size","1","--top","1","--format","json"]),
+    runCli(["bow","--text",source,"--language","en","--keep-stopwords","--top","1","--format","json"]),
+    runCli(["density","--text",source,"--language","en","--keep-stopwords","--keywords","alpha,beta","--top","1","--format","json"]),
+  ]);
+  for(const response of [frequency,ngram,bow]){
+    assert.equal(response.code,0,response.stderr);
+    const result=JSON.parse(response.stdout).result;
+    assert.deepEqual(
+      {totalRows:result.totalRows,returnedRows:result.returnedRows,truncated:result.truncated},
+      {totalRows:3,returnedRows:1,truncated:true},
+    );
+  }
+  assert.equal(density.code,0,density.stderr);
+  const densityResult=JSON.parse(density.stdout).result;
+  assert.equal(densityResult.totalRows.trackedKeywords,2);
+  assert.equal(densityResult.returnedRows.trackedKeywords,1);
+  assert.equal(densityResult.totalRows.unigrams,3);
+  assert.equal(densityResult.returnedRows.unigrams,1);
+  assert.equal(densityResult.truncated,true);
 });
 
 test("analyze, density, ngram, and bow commands expose their focused results",async()=>{
@@ -170,6 +210,23 @@ test("density preserves tracked phrases with zero occurrences",async()=>{
   }]);
 });
 
+test("density rejects tracked phrase lists that would be silently truncated",async()=>{
+  const tooMany=await runCli([
+    "density","--text","alpha beta gamma","--language","en",
+    "--keywords",Array.from({length:101},(_,index)=>`phrase ${index}x`).join(","),
+    "--format","json",
+  ]);
+  assert.equal(tooMany.code,2);
+  assert.match(tooMany.stderr,/at most 100 analyzable phrases/);
+
+  const tooLong=await runCli([
+    "density","--text","alpha beta gamma","--language","en",
+    "--keywords","x".repeat(201),"--format","json",
+  ]);
+  assert.equal(tooLong.code,2);
+  assert.match(tooLong.stderr,/up to 200 characters/);
+});
+
 test("TF-IDF, similarity, and comparison accept file pairs",async(t)=>{
   const directory=await mkdtemp(join(tmpdir(),"textanalysis-cli-"));
   t.after(()=>rm(directory,{recursive:true,force:true}));
@@ -204,6 +261,9 @@ test("TF-IDF, similarity, and comparison accept file pairs",async(t)=>{
   assert.equal(limitedComparisonData.comparison.wordChanges.length,5);
   assert.equal(limitedComparisonData.comparison.returnedRows.wordChanges,5);
   assert.equal(limitedComparisonData.comparison.truncated,true);
+  assert.equal(limitedComparisonData.comparison.totalRows.wordChanges,14);
+  assert.equal("hasMore" in limitedComparisonData.comparison,false);
+  assert.equal("nextOffset" in limitedComparisonData.comparison,false);
 });
 
 test("similarity CSV includes the score even when documents have no shared terms",async()=>{
@@ -223,6 +283,51 @@ test("similarity CSV includes the score even when documents have no shared terms
   );
   assert.match(row,/^tfidf,en,0,0,/);
   assert.equal(row.split(",")[6],"0");
+});
+
+test("TF-IDF CLI bounds support vocabulary and reports truncation",async(t)=>{
+  const vocabulary=Array.from({length:180},(_,index)=>`term${index}x`);
+  const directory=await mkdtemp(join(tmpdir(),"textanalysis-cli-tfidf-"));
+  t.after(()=>rm(directory,{recursive:true,force:true}));
+  const fileA=join(directory,"a.txt");
+  const fileB=join(directory,"b.txt");
+  await Promise.all([
+    writeFile(fileA,vocabulary.join(" "),"utf8"),
+    writeFile(fileB,[...vocabulary].reverse().join(" "),"utf8"),
+  ]);
+  const response=await runCli([
+    "tfidf",
+    fileA,
+    fileB,
+    "--language","en",
+    "--keep-stopwords",
+    "--top","20",
+    "--format","json",
+  ]);
+  assert.equal(response.code,0,response.stderr);
+  const result=JSON.parse(response.stdout).result;
+  assert.equal(result.idfTable.length,20);
+  assert.equal(result.totalIdfRows,180);
+  assert.equal(result.returnedIdfRows,20);
+  assert.equal(result.idfTableTruncated,true);
+});
+
+test("comparison metadata counts disjoint vocabularies beyond one-source token limit",async(t)=>{
+  const directory=await mkdtemp(join(tmpdir(),"textanalysis-cli-compare-wide-"));
+  t.after(()=>rm(directory,{recursive:true,force:true}));
+  const fileA=join(directory,"a.txt");
+  const fileB=join(directory,"b.txt");
+  const vocabularySize=50_100;
+  await Promise.all([
+    writeFile(fileA,Array.from({length:vocabularySize},(_,index)=>`a${index.toString(36)}`).join(" "),"utf8"),
+    writeFile(fileB,Array.from({length:vocabularySize},(_,index)=>`b${index.toString(36)}`).join(" "),"utf8"),
+  ]);
+  const response=await runCli(["compare",fileA,fileB,"--language","en","--keep-stopwords","--top","5","--format","json"]);
+  assert.equal(response.code,0,response.stderr);
+  const comparison=JSON.parse(response.stdout).comparison;
+  assert.equal(comparison.wordChanges.length,5);
+  assert.equal(comparison.totalRows.wordChanges,vocabularySize*2);
+  assert.equal(comparison.truncated,true);
 });
 
 test("CSV output can be saved to a file",async(t)=>{

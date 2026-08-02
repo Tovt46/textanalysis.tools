@@ -115,7 +115,7 @@ export default function CosineSimilarityForTextPage(){
           <section className="article-final-cta">
             <p className="eyebrow">BOW OR TF-IDF · EXPLAINABLE RESULT</p>
             <h2>Compare two documents and inspect every contribution</h2>
-            <p>Switch weighting modes, review the vector norms and shared terms, then export the complete result.</p>
+            <p>Switch weighting modes, review the vector norms and shared terms, then export the returned contribution rows.</p>
             <Link href="/tools/text-similarity-calculator">Open the similarity calculator <span>→</span></Link>
           </section>
         </div>

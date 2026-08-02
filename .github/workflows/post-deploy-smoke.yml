@@ -1,0 +1,53 @@
+name: Production smoke after main
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-smoke-main
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out the validated revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.13.0
+          package-manager-cache: false
+
+      - name: Wait for Hostinger and verify production
+        shell: bash
+        env:
+          EXPECT_RATE_LIMIT_BACKEND: shared
+          EXPECT_DEPLOYMENT_REVISION: ${{ github.event.workflow_run.head_sha }}
+          CHECK_NPM_RELEASE: 1
+        run: |
+          set -uo pipefail
+          for attempt in {1..12}; do
+            if npm run smoke:production; then
+              exit 0
+            fi
+            if [[ "$attempt" -lt 12 ]]; then
+              sleep 30
+            fi
+          done
+          exit 1

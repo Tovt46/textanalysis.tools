@@ -7,7 +7,7 @@ import { languageAlternates,languagePaths } from "../../../localization";
 
 const path="/tools/bag-of-words-generator";
 const title="Free Bag of Words Generator for Text & URLs";
-const description="Build a full term vector from text or a public webpage with token counts, frequencies, and frequency rates. Export full tables for downstream analysis.";
+const description="Build a bounded term vector from text or a public webpage with token counts, frequencies, and frequency rates. Export the returned table for downstream analysis.";
 
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),
@@ -25,7 +25,7 @@ const schema=toolWebApplicationSchema({
   name:"Bag of Words Generator",
   description,
   path,
-  featureList:["Complete term vectors","Raw counts and normalized frequencies","Editable stop words","Text and URL input","CSV and JSON export"],
+  featureList:["Bounded term-vector rows","Raw counts and normalized frequencies","Editable stop words","Text and URL input","CSV and JSON export"],
 });
 
 export default function BagOfWordsGeneratorPage(){
@@ -47,7 +47,7 @@ export default function BagOfWordsGeneratorPage(){
           <div><h3>Text-first mode</h3><p>Local analysis runs immediately with no network round-trip for pasted text.</p></div>
           <div><h3>Public URL mode</h3><p>The same vector contract is applied after HTML cleanup and token extraction.</p></div>
           <div><h3>Stop-word control</h3><p>Drop common function words or keep them if your model needs a full vocabulary baseline.</p></div>
-          <div><h3>CSV and JSON export</h3><p>Export the complete vector to share downstream scoring or clustering scripts.</p></div>
+          <div><h3>CSV and JSON export</h3><p>Export the returned vector page; the tool shows a notice when a large vocabulary is partial.</p></div>
         </div>
       </section>
       <section className="tool-next-links">

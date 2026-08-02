@@ -1,7 +1,7 @@
 import type { UiLang } from "./i18n";
 import { languagePaths,localizedPath } from "./localization";
 
-type ActiveNav="home"|"tools"|"guide"|"api"|"agents";
+type ActiveNav="home"|"tools"|"guide"|"api"|"agents"|"privacy";
 type LanguagePaths=Record<UiLang,string>;
 
 const ROOT_LANGUAGE_PATHS:LanguagePaths=languagePaths("/");
@@ -17,10 +17,10 @@ const LABELS:Record<UiLang,{
   sitemap:string;
   agents:string;
 }>={
-  en:{home:"Home",tools:"Tools",guides:"Guides",navigation:"Main navigation",languages:"Language",privacy:"Transparent text analysis without server storage.",resources:"Developer and machine-readable resources",sitemap:"Sitemap",agents:"Agents"},
-  uk:{home:"Головна",tools:"Інструменти",guides:"Гайди",navigation:"Головна навігація",languages:"Мова",privacy:"Прозорий аналіз тексту без збереження на сервері.",resources:"Ресурси для розробників і машинного читання",sitemap:"Мапа сайту",agents:"Агенти"},
-  ru:{home:"Главная",tools:"Инструменты",guides:"Гайды",navigation:"Главная навигация",languages:"Язык",privacy:"Прозрачный анализ текста без хранения на сервере.",resources:"Ресурсы для разработчиков и машинного чтения",sitemap:"Карта сайта",agents:"Агенты"},
-  es:{home:"Inicio",tools:"Herramientas",guides:"Guías",navigation:"Navegación principal",languages:"Idioma",privacy:"Análisis de texto transparente sin almacenamiento en el servidor.",resources:"Recursos para desarrolladores y lectura automática",sitemap:"Mapa del sitio",agents:"Agentes"},
+  en:{home:"Home",tools:"Tools",guides:"Guides",navigation:"Main navigation",languages:"Language",privacy:"Transparent text analysis without server-side document storage.",resources:"Developer and machine-readable resources",sitemap:"Sitemap",agents:"Agents"},
+  uk:{home:"Головна",tools:"Інструменти",guides:"Гайди",navigation:"Головна навігація",languages:"Мова",privacy:"Прозорий аналіз тексту без зберігання документів на сервері.",resources:"Ресурси для розробників і машинного читання",sitemap:"Мапа сайту",agents:"Агенти"},
+  ru:{home:"Главная",tools:"Инструменты",guides:"Гайды",navigation:"Главная навигация",languages:"Язык",privacy:"Прозрачный анализ текста без хранения документов на сервере.",resources:"Ресурсы для разработчиков и машинного чтения",sitemap:"Карта сайта",agents:"Агенты"},
+  es:{home:"Inicio",tools:"Herramientas",guides:"Guías",navigation:"Navegación principal",languages:"Idioma",privacy:"Análisis transparente sin almacenar documentos en el servidor.",resources:"Recursos para desarrolladores y lectura automática",sitemap:"Mapa del sitio",agents:"Agentes"},
 };
 
 function navItems(locale:UiLang){
@@ -47,6 +47,6 @@ export function SiteFooter({locale}:{locale:UiLang}){
   const labels=LABELS[locale];
   return <footer className="site-footer">
     <div className="site-footer-brand"><a className="brand" href={ROOT_LANGUAGE_PATHS[locale]}><span className="brand-mark" aria-hidden="true"/><span>TEXT ANALYSIS TOOLS</span></a><p>{labels.privacy}</p></div>
-    <div className="site-footer-links"><nav className="site-footer-nav" aria-label={labels.navigation}>{navItems(locale).map(item=><a key={item.key} href={item.href}>{item.label}</a>)}</nav><nav className="site-footer-utility" aria-label={labels.resources}><a href={localizedPath(locale,"/cli")}>CLI</a><a href={localizedPath(locale,"/agents")}>{labels.agents}</a><a href="/openapi.json">OpenAPI</a><a href="/llms.txt">llms.txt</a><a href="/sitemap.xml">{labels.sitemap}</a></nav></div>
+    <div className="site-footer-links"><nav className="site-footer-nav" aria-label={labels.navigation}>{navItems(locale).map(item=><a key={item.key} href={item.href}>{item.label}</a>)}</nav><nav className="site-footer-utility" aria-label={labels.resources}><a href={localizedPath(locale,"/cli")}>CLI</a><a href={localizedPath(locale,"/agents")}>{labels.agents}</a><a href="/privacy">Privacy</a><a href="/openapi.json">OpenAPI</a><a href="/llms.txt">llms.txt</a><a href="/sitemap.xml">{labels.sitemap}</a></nav></div>
   </footer>;
 }

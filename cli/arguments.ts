@@ -7,6 +7,7 @@ export const COMMANDS=[
   "bow",
   "tfidf",
   "similarity",
+  "check",
   "mcp",
 ] as const;
 
@@ -38,6 +39,7 @@ const COMMAND_ALIASES:Record<string,CliCommand>={
   "tf-idf":"tfidf",
   similarity:"similarity",
   "text-similarity":"similarity",
+  check:"check",
   mcp:"mcp",
 };
 
@@ -65,6 +67,8 @@ const VALUE_OPTIONS=new Set([
   "url-b",
   "stopwords",
   "min-count",
+  "config",
+  "baseline",
 ]);
 
 const SHORT_OPTIONS:Record<string,string>={

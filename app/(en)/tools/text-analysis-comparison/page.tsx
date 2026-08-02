@@ -40,8 +40,8 @@ export default function TextAnalysisComparisonPage(){
       <section>
         <p className="section-number">REVISION WORKFLOW</p>
         <h2>Use A/B frequency changes to inspect a revision</h2>
-        <p>Paste the original in A and the revision in B, then review the largest normalized changes first. Search for a specific word or switch to bigrams when phrase order matters. The export contains the complete comparison, including terms that appear in only one version.</p>
-        <div className="feature-list"><div><h3>Draft vs revision</h3><p>Find vocabulary that was added, removed, or repeated more heavily after editing.</p></div><div><h3>Page vs competitor</h3><p>Compare public pages cautiously and remember that menus or templates can affect extracted text.</p></div><div><h3>Local pasted-text mode</h3><p>When both inputs are pasted, the complete calculation stays in your browser.</p></div><div><h3>URL comparison API</h3><p>If either source is a URL, the stateless public API fetches and compares both inputs without retaining them.</p></div></div>
+        <p>Paste the original in A and the revision in B, then review the largest normalized changes first. Search for a specific word or switch to bigrams when phrase order matters. The export contains the returned comparison page, including terms that appear in only one version; a visible notice identifies a partial result.</p>
+        <div className="feature-list"><div><h3>Draft vs revision</h3><p>Find vocabulary that was added, removed, or repeated more heavily after editing.</p></div><div><h3>Page vs competitor</h3><p>Compare public pages cautiously and remember that menus or templates can affect extracted text.</p></div><div><h3>Local pasted-text mode</h3><p>When both inputs are pasted, the calculation stays in your browser and large returned tables are explicitly capped.</p></div><div><h3>URL comparison API</h3><p>If either source is a URL, the stateless public API fetches and compares both inputs without retaining them.</p></div></div>
       </section>
       <section>
         <p className="section-number">LIMITATIONS</p>

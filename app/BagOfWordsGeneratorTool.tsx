@@ -2,11 +2,13 @@
 
 import { FormEvent,useEffect,useMemo,useState } from "react";
 import Link from "next/link";
-import { analyzeBagOfWords } from "./lib/analyze";
+import type { analyzeBagOfWords } from "./lib/analyze";
+import { AnalysisProgress,hasPartialBrowserResult,isAnalysisAbort,PartialResultNotice,useBrowserAnalysis,validateBrowserInputs } from "./lib/browser-analysis";
 import { DEFAULT_STOPWORD_TEXT,parseStopwordText,type TextLanguage } from "./lib/stopwords";
 import type { UiLang } from "./i18n";
 import { BREADCRUMB_LABELS,formatNumber,localizedPath,localizeApiError } from "./localization";
 import { BOW_GENERATOR_UI } from "./tool-ui-copy";
+import { CopyResultAction,ExampleAction,type ToolExample } from "./ToolWorkflowActions";
 
 type SourceType="text"|"url";
 type SortKey="term"|"count"|"frequency"|"percentage"|"per1000";
@@ -48,8 +50,8 @@ export default function BagOfWordsGeneratorTool({uiLang="en"}:{uiLang?:UiLang}){
   const [query,setQuery]=useState("");
   const [sortKey,setSortKey]=useState<SortKey>("frequency");
   const [sortDirection,setSortDirection]=useState<SortDirection>("desc");
-  const [loading,setLoading]=useState(false);
   const [error,setError]=useState("");
+  const {busy:loading,progress,runWorker,runRemote,cancel}=useBrowserAnalysis();
 
   useEffect(()=>{
     const timer=window.setTimeout(()=>{try{
@@ -89,44 +91,49 @@ export default function BagOfWordsGeneratorTool({uiLang="en"}:{uiLang?:UiLang}){
   async function runAnalysis(event:FormEvent){
     event.preventDefault();
     if(!source.trim())return;
-    setLoading(true);
     setError("");
     setResult(null);
     try{
       let next:Analysis;
       if(sourceType==="text"){
-        await new Promise<void>(resolve=>window.setTimeout(resolve,0));
-        next=analyzeBagOfWords({text:source,language,keepStopwords,stopwordLists:parsedStopwords});
+        validateBrowserInputs([source],uiLang);
+        next=await runWorker<Analysis>("bag-of-words",{text:source,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang});
       }else{
-        const response=await fetch("/api/v1/bag-of-words",{
-          method:"POST",
-          headers:{"Content-Type":"application/json","Accept":"application/json"},
-          body:JSON.stringify({sourceType,source,language,keepStopwords,stopwordLists:parsedStopwords}),
+        next=await runRemote(async signal=>{
+          const response=await fetch("/api/v1/bag-of-words",{
+            method:"POST",signal,
+            headers:{"Content-Type":"application/json","Accept":"application/json"},
+            body:JSON.stringify({sourceType,source,language,keepStopwords,stopwordLists:parsedStopwords}),
+          });
+          const raw=await response.text();
+          let payload:unknown;
+          try{payload=JSON.parse(raw);}catch{throw new Error(copy.invalid);}
+          if(!response.ok) throw new Error(localizeApiError(payload,copy.urlFailed,uiLang));
+          return (payload as {result:Analysis}).result;
         });
-        const raw=await response.text();
-        let payload:unknown;
-        try{payload=JSON.parse(raw);}catch{throw new Error(copy.invalid);}
-        if(!response.ok) throw new Error(localizeApiError(payload,copy.urlFailed,uiLang));
-        next=(payload as {result:Analysis}).result;
       }
       setResult(next);
       setQuery("");
       if(language==="auto") setEditorLanguage(next.language);
       window.setTimeout(()=>document.getElementById("bow-generator-results")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
     }catch(caught){
+      if(isAnalysisAbort(caught))return;
       setError(caught instanceof Error?caught.message:copy.failed);
-    }finally{
-      setLoading(false);
     }
   }
 
-  function selectSourceType(value:SourceType){setSourceType(value);setSource("");setResult(null);setError("");}
+  function selectSourceType(value:SourceType){cancel();setSourceType(value);setSource("");setResult(null);setError("");}
+  function loadExample(example:ToolExample){
+    cancel();setSourceType("text");setSource(example.sources[0]);setLanguage(uiLang);setEditorLanguage(uiLang);setResult(null);setError("");
+  }
   function changeLanguage(value:"auto"|TextLanguage){
+    cancel();
     setLanguage(value);
     if(value!=="auto")setEditorLanguage(value);
   }
-  function changeEditorLanguage(value:TextLanguage){setEditorLanguage(value);setLanguage(value);}
+  function changeEditorLanguage(value:TextLanguage){cancel();setEditorLanguage(value);setLanguage(value);}
   function updateStopwords(value:string){
+    cancel();
     const next={...stopwordLists,[editorLanguage]:value};
     setStopwordLists(next);
     try{localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}catch{}
@@ -180,7 +187,7 @@ export default function BagOfWordsGeneratorTool({uiLang="en"}:{uiLang?:UiLang}){
       <span className="privacy-note"><b/>{copy.privacy}</span>
     </section>
 
-    <form className="frequency-workspace" onSubmit={runAnalysis}>
+    <form className="frequency-workspace" onSubmit={runAnalysis} aria-busy={loading}>
       <section className="frequency-input-card">
         <div className="section-head"><div><span>01</span><h2>{copy.source}</h2></div>
           <div className="tabs">
@@ -189,22 +196,25 @@ export default function BagOfWordsGeneratorTool({uiLang="en"}:{uiLang?:UiLang}){
           </div>
         </div>
         {sourceType==="text"
-          ?<div className="textarea-wrap"><textarea value={source} onChange={event=>setSource(event.target.value)} placeholder={copy.paste} aria-label={copy.textAria}/><span>{formatNumber(source.length,uiLang)} {copy.characters}</span></div>
-          :<><input className="url-input" type="url" value={source} onChange={event=>setSource(event.target.value)} placeholder="https://example.com/page" aria-label={copy.urlAria} required/><p className="url-help">{copy.urlHelp}</p></>}
+          ?<div className="textarea-wrap"><textarea value={source} onChange={event=>{cancel();setSource(event.target.value);setResult(null);setError("");}} placeholder={copy.paste} aria-label={copy.textAria}/><span>{formatNumber(source.length,uiLang)} {copy.characters}</span></div>
+          :<><input className="url-input" type="url" value={source} onChange={event=>{cancel();setSource(event.target.value);setResult(null);setError("");}} placeholder="https://example.com/page" aria-label={copy.urlAria} required/><p className="url-help">{copy.urlHelp}</p></>}
+        <ExampleAction tool="bag-of-words-generator" locale={uiLang} onLoad={loadExample}/>
       </section>
 
       <aside className="frequency-settings-card">
         <div className="section-head simple"><div><span>02</span><h2>{copy.settings}</h2></div></div>
         <label className="field"><span>{copy.language}</span><select value={language} onChange={event=>changeLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option></select><small>{copy.languageHelp}</small></label>
-        <label className="check"><input type="checkbox" checked={keepStopwords} onChange={event=>setKeepStopwords(event.target.checked)}/><span><b>{copy.keepStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
+        <label className="check"><input type="checkbox" checked={keepStopwords} onChange={event=>{cancel();setKeepStopwords(event.target.checked);}}/><span><b>{copy.keepStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
         <details className="stopword-editor"><summary>{copy.editStops} <span>{parsedStopwords[editorLanguage].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru","es"] as TextLanguage[]).map((item)=><button type="button" key={item} className={editorLanguage===item?"active":""} onClick={()=>changeEditorLanguage(item)}>{item.toUpperCase()}</button>)}</div><p>{copy.editorHelp}</p><textarea value={stopwordLists[editorLanguage]} onChange={event=>updateStopwords(event.target.value)} aria-label={`${copy.editAria}: ${editorLanguage.toUpperCase()}`}/><div className="stopword-actions"><small>{parsedStopwords[editorLanguage].length} {copy.saved}</small><button type="button" onClick={resetStopwords}>{copy.restore}</button></div></div></details>
         <button className="analyze-button" disabled={loading||!source.trim()}><span>{loading?copy.loading:copy.submit}</span><b>→</b></button>
+        <AnalysisProgress active={loading} progress={progress} label={copy.loading}/>
         {error&&<p className="error" role="alert">{error}</p>}
       </aside>
     </form>
 
     {result&&<section className="frequency-results" id="bow-generator-results">
-      <div className="results-title"><div><span>03</span><h2>{copy.results}</h2></div><p>{copy.detected}: <b>{result.language.toUpperCase()}</b></p></div>
+      <div className="results-title"><div><span>03</span><h2>{copy.results}</h2></div><div className="results-actions"><p>{copy.detected}: <b>{result.language.toUpperCase()}</b></p><CopyResultAction tool="bag-of-words-generator" locale={uiLang} value={result}/></div></div>
+      <PartialResultNotice partial={hasPartialBrowserResult(result)} locale={uiLang}/>
       <div className="frequency-metrics">
         <div><span>{copy.words}</span><strong>{formatNumber(result.tokenCount,uiLang)}</strong><small>{copy.wordsNote}</small></div>
         <div><span>{copy.unique}</span><strong>{formatNumber(result.vocabularySize,uiLang)}</strong><small>{copy.uniqueNote}</small></div>

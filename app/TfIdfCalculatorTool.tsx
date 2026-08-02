@@ -2,11 +2,12 @@
 
 import { FormEvent,useEffect,useMemo,useRef,useState } from "react";
 import Link from "next/link";
-import { analyzeBagOfWords, calculateTfIdfCorpus, type TfIdfCorpusInput } from "./lib/analyze";
+import { AnalysisProgress,hasPartialBrowserResult,isAnalysisAbort,PartialResultNotice,useBrowserAnalysis,validateBrowserInputs } from "./lib/browser-analysis";
 import { DEFAULT_STOPWORD_TEXT,parseStopwordText,type TextLanguage } from "./lib/stopwords";
 import type { UiLang } from "./i18n";
 import { BREADCRUMB_LABELS,formatNumber,localizedPath,localizeApiError } from "./localization";
 import { TFIDF_UI } from "./tool-ui-copy";
+import { CopyResultAction,ExampleAction,type ToolExample } from "./ToolWorkflowActions";
 
 type SourceType="text"|"url";
 type SourceDocument={id:number;sourceType:SourceType;source:string;};
@@ -61,8 +62,8 @@ export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
   const [result,setResult]=useState<TfIdfResult|null>(null);
   const [activeDoc,setActiveDoc]=useState(0);
   const [query,setQuery]=useState("");
-  const [loading,setLoading]=useState(false);
   const [error,setError]=useState("");
+  const {busy:loading,progress,runWorker,runRemote,cancel}=useBrowserAnalysis();
 
   useEffect(()=>{
     const timer=window.setTimeout(()=>{try{
@@ -101,10 +102,10 @@ export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
   async function runAnalysis(event:FormEvent){
     event.preventDefault();
     if(sources.length<2||sources.length>10||sources.some(item=>!item.source.trim()))return;
-    setLoading(true);
     setError("");
     setResult(null);
     try{
+      validateBrowserInputs(sources.filter(item=>item.sourceType==="text").map(item=>item.source),uiLang);
       const limit=Math.max(1,Math.min(top,100));
       const requestBody={
         top:limit,
@@ -118,43 +119,36 @@ export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
       };
       let nextResult:TfIdfResult;
       if(sources.every(item=>item.sourceType==="text")){
-        await new Promise<void>(resolve=>window.setTimeout(resolve,0));
-        const documents = await Promise.all(
-          sources.map(item=>analyzeBagOfWords({text:item.source,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang})),
-        );
-        const analysis = calculateTfIdfCorpus(documents as TfIdfCorpusInput, limit);
-        const languageResult = documents.every((doc)=>doc.language===documents[0].language) ? documents[0].language : "auto";
-        nextResult={
-          language:languageResult,
-          documentCount:documents.length,
+        nextResult=await runWorker<TfIdfResult>("tf-idf",{
+          documents:sources.map(item=>({text:item.source,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang})),
           top:limit,
-          totalVocabularySize:analysis.totalVocabularySize,
-          averageDocumentFrequency:analysis.averageDocumentFrequency,
-          documents:analysis.documents,
-          idfTable:analysis.idfTable,
-        };
-      }else{
-        const response=await fetch("/api/v1/tf-idf",{
-          method:"POST",
-          headers:{"Content-Type":"application/json","Accept":"application/json"},
-          body:JSON.stringify(requestBody),
         });
-        const raw=await response.text();
-        let payload:unknown;
-        try{payload=JSON.parse(raw);}catch{throw new Error(copy.invalid);}
-        if(!response.ok) throw new Error(localizeApiError(payload,copy.urlFailed,uiLang));
-        nextResult=(payload as {result:TfIdfResult}).result;
+      }else{
+        nextResult=await runRemote(async signal=>{
+          const response=await fetch("/api/v1/tf-idf",{
+            method:"POST",signal,
+            headers:{"Content-Type":"application/json","Accept":"application/json"},
+            body:JSON.stringify(requestBody),
+          });
+          const raw=await response.text();
+          let payload:unknown;
+          try{payload=JSON.parse(raw);}catch{throw new Error(copy.invalid);}
+          if(!response.ok) throw new Error(localizeApiError(payload,copy.urlFailed,uiLang));
+          return (payload as {result:TfIdfResult}).result;
+        });
       }
       setResult(nextResult);
       setQuery("");
       setActiveDoc(0);
       window.setTimeout(()=>document.getElementById("tfidf-results")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
     }catch(caught){
+      if(isAnalysisAbort(caught))return;
       setError(caught instanceof Error?caught.message:copy.failed);
-    }finally{setLoading(false);}
+    }
   }
 
   function updateSource(id:number,patch:Partial<Omit<SourceDocument,"id">>){
+    cancel();
     setSources(current=>current.map(item=>item.id===id?{...item,...patch}:item));
     setResult(null);
     setError("");
@@ -163,11 +157,18 @@ export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
     updateSource(id,{sourceType:value,source:""});
   }
   function addSource(){
+    cancel();
     setSources(current=>current.length>=10?current:[...current,{id:nextSourceId.current++,sourceType:"text",source:""}]);
     setResult(null);
     setError("");
   }
+  function loadExample(example:ToolExample){
+    cancel();setSources(example.sources.map((source,index)=>({id:index+1,sourceType:"text",source})));
+    nextSourceId.current=example.sources.length+1;
+    setLanguage(uiLang);setEditorLanguage(uiLang);setResult(null);setActiveDoc(0);setError("");
+  }
   function removeSource(id:number){
+    cancel();
     setSources(current=>{
       if(current.length<=2)return current;
       return current.filter(item=>item.id!==id);
@@ -176,9 +177,10 @@ export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
     setResult(null);
     setError("");
   }
-  function changeLanguage(value:"auto"|TextLanguage){setLanguage(value);if(value!=="auto")setEditorLanguage(value);}
-  function changeEditorLanguage(value:TextLanguage){setEditorLanguage(value);setLanguage(value);}
+  function changeLanguage(value:"auto"|TextLanguage){cancel();setLanguage(value);if(value!=="auto")setEditorLanguage(value);}
+  function changeEditorLanguage(value:TextLanguage){cancel();setEditorLanguage(value);setLanguage(value);}
   function updateStopwords(value:string){
+    cancel();
     const next={...stopwordLists,[editorLanguage]:value};
     setStopwordLists(next);
     try{localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}catch{}
@@ -209,7 +211,7 @@ export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
       <span className="privacy-note"><b/>{copy.privacy}</span>
     </section>
 
-    <form className="frequency-workspace" onSubmit={runAnalysis}>
+    <form className="frequency-workspace" onSubmit={runAnalysis} aria-busy={loading}>
       <section className="frequency-input-card">
         <div className="section-head"><div><span>01</span><h2>{copy.corpus}</h2></div><small>{sources.length} {copy.ofTen}</small></div>
         <div className="tfidf-source-list">
@@ -227,21 +229,24 @@ export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
           })}
         </div>
         <button className="tfidf-add-source" type="button" onClick={addSource} disabled={sources.length>=10}><span>＋</span>{sources.length>=10?copy.max:copy.add}</button>
+        <ExampleAction tool="tf-idf" locale={uiLang} onLoad={loadExample}/>
       </section>
 
       <aside className="frequency-settings-card">
         <div className="section-head simple"><div><span>02</span><h2>{copy.settings}</h2></div></div>
         <label className="field"><span>{copy.language}</span><select value={language} onChange={event=>changeLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option></select><small>{copy.languageHelp}</small></label>
-        <label className="field"><span>{copy.top}</span><input type="number" min="1" max="100" value={top} onChange={event=>setTop(Math.max(1,Math.min(100,Number(event.target.value)||100)))} /><small>{copy.topHelp}</small></label>
-        <label className="check"><input type="checkbox" checked={keepStopwords} onChange={event=>setKeepStopwords(event.target.checked)}/><span><b>{copy.keepStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
+        <label className="field"><span>{copy.top}</span><input type="number" min="1" max="100" value={top} onChange={event=>{cancel();setTop(Math.max(1,Math.min(100,Number(event.target.value)||100)));}} /><small>{copy.topHelp}</small></label>
+        <label className="check"><input type="checkbox" checked={keepStopwords} onChange={event=>{cancel();setKeepStopwords(event.target.checked);}}/><span><b>{copy.keepStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
         <details className="stopword-editor"><summary>{copy.editStops} <span>{parsedStopwords[editorLanguage].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru","es"] as TextLanguage[]).map((item)=><button type="button" key={item} className={editorLanguage===item?"active":""} onClick={()=>changeEditorLanguage(item)}>{item.toUpperCase()}</button>)}</div><p>{copy.editorHelp}</p><textarea value={stopwordLists[editorLanguage]} onChange={event=>updateStopwords(event.target.value)} aria-label={`${copy.editAria}: ${editorLanguage.toUpperCase()}`}/><div className="stopword-actions"><small>{parsedStopwords[editorLanguage].length} {copy.saved}</small><button type="button" onClick={resetStopwords}>{copy.restore}</button></div></div></details>
         <button className="analyze-button" disabled={loading||!ready}><span>{loading?copy.loading:copy.submit}</span><b>→</b></button>
+        <AnalysisProgress active={loading} progress={progress} label={copy.loading}/>
         {error&&<p className="error" role="alert">{error}</p>}
       </aside>
     </form>
 
     {result&&<section className="frequency-results" id="tfidf-results">
-      <div className="results-title"><div><span>03</span><h2>{copy.results}</h2></div><p>{copy.detected}: <b>{result.language.toUpperCase()}</b></p></div>
+      <div className="results-title"><div><span>03</span><h2>{copy.results}</h2></div><div className="results-actions"><p>{copy.detected}: <b>{result.language.toUpperCase()}</b></p><CopyResultAction tool="tf-idf" locale={uiLang} value={result}/></div></div>
+      <PartialResultNotice partial={hasPartialBrowserResult(result)} locale={uiLang}/>
       <div className="frequency-metrics tfidf-metrics">
         <div><span>{copy.documents}</span><strong>{result.documentCount}</strong><small>{copy.documentsNote}</small></div>
         <div><span>{copy.vocabulary}</span><strong>{formatNumber(result.totalVocabularySize,uiLang)}</strong><small>{copy.vocabularyNote}</small></div>

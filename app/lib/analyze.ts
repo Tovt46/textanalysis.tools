@@ -62,11 +62,15 @@ function cleanHtml(raw: string) {
     .trim();
 }
 
-function tokenize(text: string, lang: Lang, keepStopwords: boolean, stopwords = STOPWORDS[lang]) {
+export function tokenizeAnalysisTerms(text:string){
   const matches = text.normalize("NFKC").toLowerCase().replaceAll("’", "'").match(/[a-záéíóúüñа-яёіїєґ0-9']+/gi) || [];
   return matches
     .map((token) => token.replace(/^'+|'+$/g, ""))
-    .filter((token) => token.length > 0 && !/^\d+$/.test(token))
+    .filter((token) => token.length > 0 && !/^\d+$/.test(token));
+}
+
+function tokenize(text: string, lang: Lang, keepStopwords: boolean, stopwords = STOPWORDS[lang]) {
+  return tokenizeAnalysisTerms(text)
     .filter((token) => keepStopwords || !stopwords.has(token));
 }
 
@@ -139,7 +143,7 @@ function exactPhraseCount(tokens:string[],phraseTokens:string[]){
   return count;
 }
 
-export function analyzeKeywordDensity(input:AnalyzeInput,trackedInput=""){
+export function analyzeKeywordDensity(input:AnalyzeInput,trackedInput:string|string[]=""){
   const {language,rawTokens,activeStopwords,stopwordCount}=prepareRawTokens(input);
   const keepStopwords=Boolean(input.keepStopwords);
   const unigramCounts=countTerms(rawTokens).filter(([term])=>keepStopwords||!activeStopwords.has(term));
@@ -147,7 +151,8 @@ export function analyzeKeywordDensity(input:AnalyzeInput,trackedInput=""){
   const bigramCounts=countTerms(rawTokens,2).filter(meaningfulPhrase);
   const trigramCounts=countTerms(rawTokens,3).filter(meaningfulPhrase);
   const wordCount=rawTokens.length;
-  const trackedTerms=[...new Set(trackedInput.split(/[\n,;]+/).map(term=>term.trim()).filter(Boolean))].slice(0,100);
+  const suppliedTerms=Array.isArray(trackedInput)?trackedInput:trackedInput.split(/[\n,;]+/);
+  const trackedTerms=[...new Set(suppliedTerms.map(term=>term.trim()).filter(Boolean))].slice(0,100);
   const trackedKeywords=trackedTerms.map(term=>{
     const phraseTokens=tokenize(term,language,true,activeStopwords);
     const count=exactPhraseCount(rawTokens,phraseTokens);
@@ -292,11 +297,13 @@ function cosineFromMaps(a:Map<string,number>,b:Map<string,number>,terms:Iterable
     if(leftWeight===undefined||rightWeight===undefined) continue;
     dot += leftWeight*rightWeight;
   }
+  const denominator=Math.sqrt(normA)*Math.sqrt(normB);
+  const rawCosine=dot===0?0:dot/(denominator||1);
   return {
     dot,
     normA:Math.sqrt(normA),
     normB:Math.sqrt(normB),
-    cosine:dot===0 ? 0 : dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1),
+    cosine:Math.max(0,Math.min(1,rawCosine)),
   };
 }
 
@@ -452,7 +459,7 @@ export function analyzeNgram(input:AnalyzeInput,n=2){
 }
 
 export function analyzeText(input: AnalyzeInput) {
-  const uiLanguage = input.uiLanguage || "ru";
+  const uiLanguage = input.uiLanguage || "en";
   const {language,rawTokens,activeStopwords,stopwordCount}=prepareRawTokens(input);
   const tokens=input.keepStopwords
     ?rawTokens
@@ -525,5 +532,23 @@ export function analyzeText(input: AnalyzeInput) {
     notes,
     _allUnigrams: unigramCounts.map(([term, count]) => ({ term, count })),
     _allBigrams: bigramCounts.map(([term, count]) => ({ term, count })),
+  };
+}
+
+/**
+ * Removes comparison-only term arrays and adds the normalized fields exposed
+ * by the Web, HTTP, CLI, and MCP contracts.
+ */
+export function toPublicAnalysisResult(result:ReturnType<typeof analyzeText>){
+  const {_allUnigrams,_allBigrams,...publicResult}=result;
+  void _allUnigrams;void _allBigrams;
+  return {
+    ...publicResult,
+    rows:result.rows.map(row=>{
+      const share=result.tokenCount?row.actualCount/result.tokenCount:0;
+      return {...row,share,percentage:share*100,per1000:share*1000};
+    }),
+    bigrams:result.bigrams.map(row=>({...row,percentage:row.share*100,per1000:row.share*1000})),
+    focusCoverage:result.focusCoverage.map(row=>({...row,percentage:row.per1000/10})),
   };
 }

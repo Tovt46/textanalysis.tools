@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { FormEvent,useEffect,useMemo,useState } from "react";
-import { analyzeKeywordDensity } from "./lib/analyze";
+import type { analyzeKeywordDensity } from "./lib/analyze";
 import { trackEvent } from "./lib/analytics";
+import { AnalysisProgress,hasPartialBrowserResult,isAnalysisAbort,PartialResultNotice,useBrowserAnalysis,validateBrowserInputs } from "./lib/browser-analysis";
 import { DEFAULT_STOPWORD_TEXT,parseStopwordText,type TextLanguage } from "./lib/stopwords";
 import type { UiLang } from "./i18n";
 import { BREADCRUMB_LABELS,formatNumber,localizedPath,localizeApiError } from "./localization";
 import { DENSITY_UI } from "./tool-ui-copy";
+import { CopyResultAction,ExampleAction,type ToolExample } from "./ToolWorkflowActions";
 
 type SourceType="text"|"url";
 type Analysis=ReturnType<typeof analyzeKeywordDensity>;
@@ -51,8 +53,8 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
   const [minimumCount,setMinimumCount]=useState(1);
   const [sortKey,setSortKey]=useState<SortKey>("count");
   const [sortDirection,setSortDirection]=useState<SortDirection>("desc");
-  const [loading,setLoading]=useState(false);
   const [error,setError]=useState("");
+  const {busy:loading,progress,runWorker,runRemote,cancel}=useBrowserAnalysis();
 
   useEffect(()=>{
     const timer=window.setTimeout(()=>{try{
@@ -99,26 +101,31 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
   async function runAnalysis(event:FormEvent){
     event.preventDefault();
     if(!source.trim())return;
-    setLoading(true);setError("");setResult(null);
+    setError("");setResult(null);
     const settings=baseline?.settings||{language,keepStopwords,trackedKeywords,stopwordLists:parsedStopwords};
     trackEvent("analysis_started",{tool:"keyword_density_checker",source_type:sourceType,text_language:settings.language});
     if(sourceType==="url")trackEvent("url_analysis_started",{tool:"keyword_density_checker",text_language:settings.language});
     try{
       let next:Analysis;
       if(sourceType==="text"){
-        await new Promise<void>(resolve=>window.setTimeout(resolve,0));
-        next=analyzeKeywordDensity({text:source,language:settings.language,keepStopwords:settings.keepStopwords,stopwordLists:settings.stopwordLists,uiLanguage:uiLang},settings.trackedKeywords);
-      }else{
-        const response=await fetch("/api/v1/keyword-density",{
-          method:"POST",
-          headers:{"Content-Type":"application/json","Accept":"application/json"},
-          body:JSON.stringify({sourceType,source,language:settings.language,keepStopwords:settings.keepStopwords,stopwordLists:settings.stopwordLists,trackedKeywords:settings.trackedKeywords}),
+        validateBrowserInputs([source],uiLang);
+        next=await runWorker<Analysis>("keyword-density",{
+          input:{text:source,language:settings.language,keepStopwords:settings.keepStopwords,stopwordLists:settings.stopwordLists,uiLanguage:uiLang},
+          trackedKeywords:settings.trackedKeywords,
         });
-        const raw=await response.text();
-        let payload:unknown;
-        try{payload=JSON.parse(raw);}catch{throw new Error(copy.invalid);}
-        if(!response.ok)throw new Error(localizeApiError(payload,copy.urlFailed,uiLang));
-        next=(payload as {result:Analysis}).result;
+      }else{
+        next=await runRemote(async signal=>{
+          const response=await fetch("/api/v1/keyword-density",{
+            method:"POST",signal,
+            headers:{"Content-Type":"application/json","Accept":"application/json"},
+            body:JSON.stringify({sourceType,source,language:settings.language,keepStopwords:settings.keepStopwords,stopwordLists:settings.stopwordLists,trackedKeywords:settings.trackedKeywords}),
+          });
+          const raw=await response.text();
+          let payload:unknown;
+          try{payload=JSON.parse(raw);}catch{throw new Error(copy.invalid);}
+          if(!response.ok)throw new Error(localizeApiError(payload,copy.urlFailed,uiLang));
+          return (payload as {result:Analysis}).result;
+        });
       }
       setResult(next);setQuery("");
       if(settings.language==="auto")setEditorLanguage(next.language);
@@ -126,16 +133,22 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
       if(baseline)trackEvent("comparison_completed",{tool:"keyword_density_checker",source_type:sourceType});
       window.setTimeout(()=>document.getElementById("density-results")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
     }catch(caught){
+      if(isAnalysisAbort(caught))return;
       const message=caught instanceof Error?caught.message:copy.failed;
       setError(message);
       trackEvent("analysis_error",{tool:"keyword_density_checker",source_type:sourceType,error_message:message.slice(0,100)});
-    }finally{setLoading(false);}
+    }
   }
 
-  function selectSourceType(value:SourceType){setSourceType(value);setSource("");setResult(null);setError("");}
-  function changeLanguage(value:"auto"|TextLanguage){setLanguage(value);if(value!=="auto")setEditorLanguage(value);trackEvent("language_changed",{tool:"keyword_density_checker",text_language:value});}
-  function changeEditorLanguage(value:TextLanguage){setEditorLanguage(value);setLanguage(value);trackEvent("language_changed",{tool:"keyword_density_checker",text_language:value,control:"stopword_editor"});}
+  function selectSourceType(value:SourceType){cancel();setSourceType(value);setSource("");setResult(null);setError("");}
+  function loadExample(example:ToolExample){
+    cancel();setSourceType("text");setSource(example.sources[0]);setResult(null);setError("");
+    if(!baseline){setTrackedKeywords(example.tracked);setLanguage(uiLang);setEditorLanguage(uiLang);}
+  }
+  function changeLanguage(value:"auto"|TextLanguage){cancel();setLanguage(value);if(value!=="auto")setEditorLanguage(value);trackEvent("language_changed",{tool:"keyword_density_checker",text_language:value});}
+  function changeEditorLanguage(value:TextLanguage){cancel();setEditorLanguage(value);setLanguage(value);trackEvent("language_changed",{tool:"keyword_density_checker",text_language:value,control:"stopword_editor"});}
   function updateStopwords(value:string){
+    cancel();
     const next={...stopwordLists,[editorLanguage]:value};
     setStopwordLists(next);
     try{localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}catch{}
@@ -143,13 +156,14 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
   function resetStopwords(){updateStopwords(DEFAULT_STOPWORD_TEXT[editorLanguage]);}
   function saveAsA(){
     if(!result)return;
+    cancel();
     const settings={language,keepStopwords,trackedKeywords,stopwordLists:parsedStopwords};
     setBaseline({result,label:`${copy.labelA} · ${formatNumber(result.wordCount,uiLang)} ${copy.labelWords}`,settings});
     setResult(null);setSource("");setError("");
     trackEvent("comparison_result_saved",{tool:"keyword_density_checker",word_count:result.wordCount});
     window.scrollTo({top:0,behavior:"smooth"});
   }
-  function clearBaseline(){setBaseline(null);setResult(null);setError("");}
+  function clearBaseline(){cancel();setBaseline(null);setResult(null);setError("");}
   function changeSort(value:SortKey){
     if(value===sortKey)setSortDirection(current=>current==="asc"?"desc":"asc");
     else{setSortKey(value);setSortDirection(value==="term"?"asc":"desc");}
@@ -180,28 +194,31 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
       <div className="hero-note-row"><span className="privacy-note"><b/>{copy.privacy}</span><span className="ranking-note">{copy.ranking}</span></div>
     </section>
 
-    <form className="frequency-workspace density-workspace" onSubmit={runAnalysis}>
+    <form className="frequency-workspace density-workspace" onSubmit={runAnalysis} aria-busy={loading}>
       <section className="frequency-input-card">
         <div className="section-head"><div><span>01</span><h2>{baseline?copy.sourceB:copy.source}</h2></div><div className="tabs"><button type="button" className={sourceType==="text"?"active":""} onClick={()=>selectSourceType("text")}>{copy.text}</button><button type="button" className={sourceType==="url"?"active":""} onClick={()=>selectSourceType("url")}>{copy.url}</button></div></div>
         {sourceType==="text"
-          ?<div className="textarea-wrap"><textarea value={source} onChange={event=>setSource(event.target.value)} placeholder={copy.paste} aria-label={copy.textAria}/><span>{formatNumber(source.length,uiLang)} {copy.characters}</span></div>
-          :<><input className="url-input" type="url" value={source} onChange={event=>setSource(event.target.value)} placeholder="https://example.com/page" aria-label={copy.urlAria} required/><p className="url-help">{copy.urlHelp}</p></>}
-        <label className="field wide tracked-keywords"><span>{copy.tracked}</span><textarea value={trackedKeywords} disabled={locked} onChange={event=>setTrackedKeywords(event.target.value)} placeholder={copy.trackedPlaceholder}/><small>{locked?copy.trackedLocked:copy.trackedHelp}</small></label>
+          ?<div className="textarea-wrap"><textarea value={source} onChange={event=>{cancel();setSource(event.target.value);setResult(null);setError("");}} placeholder={copy.paste} aria-label={copy.textAria}/><span>{formatNumber(source.length,uiLang)} {copy.characters}</span></div>
+          :<><input className="url-input" type="url" value={source} onChange={event=>{cancel();setSource(event.target.value);setResult(null);setError("");}} placeholder="https://example.com/page" aria-label={copy.urlAria} required/><p className="url-help">{copy.urlHelp}</p></>}
+        <label className="field wide tracked-keywords"><span>{copy.tracked}</span><textarea value={trackedKeywords} disabled={locked} onChange={event=>{cancel();setTrackedKeywords(event.target.value);}} placeholder={copy.trackedPlaceholder}/><small>{locked?copy.trackedLocked:copy.trackedHelp}</small></label>
+        <ExampleAction tool="keyword-density" locale={uiLang} onLoad={loadExample}/>
       </section>
 
       <aside className="frequency-settings-card">
         <div className="section-head simple"><div><span>02</span><h2>{copy.settings}</h2></div></div>
         {baseline&&<div className="density-baseline-pill"><span>A</span><p><b>{baseline.label}</b><small>{copy.baselineHelp}</small></p><button type="button" onClick={clearBaseline} aria-label={copy.removeA}>×</button></div>}
         <label className="field"><span>{copy.language}</span><select value={language} disabled={locked} onChange={event=>changeLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option></select><small>{copy.languageHelp}</small></label>
-        <label className="check"><input type="checkbox" checked={keepStopwords} disabled={locked} onChange={event=>setKeepStopwords(event.target.checked)}/><span><b>{copy.includeStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
+        <label className="check"><input type="checkbox" checked={keepStopwords} disabled={locked} onChange={event=>{cancel();setKeepStopwords(event.target.checked);}}/><span><b>{copy.includeStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
         <details className="stopword-editor"><summary>{copy.editStops} <span>{parsedStopwords[editorLanguage].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru","es"] as TextLanguage[]).map(item=><button type="button" key={item} disabled={locked} className={editorLanguage===item?"active":""} onClick={()=>changeEditorLanguage(item)}>{item.toUpperCase()}</button>)}</div><p>{copy.editorHelp}</p><textarea value={stopwordLists[editorLanguage]} disabled={locked} onChange={event=>updateStopwords(event.target.value)} aria-label={`${copy.editAria}: ${editorLanguage.toUpperCase()}`}/><div className="stopword-actions"><small>{parsedStopwords[editorLanguage].length} {copy.saved}</small><button type="button" disabled={locked} onClick={resetStopwords}>{copy.restore}</button></div></div></details>
         <button className="analyze-button" disabled={loading||!source.trim()}><span>{loading?copy.loading:baseline?copy.submitB:copy.submit}</span><b>→</b></button>
+        <AnalysisProgress active={loading} progress={progress} label={copy.loading}/>
         {error&&<p className="error" role="alert">{error}</p>}
       </aside>
     </form>
 
     {result&&<section className="frequency-results density-results" id="density-results">
-      <div className="results-title"><div><span>03</span><h2>{baseline?copy.resultsCompare:copy.results}</h2></div><div className="results-actions"><p>{copy.detected}: <b>{result.language.toUpperCase()}</b></p>{!baseline&&<button type="button" className="save-button" onClick={saveAsA}>{copy.saveA}</button>}</div></div>
+      <div className="results-title"><div><span>03</span><h2>{baseline?copy.resultsCompare:copy.results}</h2></div><div className="results-actions"><p>{copy.detected}: <b>{result.language.toUpperCase()}</b></p><CopyResultAction tool="keyword-density" locale={uiLang} value={result}/>{!baseline&&<button type="button" className="save-button" onClick={saveAsA}>{copy.saveA}</button>}</div></div>
+      <PartialResultNotice partial={hasPartialBrowserResult(result)} locale={uiLang}/>
       <div className="density-warning"><b>{copy.warning}</b><p>{copy.warningText}</p></div>
       <div className="frequency-metrics"><div><span>{copy.totalWords}</span><strong>{formatNumber(result.wordCount,uiLang)}</strong><small>{copy.totalWordsNote}</small></div><div><span>{copy.visible}</span><strong>{formatNumber(result.vocabularySize,uiLang)}</strong><small>{copy.visibleNote}</small></div><div><span>{copy.trackedCount}</span><strong>{formatNumber(result.trackedKeywords.length,uiLang)}</strong><small>{copy.trackedNote}</small></div></div>
 

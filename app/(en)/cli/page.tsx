@@ -7,7 +7,7 @@ import { languageAlternates,languagePaths } from "../../localization";
 
 const path="/cli";
 const title="Text Analysis CLI: npm Installation & Command Guide";
-const description="Install the textanalysis-tools npm CLI and run word frequency, density, N-grams, Bag of Words, comparison, TF-IDF, and cosine similarity locally.";
+const description="Install the textanalysis-tools npm package for local analysis, deterministic content checks, an importable TypeScript API, and MCP agent tools.";
 
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
@@ -26,7 +26,7 @@ const schema={
       description,
       inLanguage:"en",
       datePublished:"2026-07-26",
-      dateModified:"2026-07-31",
+      dateModified:"2026-08-02",
       mainEntityOfPage:`${SITE_URL}${path}`,
       publisher:{"@type":"Organization",name:SITE_NAME,url:SITE_URL},
     },
@@ -70,6 +70,27 @@ const mcpConfig=`{
     }
   }
 }`;
+const checkConfig=`{
+  "$schema": "https://textanalysis.tools/textanalysis-config.schema.json",
+  "schemaVersion": 1,
+  "requiredPhrases": ["text analysis"],
+  "forbiddenPhrases": ["guaranteed ranking"],
+  "minimumWords": 500,
+  "maxTermDensity": 4,
+  "maxPhraseDensity": 2,
+  "maxSimilarity": 0.8,
+  "baseline": "approved.md"
+}`;
+const sdkExample=`import {
+  analyzeBagOfWords,
+  analyzeWordFrequency,
+  calculateTextSimilarity,
+  calculateTfIdfCorpus,
+} from "textanalysis-tools";
+
+const left = analyzeBagOfWords({text: "alpha beta alpha", language: "en"});
+const right = analyzeBagOfWords({text: "alpha gamma", language: "en"});
+const similarity = calculateTextSimilarity(left, right, "tfidf");`;
 
 export default function CliDocumentationPage(){
   return <main className="article-page">
@@ -93,6 +114,8 @@ export default function CliDocumentationPage(){
           <a href="#examples">Examples</a>
           <a href="#options">Common options</a>
           <a href="#outputs">Output and exit codes</a>
+          <a href="#checks">Repeatable checks</a>
+          <a href="#sdk">TypeScript API</a>
           <a href="#privacy">Privacy and URL behavior</a>
           <a href="#mcp">Local MCP server</a>
           <a href="#api">CLI versus API</a>
@@ -109,16 +132,17 @@ export default function CliDocumentationPage(){
           </section>
           <section id="commands">
             <p className="section-number">02</p>
-            <h2>Eight Focused Text Analysis Commands</h2>
+            <h2>Eight Analysis Commands plus a Repeatable Check Workflow</h2>
             <div className="cli-command-grid">
               <div><code>analyze</code><p>Bag of Words, focus phrases, and Zipf distribution diagnostics.</p><Link href="/tools/bag-of-words-analyzer">Web tool →</Link></div>
-              <div><code>frequency</code><p>Complete word-frequency table with counts and normalized rates.</p><Link href="/tools/word-frequency-counter">Web tool →</Link></div>
+              <div><code>frequency</code><p>Top ordered word-frequency rows with counts, normalized rates, and truncation metadata.</p><Link href="/tools/word-frequency-counter">Web tool →</Link></div>
               <div><code>density</code><p>Unigram, bigram, trigram, and exact tracked-phrase density.</p><Link href="/tools/keyword-density-checker">Web tool →</Link></div>
               <div><code>compare</code><p>Normalized word, bigram, metric, and Zipf changes between A and B.</p><Link href="/tools/text-analysis-comparison">Web tool →</Link></div>
               <div><code>ngram</code><p>Phrase windows from one to ten tokens with count filtering.</p><Link href="/tools/ngram-analyzer">Web tool →</Link></div>
-              <div><code>bow</code><p>Complete Bag of Words vector for downstream processing.</p><Link href="/tools/bag-of-words-generator">Web tool →</Link></div>
+              <div><code>bow</code><p>Top ordered Bag of Words rows with explicit truncation metadata for downstream processing.</p><Link href="/tools/bag-of-words-generator">Web tool →</Link></div>
               <div><code>tfidf</code><p>TF-IDF vectors and global IDF table across 2–10 documents.</p><Link href="/tools/tf-idf-calculator">Web tool →</Link></div>
               <div><code>similarity</code><p>BoW or TF-IDF cosine similarity with contribution terms.</p><Link href="/tools/text-similarity-calculator">Web tool →</Link></div>
+              <div><code>check</code><p>Versioned phrase, repetition, length, and baseline-similarity rules with CI exit codes.</p><a href="#checks">Configuration →</a></div>
             </div>
           </section>
           <section id="inputs">
@@ -151,22 +175,39 @@ export default function CliDocumentationPage(){
           <section id="outputs">
             <p className="section-number">06</p>
             <h2>Output Formats and Exit Codes</h2>
-            <p>Table output is optimized for interactive terminal review. JSON includes the command, package version, generation time, input labels, local-storage declaration, settings, and complete operation payload. CSV uses explicit table labels when one operation returns several result sets.</p>
+            <p>Table output is optimized for interactive terminal review. JSON includes the command, package version, generation time, input labels, local-storage declaration, settings, and the operation payload bounded by the selected <code>--top</code> value. Frequency, density, N-gram, Bag of Words, comparison, TF-IDF, and similarity payloads expose table-size or truncation metadata where rows can be cut. CSV uses explicit table labels when one operation returns several result sets.</p>
             <div className="feature-list">
               <div><h3>Exit 0</h3><p>The operation completed successfully, help/version was printed, or a downstream pipe closed normally.</p></div>
               <div><h3>Exit 2</h3><p>The command, option, input count, or option value failed usage validation.</p></div>
-              <div><h3>Exit 1</h3><p>An operational error occurred while reading, fetching, analyzing, or writing data.</p></div>
+              <div><h3>Exit 1</h3><p>An operational error occurred, or a <code>check</code> rule failed with its measured value and threshold.</p></div>
               <div><h3>stderr</h3><p>Error messages go to stderr, leaving stdout available for JSON, CSV, and shell pipelines.</p></div>
             </div>
           </section>
-          <section id="privacy">
+          <section id="checks">
             <p className="section-number">07</p>
+            <h2>Turn Existing Measurements into Repeatable CI Checks</h2>
+            <p><code>textanalysis check</code> composes exact phrase counts, word and repeated-phrase density, document length, and optional TF-IDF similarity to a local approved baseline. The command is diagnostic: it enforces thresholds your project chose and does not claim to score writing quality or guarantee rankings.</p>
+            <pre className="api-code"><code>{checkConfig}</code></pre>
+            <pre className="api-code"><code>{`textanalysis check article.md
+textanalysis check article.md --format json
+textanalysis check article.md --format ci`}</code></pre>
+            <p>The configuration must declare <code>schemaVersion: 1</code>. A failed rule exits with status 1; invalid configuration exits with status 2. Use the published <a href="/textanalysis-config.schema.json">JSON Schema</a> for editor completion and validation. The repository&apos;s reusable GitHub Action runs the same npm package contract.</p>
+          </section>
+          <section id="sdk">
+            <p className="section-number">08</p>
+            <h2>Import the Same Analysis Core from TypeScript</h2>
+            <p>The npm package exposes a side-effect-free ESM entrypoint, so Node applications can analyze local text without launching a subprocess or sending it to the hosted API. Curated TypeScript declarations ship in the exact tarball.</p>
+            <pre className="api-code"><code>{sdkExample}</code></pre>
+            <p>Stable exports cover word frequency, keyword density, N-grams, Bag of Words, Zipf diagnostics, TF-IDF, cosine similarity, token counting, and stop-word helpers.</p>
+          </section>
+          <section id="privacy">
+            <p className="section-number">09</p>
             <h2>Local-First Privacy and Public URL Inputs</h2>
             <p>Inline text, local files, and stdin are analyzed inside the CLI process and are not sent to textanalysis.tools. When a command receives a public URL, the CLI downloads that page directly, removes non-content markup, and analyzes the extracted text locally.</p>
             <p>Only public HTTP and HTTPS URLs are accepted. Private and local-network destinations are rejected. Follow the source site&apos;s terms, access rules, and applicable data requirements when processing remote content.</p>
           </section>
           <section id="mcp">
-            <p className="section-number">08</p>
+            <p className="section-number">10</p>
             <h2>Expose the Eight Operations to AI Agents through MCP</h2>
             <p>The <code>mcp</code> command starts a local stdio server with eight read-only tools, validated input schemas, and structured results. Text arguments stay in the local process. Explicit public URL inputs are fetched and then analyzed locally.</p>
             <pre className="api-code"><code>{`npx --yes textanalysis-tools@${cliPackage.version} mcp`}</code></pre>
@@ -175,7 +216,7 @@ export default function CliDocumentationPage(){
             <p>See the <Link href="/agents">agent integration guide</Link> for the complete tool list, OpenAPI alternative, and data boundaries.</p>
           </section>
           <section id="api">
-            <p className="section-number">09</p>
+            <p className="section-number">11</p>
             <h2>Choose CLI or MCP for Local Workflows and API for Applications</h2>
             <p>The CLI is suitable for files, shell pipelines, and scheduled jobs. MCP exposes the local engine directly to AI agents. The public API is suitable when an application or remote agent needs structured HTTP responses, OpenAPI discovery, and CORS.</p>
             <div className="article-callout subtle"><b>Same analysis primitives</b><p>The CLI and versioned API share the project&apos;s analysis implementation, but their transport, limits, and input handling are documented separately.</p></div>

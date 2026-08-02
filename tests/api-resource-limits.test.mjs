@@ -40,6 +40,34 @@ test("caps large single-table API results and reports truncation",async()=>{
   assert.equal(ngram.result.truncated,true);
 });
 
+test("paginates complete vocabulary and corpus support tables without overlap",async()=>{
+  const source="alpha beta gamma delta epsilon zeta";
+  const firstResponse=await post("/api/v1/word-frequency",{source,language:"en",keepStopwords:true,limit:2});
+  const first=(await firstResponse.json()).result;
+  assert.equal(first.offset,0);
+  assert.equal(first.nextOffset,2);
+  assert.equal(first.hasMore,true);
+
+  const secondResponse=await post("/api/v1/word-frequency",{source,language:"en",keepStopwords:true,limit:2,offset:first.nextOffset});
+  const second=(await secondResponse.json()).result;
+  assert.equal(second.offset,2);
+  assert.equal(second.nextOffset,4);
+  assert.equal(second.hasMore,true);
+  assert.equal(new Set([...first.rows,...second.rows].map(row=>row.term)).size,4);
+
+  const documents=[
+    {source:"alpha beta gamma delta",language:"en",keepStopwords:true},
+    {source:"alpha epsilon zeta eta",language:"en",keepStopwords:true},
+  ];
+  const idfFirst=(await (await post("/api/v1/tf-idf",{documents,limit:2})).json()).result;
+  const idfSecond=(await (await post("/api/v1/tf-idf",{documents,limit:2,offset:idfFirst.nextIdfOffset})).json()).result;
+  assert.equal(idfFirst.idfOffset,0);
+  assert.equal(idfFirst.nextIdfOffset,2);
+  assert.equal(idfFirst.hasMoreIdfRows,true);
+  assert.equal(idfSecond.idfOffset,2);
+  assert.equal(new Set([...idfFirst.idfTable,...idfSecond.idfTable].map(row=>row.term)).size,4);
+});
+
 test("caps every generated density table without dropping tracked phrases",async()=>{
   const response=await post("/api/v1/keyword-density",{
     source:"alpha beta gamma delta alpha beta gamma delta",
@@ -82,6 +110,48 @@ test("caps every generated density table without dropping tracked phrases",async
   assert.equal(tooManyPhrases.status,400);
 });
 
+test("rejects excessive or non-analyzable focus phrase work",async()=>{
+  const tooManyInString=await post("/api/v1/analyze",{
+    source:"alpha beta gamma",
+    language:"en",
+    focus:Array.from({length:101},(_,index)=>`phrase ${index}x`).join(","),
+  });
+  assert.equal(tooManyInString.status,400);
+  assert.equal((await tooManyInString.json()).error.code,"INVALID_ARGUMENT");
+
+  const tooManyInArray=await post("/api/v1/analyze",{
+    source:"alpha beta gamma",
+    language:"en",
+    focus:Array.from({length:101},(_,index)=>`phrase ${index}x`),
+  });
+  assert.equal(tooManyInArray.status,400);
+  assert.equal((await tooManyInArray.json()).error.code,"INVALID_ARGUMENT");
+
+  const tooLong=await post("/api/v1/analyze",{
+    source:"alpha beta gamma",
+    language:"en",
+    focus:["a".repeat(201)],
+  });
+  assert.equal(tooLong.status,400);
+  assert.equal((await tooLong.json()).error.code,"INVALID_ARGUMENT");
+
+  const nonAnalyzable=await post("/api/v1/analyze",{
+    source:"alpha beta gamma",
+    language:"en",
+    focus:["!!!"],
+  });
+  assert.equal(nonAnalyzable.status,400);
+  assert.equal((await nonAnalyzable.json()).error.code,"INVALID_ARGUMENT");
+
+  const exactLimits=await post("/api/v1/analyze",{
+    source:"alpha beta gamma",
+    language:"en",
+    focus:["a".repeat(200),...Array.from({length:99},(_,index)=>`phrase${index}x`)],
+  });
+  assert.equal(exactLimits.status,200);
+  assert.equal((await exactLimits.json()).result.focusCoverage.length,100);
+});
+
 test("caps TF-IDF support tables and validates the requested limit",async()=>{
   const documents=[
     {source:"alpha beta gamma delta epsilon",language:"en",keepStopwords:true},
@@ -103,6 +173,15 @@ test("caps TF-IDF support tables and validates the requested limit",async()=>{
   });
   assert.equal(invalid.status,400);
   assert.equal((await invalid.json()).error.code,"INVALID_ARGUMENT");
+
+  const invalidOffset=await post("/api/v1/word-frequency",{
+    source:"alpha beta gamma",
+    language:"en",
+    keepStopwords:true,
+    offset:250_001,
+  });
+  assert.equal(invalidOffset.status,400);
+  assert.equal((await invalidOffset.json()).error.code,"INVALID_ARGUMENT");
 
   const invalidDocument=await post("/api/v1/tf-idf",{documents:[null,documents[0]]});
   assert.equal(invalidDocument.status,400);
@@ -131,6 +210,14 @@ test("caps optional TF-IDF details in similarity responses",async()=>{
     limit:5001,
   });
   assert.equal(invalidBowLimit.status,400);
+
+  const invalidBowOffset=await post("/api/v1/similarity",{
+    a:{source:"alpha beta gamma",language:"en",keepStopwords:true},
+    b:{source:"alpha beta delta",language:"en",keepStopwords:true},
+    method:"bow",
+    offset:250_001,
+  });
+  assert.equal(invalidBowOffset.status,400);
 });
 
 test("reports comparison truncation instead of silently dropping rows",async()=>{
@@ -145,6 +232,19 @@ test("reports comparison truncation instead of silently dropping rows",async()=>
   assert.equal(body.comparison.totalRows.wordChanges,1008);
   assert.equal(body.comparison.returnedRows.wordChanges,1000);
   assert.equal(body.comparison.truncated,true);
+
+  const next=await post("/api/v1/compare",{
+    a:{source:terms.join(" "),language:"en",keepStopwords:true},
+    b:{source:[...terms,"extraone","extratwo","extrathree"].join(" "),language:"en",keepStopwords:true},
+    limit:1000,
+    offset:body.comparison.nextOffset,
+  });
+  assert.equal(next.status,200);
+  const nextComparison=(await next.json()).comparison;
+  assert.equal(nextComparison.offset,1000);
+  assert.equal(nextComparison.hasMore,false);
+  assert.equal(nextComparison.wordChanges.length,8);
+  assert.equal(new Set([...body.comparison.wordChanges,...nextComparison.wordChanges].map(row=>row.term)).size,1008);
 });
 
 test("rejects workloads above the analysis-token budgets before building result tables",async()=>{

@@ -49,7 +49,11 @@ function entry(path:string,locale:UiLang){
   </url>`;
 }
 
-const entries=PATHS.flatMap(path=>LANGUAGES.map(locale=>entry(path,locale))).join("\n");
+const privacyEntry=`  <url>
+    <loc>${absolute("/privacy")}</loc>
+    <lastmod>2026-08-02</lastmod>
+  </url>`;
+const entries=[...PATHS.flatMap(path=>LANGUAGES.map(locale=>entry(path,locale))),privacyEntry].join("\n");
 const xml=`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${entries}

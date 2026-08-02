@@ -16,7 +16,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -36,8 +36,14 @@ jobs:
       - name: Test production build, pages, APIs, CLI, and MCP
         run: npm test
 
+      - name: Install Chromium for browser interaction tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Test all tool examples at desktop and mobile sizes
+        run: npm run test:browser
+
       - name: Audit production dependencies
         run: npm audit --omit=dev
 
-      - name: Verify npm package contents
-        run: npm pack ./packages/cli --dry-run
+      - name: Install and verify the packed CLI runtime tree
+        run: npm run test:package

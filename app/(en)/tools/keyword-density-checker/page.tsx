@@ -41,7 +41,7 @@ export default function KeywordDensityCheckerPage(){
         <p className="section-number">PHRASE ANALYSIS</p>
         <h2>Review one-word keywords, bigrams, and trigrams separately</h2>
         <p>Unigrams show individual vocabulary. Bigrams preserve two-word sequences such as “keyword density,” while trigrams expose more specific patterns such as “free SEO tool.” The analyzer builds phrases from consecutive words before applying the table filter, so removing stop-word noise never creates a phrase that did not exist in the source.</p>
-        <div className="feature-list"><div><h3>Tracked keywords</h3><p>Check exact phrases you care about even when they are not among the most frequent rows.</p></div><div><h3>Minimum frequency</h3><p>Hide one-off terms while retaining the complete exported result.</p></div><div><h3>Draft vs page</h3><p>Save result A, analyze result B with identical settings, and review the largest percentage-point changes.</p></div><div><h3>URL or pasted text</h3><p>Fetch a public page or analyze a draft locally before it is published.</p></div></div>
+        <div className="feature-list"><div><h3>Tracked keywords</h3><p>Check exact phrases you care about even when they are not among the most frequent rows.</p></div><div><h3>Minimum frequency</h3><p>Hide one-off terms while retaining the returned result for export.</p></div><div><h3>Draft vs page</h3><p>Save result A, analyze result B with identical settings, and review the largest percentage-point changes.</p></div><div><h3>URL or pasted text</h3><p>Fetch a public page or analyze a draft locally before it is published.</p></div></div>
       </section>
       <section>
         <p className="section-number">LIMITATIONS</p>

@@ -17,7 +17,7 @@ export const metadata:Metadata={
 };
 
 const liveTools=[
-  ["/tools/word-frequency-counter","Word Frequency Counter","01","Count every word in pasted text or a URL. Search and sort the full vocabulary, edit stop words, and export CSV or JSON.","featured"],
+  ["/tools/word-frequency-counter","Word Frequency Counter","01","Count every word in pasted text or a URL. Search and sort the bounded vocabulary table, edit stop words, and export CSV or JSON.","featured"],
   ["/tools/keyword-density-checker","Keyword Density Checker","02","Measure words, bigrams, and trigrams, track exact phrases, and compare density changes between result A and B.","featured density-card"],
   ["/tools/bag-of-words-analyzer","Bag of Words Analyzer","03","Inspect vocabulary, bigrams, tracked phrases, and Zipf distribution, then save result A and compare it with result B.","featured bow-card"],
   ["/tools/text-analysis-comparison","Text Analysis Comparison","04","Compare two texts or webpages by length, vocabulary, normalized word and bigram frequency, and Zipf diagnostics.","featured comparison-card"],

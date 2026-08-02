@@ -3,6 +3,7 @@
 import {writeFile} from "node:fs/promises";
 import packageInfo from "../packages/cli/package.json";
 import {booleanOption,CliUsageError,parseCliArgs} from "./arguments";
+import {runCheck} from "./check";
 import {startMcpServer} from "./mcp";
 import {runOperation} from "./operations";
 import {renderCliOutput} from "./output";
@@ -17,13 +18,14 @@ Usage:
 
 Commands:
   analyze       Bag of Words and Zipf distribution analysis
-  frequency     Complete word-frequency table
+  frequency     Ordered word-frequency rows
   density       Unigram, bigram, trigram, and tracked-keyword density
   compare       Compare frequency and Zipf changes between two inputs
   ngram         Count phrases from 1 to 10 tokens
   bow           Generate a Bag of Words vector
   tfidf         Calculate TF-IDF across 2 to 10 documents
   similarity    Calculate BoW or TF-IDF cosine similarity
+  check         Run deterministic content rules from textanalysis.config.json
   mcp           Start a local MCP server with all eight analysis tools
 
 Inputs:
@@ -49,6 +51,7 @@ Command options:
   ngram:       --size <1-10> --min-count <number>
   bow:         --min-count <number>
   similarity:  --method <bow|tfidf>
+  check:       --config <file> --baseline <file> --format <table|json|ci>
 
 Examples:
   textanalysis frequency article.txt
@@ -56,6 +59,7 @@ Examples:
   textanalysis ngram https://example.com/article --size 3 --format csv
   textanalysis tfidf draft.txt competitor.txt --output tfidf.json --format json
   textanalysis similarity a.txt b.txt --method tfidf
+  textanalysis check article.md --config textanalysis.config.json --format ci
   textanalysis mcp
 `;
 
@@ -84,6 +88,16 @@ async function main(){
   }
 
   const stdin=new StdinReader(process.stdin,Boolean(process.stdin.isTTY));
+  if(parsed.command==="check"){
+    const checked=await runCheck(parsed,stdin);
+    if(checked.output){
+      await writeStdout(`Saved ${checked.format} output to ${checked.output}\n`);
+    }else{
+      await writeStdout(checked.rendered);
+    }
+    if(!checked.result.passed)process.exitCode=1;
+    return;
+  }
   const operation=await runOperation(parsed.command,parsed,stdin);
   const rendered=renderCliOutput(
     parsed.command,

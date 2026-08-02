@@ -3,9 +3,10 @@
 import { FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import { LOCALES, translate, type UiLang } from "./i18n";
 import { SiteFooter,SiteHeader } from "./SiteChrome";
-import { analyzeText } from "./lib/analyze";
+import { AnalysisProgress,isAnalysisAbort,useBrowserAnalysis,validateBrowserInputs } from "./lib/browser-analysis";
 import { DEFAULT_STOPWORD_TEXT,parseStopwordText,type TextLanguage } from "./lib/stopwords";
 import { trackEvent } from "./lib/analytics";
+import { CopyResultAction,ExampleAction,type ToolExample } from "./ToolWorkflowActions";
 
 type Zone = "above" | "within" | "below" | "sparse-tail";
 type ZipfRow = { rank:number; term:string; actualCount:number; expectedCount:number; ratio:number; zone:Zone };
@@ -164,7 +165,8 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
   const [top,setTop]=useState(20); const [tolerance,setTolerance]=useState(2); const [keepStopwords,setKeepStopwords]=useState(false);
   const [stopwordEditorLang,setStopwordEditorLang]=useState<Lang>("en"); const [stopwordLists,setStopwordLists]=useState<Record<Lang,string>>(DEFAULT_STOPWORD_TEXT);
   const [result,setResult]=useState<Analysis|null>(null); const [baseline,setBaseline]=useState<SavedResult|null>(null);
-  const [loading,setLoading]=useState(false); const [error,setError]=useState("");
+  const [error,setError]=useState("");
+  const {busy:loading,progress,runWorker,runRemote,cancel}=useBrowserAnalysis();
   const t:T=useCallback((key,vars)=>translate(uiLang,key,vars),[uiLang]);
 
   useEffect(()=>{const timer=window.setTimeout(()=>{try{
@@ -182,62 +184,68 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
 
   const parsedStopwords=Object.fromEntries(Object.entries(stopwordLists).map(([lang,value])=>[lang,parseStopwordText(value)])) as Record<Lang,string[]>;
   async function analyze(event?:FormEvent){
-    event?.preventDefault();setLoading(true);setError("");
+    event?.preventDefault();setError("");
     trackEvent("analysis_started",{tool:"bow_analyzer",source_type:sourceType,text_language:language});
     if(sourceType==="url")trackEvent("url_analysis_started",{tool:"bow_analyzer",text_language:language});
     try{
-      await new Promise<void>(resolve=>window.setTimeout(resolve,0));
       let data:Analysis;
       if(sourceType==="text"){
-        const localResult=analyzeText({text:source,language:language as "auto"|Lang,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang});
-        const {_allUnigrams,_allBigrams,...visibleResult}=localResult;void _allUnigrams;void _allBigrams;
-        data=visibleResult;
+        validateBrowserInputs([source],uiLang);
+        data=await runWorker<Analysis>("zipf",{text:source,language:language as "auto"|Lang,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang});
       }else{
-        const response=await fetch("/api/v1/analyze",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({sourceType,source,language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords})});
-        const raw=await response.text();
-        let payload:unknown;
-        try{payload=JSON.parse(raw);}catch{throw new Error(response.status===403?t("requestBlocked"):t("invalidResponse"));}
-        if(!response.ok)throw new Error(localizedApiError(payload,response.status,t));
-        const versionedResult=readVersionedAnalysis(payload);
-        if(!versionedResult)throw new Error(t("invalidResponse"));
-        data=versionedResult;
+        data=await runRemote(async signal=>{
+          const response=await fetch("/api/v1/analyze",{method:"POST",signal,headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({sourceType,source,language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords})});
+          const raw=await response.text();
+          let payload:unknown;
+          try{payload=JSON.parse(raw);}catch{throw new Error(response.status===403?t("requestBlocked"):t("invalidResponse"));}
+          if(!response.ok)throw new Error(localizedApiError(payload,response.status,t));
+          const versionedResult=readVersionedAnalysis(payload);
+          if(!versionedResult)throw new Error(t("invalidResponse"));
+          return versionedResult;
+        });
       }
       setResult(data);trackEvent("analysis_completed",{tool:"bow_analyzer",source_type:sourceType,text_language:data.language,word_count:data.tokenCount});if(baseline)trackEvent("comparison_completed",{tool:"bow_analyzer",source_type:sourceType});if(language==="auto"&&["ru","uk","en","es"].includes(data.language))setStopwordEditorLang(data.language as Lang);setTimeout(()=>document.getElementById("result")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
-    }catch(err){const message=err instanceof Error?err.message:t("unknownError");setError(message);trackEvent("analysis_error",{tool:"bow_analyzer",source_type:sourceType,error_message:message.slice(0,100)});}finally{setLoading(false);}
+    }catch(err){if(isAnalysisAbort(err))return;const message=err instanceof Error?err.message:t("unknownError");setError(message);trackEvent("analysis_error",{tool:"bow_analyzer",source_type:sourceType,error_message:message.slice(0,100)});}
   }
-  function changeLanguage(value:string){setLanguage(value);trackEvent("language_changed",{tool:"bow_analyzer",text_language:value});if(value!=="auto")setStopwordEditorLang(value as Lang);}
-  function changeStopwordLanguage(value:Lang){setStopwordEditorLang(value);setLanguage(value);trackEvent("language_changed",{tool:"bow_analyzer",text_language:value,control:"stopword_editor"});}
-  function updateStopwords(value:string){const next={...stopwordLists,[stopwordEditorLang]:value};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}
-  function resetStopwords(){const next={...stopwordLists,[stopwordEditorLang]:DEFAULT_STOPWORD_TEXT[stopwordEditorLang]};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}
-  function saveA(){if(!result)return;const settings:AnalysisSettings={language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords};const saved:SavedResult={version:3,result,settings,savedAt:new Date().toISOString(),label:t("analysisLabel",{count:result.tokenCount})};try{localStorage.setItem(CACHE_KEY,JSON.stringify(saved));}catch{setError(t("cacheFailed"));return;}trackEvent("comparison_result_saved",{tool:"bow_analyzer",word_count:result.tokenCount});setBaseline(saved);setResult(null);setSource("");window.scrollTo({top:0,behavior:"smooth"});}
-  function clearA(){setBaseline(null);localStorage.removeItem(CACHE_KEY);}
+  function changeLanguage(value:string){cancel();setLanguage(value);trackEvent("language_changed",{tool:"bow_analyzer",text_language:value});if(value!=="auto")setStopwordEditorLang(value as Lang);}
+  function changeStopwordLanguage(value:Lang){cancel();setStopwordEditorLang(value);setLanguage(value);trackEvent("language_changed",{tool:"bow_analyzer",text_language:value,control:"stopword_editor"});}
+  function updateStopwords(value:string){cancel();const next={...stopwordLists,[stopwordEditorLang]:value};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}
+  function resetStopwords(){cancel();const next={...stopwordLists,[stopwordEditorLang]:DEFAULT_STOPWORD_TEXT[stopwordEditorLang]};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}
+  function saveA(){if(!result)return;cancel();const settings:AnalysisSettings={language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords};const saved:SavedResult={version:3,result,settings,savedAt:new Date().toISOString(),label:t("analysisLabel",{count:result.tokenCount})};try{localStorage.setItem(CACHE_KEY,JSON.stringify(saved));}catch{setError(t("cacheFailed"));return;}trackEvent("comparison_result_saved",{tool:"bow_analyzer",word_count:result.tokenCount});setBaseline(saved);setResult(null);setSource("");window.scrollTo({top:0,behavior:"smooth"});}
+  function clearA(){cancel();setBaseline(null);localStorage.removeItem(CACHE_KEY);}
+  function loadExample(example:ToolExample){
+    cancel();setSourceType("text");setSource(example.sources[0]);setResult(null);setError("");
+    if(!baseline){setFocus(example.focus);setLanguage(uiLang);setStopwordEditorLang(uiLang);}
+  }
 
   return <main>
     <SiteHeader locale={uiLang} active="tools" languagePaths={{en:"/tools/bag-of-words-analyzer",ru:"/ru/tools/bag-of-words-analyzer",uk:"/uk/tools/bag-of-words-analyzer",es:"/es/tools/bag-of-words-analyzer"}}/>
     <section className="hero reduced" id="top"><p className="eyebrow">{t("heroEye")}</p><h1>{t("heroLine")}<br/><em>{t("heroEm")}</em></h1><div className="hero-aside"><p className="hero-copy">{t("heroCopy")}</p><span className="privacy-note"><b/>{t("status")}</span></div></section>
 
-    <form className="workspace" onSubmit={analyze}>
+    <form className="workspace" onSubmit={analyze} aria-busy={loading}>
       <section className="input-card">
-        <div className="section-head"><div><span>01</span><h2>{t("source")}</h2></div><div className="tabs"><button type="button" className={sourceType==="text"?"active":""} onClick={()=>{setSourceType("text");setSource("")}}>{t("text")}</button><button type="button" className={sourceType==="url"?"active":""} onClick={()=>{setSourceType("url");setSource("")}}>{t("url")}</button></div></div>
-        {sourceType==="text"?<div className="textarea-wrap"><textarea value={source} onChange={e=>setSource(e.target.value)} placeholder={t("textPlaceholder")}/><span>{source.length.toLocaleString(LOCALES[uiLang])} {t("chars")}</span></div>:<input className="url-input" type="url" value={source} onChange={e=>setSource(e.target.value)} placeholder="https://example.com/page" required/>}
-        <label className="field wide"><span>{t("focus")} <Tip>{t("focusHelp")}</Tip></span><input value={focus} disabled={Boolean(baseline)} onChange={e=>setFocus(e.target.value)}/><small>{baseline?t("settingsLocked"):t("focusNote")}</small></label>
+        <div className="section-head"><div><span>01</span><h2>{t("source")}</h2></div><div className="tabs"><button type="button" className={sourceType==="text"?"active":""} onClick={()=>{cancel();setSourceType("text");setSource("")}}>{t("text")}</button><button type="button" className={sourceType==="url"?"active":""} onClick={()=>{cancel();setSourceType("url");setSource("")}}>{t("url")}</button></div></div>
+        {sourceType==="text"?<div className="textarea-wrap"><textarea value={source} onChange={e=>{cancel();setSource(e.target.value);setResult(null);setError("");}} placeholder={t("textPlaceholder")}/><span>{source.length.toLocaleString(LOCALES[uiLang])} {t("chars")}</span></div>:<input className="url-input" type="url" value={source} onChange={e=>{cancel();setSource(e.target.value);setResult(null);setError("");}} placeholder="https://example.com/page" required/>}
+        <label className="field wide"><span>{t("focus")} <Tip>{t("focusHelp")}</Tip></span><input value={focus} disabled={Boolean(baseline)} onChange={e=>{cancel();setFocus(e.target.value);}}/><small>{baseline?t("settingsLocked"):t("focusNote")}</small></label>
+        <ExampleAction tool="bag-of-words-analyzer" locale={uiLang} onLoad={loadExample}/>
       </section>
       <aside className="settings-card">
         <div className="section-head simple"><div><span>02</span><h2>{t("settings")}</h2></div></div>
         {baseline&&<p className="settings-lock"><b>A</b>{t("settingsLockNotice")}</p>}
         <label className="field"><span>{t("language")} <Tip>{t("languageHelp")}</Tip></span><select value={language} disabled={Boolean(baseline)} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option><option value="auto">{t("auto")}</option></select><small>{language==="auto"?t("autoNote"):t("syncNote",{lang:language.toUpperCase()})}</small></label>
-        <label className="field"><span>{t("top")} <Tip>{t("topHelp")}</Tip></span><input type="number" min="5" max="100" value={top} disabled={Boolean(baseline)} onChange={e=>setTop(Number(e.target.value))}/><small>{t("topNote")}</small></label>
-        <label className="field range-field"><span><span>{t("sensitivity")} <Tip>{t("sensitivityHelp")}</Tip></span><b>×{tolerance.toFixed(1)}</b></span><input type="range" min="1.2" max="4" step="0.1" value={tolerance} disabled={Boolean(baseline)} onChange={e=>setTolerance(Number(e.target.value))}/><small>{t("sensitivityNote")}</small></label>
-        <label className="check"><input type="checkbox" checked={keepStopwords} disabled={Boolean(baseline)} onChange={e=>setKeepStopwords(e.target.checked)}/><span><b>{t("keepStops")} <Tip>{t("keepStopsHelp")}</Tip></b><small>{keepStopwords?t("stopsOn"):t("stopsOff")}</small></span></label>
+        <label className="field"><span>{t("top")} <Tip>{t("topHelp")}</Tip></span><input type="number" min="5" max="100" value={top} disabled={Boolean(baseline)} onChange={e=>{cancel();setTop(Number(e.target.value));}}/><small>{t("topNote")}</small></label>
+        <label className="field range-field"><span><span>{t("sensitivity")} <Tip>{t("sensitivityHelp")}</Tip></span><b>×{tolerance.toFixed(1)}</b></span><input type="range" min="1.2" max="4" step="0.1" value={tolerance} disabled={Boolean(baseline)} onChange={e=>{cancel();setTolerance(Number(e.target.value));}}/><small>{t("sensitivityNote")}</small></label>
+        <label className="check"><input type="checkbox" checked={keepStopwords} disabled={Boolean(baseline)} onChange={e=>{cancel();setKeepStopwords(e.target.checked);}}/><span><b>{t("keepStops")} <Tip>{t("keepStopsHelp")}</Tip></b><small>{keepStopwords?t("stopsOn"):t("stopsOff")}</small></span></label>
         <details className="stopword-editor"><summary>{t("editStops")} <span>{parsedStopwords[stopwordEditorLang].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru","es"] as Lang[]).map(lang=><button type="button" disabled={Boolean(baseline)} key={lang} className={stopwordEditorLang===lang?"active":""} onClick={()=>changeStopwordLanguage(lang)}>{lang.toUpperCase()}</button>)}</div><p>{baseline?t("settingsLocked"):t("stopEditorNote")}</p><textarea value={stopwordLists[stopwordEditorLang]} disabled={Boolean(baseline)} onChange={e=>updateStopwords(e.target.value)} aria-label={`${t("editStops")} ${stopwordEditorLang}`}/><div className="stopword-actions"><small>{parsedStopwords[stopwordEditorLang].length} {t("savedLocally")}</small><button type="button" disabled={Boolean(baseline)} onClick={resetStopwords}>{t("resetStops")}</button></div></div></details>
         <button className="analyze-button" disabled={loading||!source.trim()}><span>{loading?t("loading"):baseline?t("analyzeB"):t("analyze")}</span><b>→</b></button>
+        <AnalysisProgress active={loading} progress={progress} label={t("loading")}/>
         {baseline&&<div className="cached-pill"><span>A</span><p><b>{baseline.label}</b><small>{t("cached")}</small></p><button type="button" onClick={clearA} aria-label={t("removeSaved")}>×</button></div>}
         {error&&<p className="error">{error}</p>}
       </aside>
     </form>
 
     {result&&<section className="results simplified" id="result">
-      <div className="results-title"><div><span>03</span><h2>{baseline?t("resultB"):t("result")}</h2></div>{!baseline&&<button className="save-button" onClick={saveA}>{t("saveA")}</button>}</div>
+      <div className="results-title"><div><span>03</span><h2>{baseline?t("resultB"):t("result")}</h2></div><div className="results-actions"><CopyResultAction tool="bag-of-words-analyzer" locale={uiLang} value={result}/>{!baseline&&<button className="save-button" onClick={saveA}>{t("saveA")}</button>}</div></div>
       {!baseline&&<div className="next-step"><span>{t("next")}</span><p>{t("nextText")}</p></div>}
       <div className="metrics-grid clean-metrics">
         <Metric label={t("metricWords")} value={result.tokenCount.toLocaleString(LOCALES[uiLang])} explanation={t("metricWordsHelp")}/>

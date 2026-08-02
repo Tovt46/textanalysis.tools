@@ -1,10 +1,15 @@
 import {lookup as dnsLookup} from "node:dns/promises";
+import {createHash} from "node:crypto";
 import {request as httpRequest} from "node:http";
 import {request as httpsRequest} from "node:https";
 import {BlockList,isIP} from "node:net";
 import {Readable} from "node:stream";
-import { analyzeText,countAnalysisTokens,type AnalyzeInput } from "./analyze";
+import { analyzeText,countAnalysisTokens,toPublicAnalysisResult,type AnalyzeInput } from "./analyze";
+import {markApiResponseErrorClass} from "./api-observability";
 import { compareAnalysisResults } from "./comparison";
+import {createConfiguredRateLimitStore,type RateLimitBackendStatus} from "./rate-limit-store";
+
+export {createConfiguredRateLimitStore,FileRateLimitStore,MemoryRateLimitStore,ResilientRateLimitStore,type RateLimitBackendStatus,type RateLimitStore} from "./rate-limit-store";
 
 export const API_VERSION = "1.0";
 export const MAX_TEXT_CHARS = 500_000;
@@ -26,11 +31,11 @@ const CORS_HEADERS = {
   "Access-Control-Max-Age": "86400",
 };
 
-const requestWindows = new Map<string,{startedAt:number,count:number}>();
-const RATE_LIMIT = 30;
-const RATE_WINDOW_MS = 60_000;
+export const RATE_LIMIT = 30;
+export const RATE_WINDOW_MS = 60_000;
 const MAX_RATE_LIMIT_KEYS = 5_000;
-const RATE_LIMIT_OVERFLOW_KEY = "__overflow__";
+const sharedRateLimitPath=process.env.RATE_LIMIT_STORE_PATH?.trim();
+const rateLimitStore=createConfiguredRateLimitStore(sharedRateLimitPath,{maximumKeys:MAX_RATE_LIMIT_KEYS});
 
 export class PublicApiError extends Error {
   constructor(
@@ -170,9 +175,27 @@ export function apiErrorResponse(error:unknown,extraHeaders:Record<string,string
   if(error instanceof PublicApiError){
     const headers:Record<string,string>={...extraHeaders,...error.headers};
     if(error.retryAfter)headers["Retry-After"]=String(error.retryAfter);
-    return apiJson({apiVersion:API_VERSION,error:{code:error.code,message:error.message}},error.status,headers);
+    return markApiResponseErrorClass(
+      apiJson({apiVersion:API_VERSION,error:{code:error.code,message:error.message}},error.status,headers),
+      publicApiErrorClass(error.code),
+    );
   }
-  return apiJson({apiVersion:API_VERSION,error:{code:"ANALYSIS_FAILED",message:"The analysis failed unexpectedly."}},500,extraHeaders);
+  return markApiResponseErrorClass(
+    apiJson({apiVersion:API_VERSION,error:{code:"ANALYSIS_FAILED",message:"The analysis failed unexpectedly."}},500,extraHeaders),
+    "server_error",
+  );
+}
+
+function publicApiErrorClass(code:string){
+  if(code==="RATE_LIMITED")return "rate_limit";
+  if(code==="FETCH_FAILED"||code==="TOO_MANY_REDIRECTS")return "remote_fetch_error";
+  if(code==="INVALID_URL"||code==="UNSAFE_URL")return "remote_safety";
+  if(code==="REMOTE_CONTENT_TOO_LARGE"||code==="REMOTE_BUDGET_EXCEEDED")return "remote_resource_limit";
+  if(code==="UNSUPPORTED_REMOTE_TYPE")return "remote_content_type";
+  if(code==="UNSUPPORTED_MEDIA_TYPE")return "unsupported_media_type";
+  if(code==="INSUFFICIENT_TEXT")return "unprocessable_input";
+  if(code.endsWith("TOO_LARGE"))return "resource_limit";
+  return "invalid_request";
 }
 
 function headerIp(value:string|null){
@@ -187,9 +210,20 @@ function headerIp(value:string|null){
 
 function rateLimitKey(request:Request){
   const realIp=headerIp(request.headers.get("x-real-ip"));
-  if(realIp)return realIp;
   const forwarded=request.headers.get("x-forwarded-for")?.split(",").map(value=>headerIp(value)).filter((value):value is string=>Boolean(value));
-  return forwarded?.at(-1)||"anonymous";
+  return hashRateLimitIdentity(realIp||forwarded?.at(-1)||"anonymous");
+}
+
+export function hashRateLimitIdentity(identity:string){
+  return createHash("sha256").update("textanalysis.tools:rate-limit:v1\0").update(identity).digest("hex");
+}
+
+export function getRateLimitBackendStatus():RateLimitBackendStatus{
+  return rateLimitStore.status();
+}
+
+export function probeRateLimitBackendStatus(){
+  return rateLimitStore.probe(Date.now());
 }
 
 function rateLimitHeaders(remaining:number,reset:number){
@@ -200,34 +234,51 @@ function rateLimitHeaders(remaining:number,reset:number){
   };
 }
 
-export function enforceRateLimit(request:Request,cost=1){
+export function calculateRateLimitCost(body:Record<string,unknown>){
+  const objectValue=(value:unknown)=>value&&typeof value==="object"&&!Array.isArray(value)
+    ?value as Record<string,unknown>
+    :null;
+  let sources:Record<string,unknown>[]=[];
+  if(Array.isArray(body.documents)){
+    sources=body.documents.map(objectValue).filter((value):value is Record<string,unknown>=>Boolean(value));
+  }else{
+    const a=objectValue(body.a);
+    const b=objectValue(body.b);
+    if(a||b)sources=[a,b].filter((value):value is Record<string,unknown>=>Boolean(value));
+    else sources=[body];
+  }
+  const urlCount=sources.filter(source=>source.sourceType==="url").length;
+  const textCharacters=sources.reduce((total,source)=>{
+    if(source.sourceType==="url"||typeof source.source!=="string")return total;
+    return total+source.source.length;
+  },0);
+  const documentCost=Math.max(0,sources.length-1);
+  const remoteCost=urlCount*2;
+  const inputSizeCost=Math.floor(textCharacters/100_000);
+  return Math.min(RATE_LIMIT,1+documentCost+remoteCost+inputSizeCost);
+}
+
+export async function enforceRateLimit(request:Request,cost=1){
   if(!Number.isSafeInteger(cost)||cost<1||cost>RATE_LIMIT)throw new RangeError("rate-limit cost must be a positive integer within the request limit.");
   const now=Date.now();
-  let ip=rateLimitKey(request);
-  let current=requestWindows.get(ip);
-  if(!current&&requestWindows.size>=MAX_RATE_LIMIT_KEYS){
-    for(const [key,window] of requestWindows) if(now-window.startedAt>=RATE_WINDOW_MS) requestWindows.delete(key);
-    current=requestWindows.get(ip);
-    if(!current&&requestWindows.size>=MAX_RATE_LIMIT_KEYS){
-      ip=RATE_LIMIT_OVERFLOW_KEY;
-      current=requestWindows.get(ip);
-      if(!current){
-        const oldestKey=requestWindows.keys().next().value;
-        if(oldestKey)requestWindows.delete(oldestKey);
-      }
-    }
-  }
-  if(!current||now-current.startedAt>=RATE_WINDOW_MS){
-    requestWindows.set(ip,{startedAt:now,count:cost});
-    return rateLimitHeaders(RATE_LIMIT-cost,Math.ceil(RATE_WINDOW_MS/1000));
-  }
-  current.count+=cost;
+  const key=rateLimitKey(request);
+  const current=await rateLimitStore.increment(key,cost,now,RATE_WINDOW_MS);
   const retryAfter=Math.max(1,Math.ceil((RATE_WINDOW_MS-(now-current.startedAt))/1000));
   const headers=rateLimitHeaders(RATE_LIMIT-current.count,retryAfter);
   if(current.count>RATE_LIMIT){
     throw new PublicApiError(429,"RATE_LIMITED",`Too many requests. Try again in ${retryAfter} seconds.`,retryAfter,headers);
   }
   return headers;
+}
+
+export async function enforceBodyRateLimit(
+  request:Request,
+  body:Record<string,unknown>,
+  alreadyCharged=1,
+){
+  const totalCost=calculateRateLimitCost(body);
+  if(totalCost<=alreadyCharged)return null;
+  return enforceRateLimit(request,totalCost-alreadyCharged);
 }
 
 export async function readJsonBody(request:Request){
@@ -540,12 +591,20 @@ export async function normalizeAnalyzeBody(body:PublicAnalyzeBody,context:Remote
 
   const language=body.language===undefined?"auto":body.language;
   if(!["auto","en","ru","uk","es"].includes(String(language))) throw new PublicApiError(400,"INVALID_ARGUMENT","language must be auto, en, ru, uk, or es.");
-  let focus:string|string[]="";
-  if(Array.isArray(body.focus)){
-    if(body.focus.length>100||body.focus.some(term=>typeof term!=="string"||term.length>200)) throw new PublicApiError(400,"INVALID_ARGUMENT","focus must contain up to 100 short phrases.");
-    focus=body.focus as string[];
-  }else if(typeof body.focus==="string"&&body.focus.length<=20_000) focus=body.focus;
-  else if(body.focus!==undefined) throw new PublicApiError(400,"INVALID_ARGUMENT","focus must be a string or an array of strings.");
+  let focus:string[]=[];
+  if(body.focus!==undefined){
+    const focusTerms=Array.isArray(body.focus)
+      ?body.focus
+      :typeof body.focus==="string"
+        ?body.focus.trim()?body.focus.split(","):[]
+        :undefined;
+    if(!focusTerms||focusTerms.length>100||focusTerms.some(term=>
+      typeof term!=="string"||!term.trim()||term.length>200||countAnalysisTokens(term,1)===0
+    )){
+      throw new PublicApiError(400,"INVALID_ARGUMENT","focus must contain up to 100 non-empty analyzable phrases of at most 200 characters each.");
+    }
+    focus=focusTerms.map(term=>(term as string).trim());
+  }
 
   const top=optionalNumber(body.top,"top",5,100);
   if(top!==undefined&&!Number.isInteger(top)) throw new PublicApiError(400,"INVALID_ARGUMENT","top must be a whole number between 5 and 100.");
@@ -574,32 +633,18 @@ async function runCoreAnalysis(body:PublicAnalyzeBody,context:RemoteFetchContext
   return result;
 }
 
-function toPublicAnalysis(result:ReturnType<typeof analyzeText>){
-  const {_allUnigrams,_allBigrams,...publicResult}=result;
-  void _allUnigrams;void _allBigrams;
-  return {
-    ...publicResult,
-    rows:result.rows.map(row=>{
-      const share=result.tokenCount?row.actualCount/result.tokenCount:0;
-      return {...row,share,percentage:share*100,per1000:share*1000};
-    }),
-    bigrams:result.bigrams.map(row=>({...row,percentage:row.share*100,per1000:row.share*1000})),
-    focusCoverage:result.focusCoverage.map(row=>({...row,percentage:row.per1000/10})),
-  };
-}
-
 export async function runPublicAnalysis(body:PublicAnalyzeBody,context:RemoteFetchContext={}){
-  return toPublicAnalysis(await runCoreAnalysis(body,context));
+  return toPublicAnalysisResult(await runCoreAnalysis(body,context));
 }
 
 export async function runComparisonAnalysis(body:PublicAnalyzeBody,context:RemoteFetchContext={}){
   const core=await runCoreAnalysis(body,context);
-  return {result:toPublicAnalysis(core),unigrams:core._allUnigrams,bigrams:core._allBigrams};
+  return {result:toPublicAnalysisResult(core),unigrams:core._allUnigrams,bigrams:core._allBigrams};
 }
 
 export type AnalysisResult=Awaited<ReturnType<typeof runPublicAnalysis>>;
 export type ComparisonAnalysis=Awaited<ReturnType<typeof runComparisonAnalysis>>;
 
-export function compareResults(a:ComparisonAnalysis,b:ComparisonAnalysis){
-  return compareAnalysisResults(a,b);
+export function compareResults(a:ComparisonAnalysis,b:ComparisonAnalysis,limit=1000,offset=0){
+  return compareAnalysisResults(a,b,limit,offset);
 }

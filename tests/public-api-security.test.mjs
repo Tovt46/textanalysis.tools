@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import {mkdtemp,rm} from "node:fs/promises";
+import {mkdtemp,rm,writeFile} from "node:fs/promises";
 import {createServer} from "node:http";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
@@ -333,6 +333,153 @@ test("apiJson returns a stable non-recursive error when serialized output exceed
     apiVersion:api.API_VERSION,
     error:{code:"RESULT_TOO_LARGE",message:"The analysis result is too large to return in one response."},
   });
+});
+
+test("rate-limit cost scales with documents, remote sources, and input size",()=>{
+  assert.equal(api.calculateRateLimitCost({source:"short text"}),1);
+  assert.equal(api.calculateRateLimitCost({source:"x".repeat(100_000)}),2);
+  assert.equal(api.calculateRateLimitCost({sourceType:"url",source:"https://example.com"}),3);
+  assert.equal(api.calculateRateLimitCost({
+    documents:[
+      {source:"alpha"},
+      {sourceType:"url",source:"https://example.com/a"},
+      {sourceType:"url",source:"https://example.com/b"},
+    ],
+  }),7);
+  assert.equal(api.calculateRateLimitCost({
+    documents:Array.from({length:10},()=>({sourceType:"url",source:"https://example.com"})),
+  }),api.RATE_LIMIT);
+});
+
+test("rate-limit identities are hashed before reaching any store",()=>{
+  const identity="203.0.113.10";
+  const key=api.hashRateLimitIdentity(identity);
+  assert.match(key,/^[a-f0-9]{64}$/);
+  assert.notEqual(key,identity);
+  assert.equal(api.hashRateLimitIdentity(identity),key);
+  assert.notEqual(api.hashRateLimitIdentity("203.0.113.11"),key);
+});
+
+test("configured shared-store failures degrade with bounded backoff and safe diagnostics",async()=>{
+  let attempts=0;
+  const logs=[];
+  const primary={
+    async increment(key){
+      attempts+=1;
+      throw new Error(`shared path /private/rate-store failed for ${key}`);
+    },
+  };
+  const store=new api.ResilientRateLimitStore(primary,new api.MemoryRateLimitStore(10),{
+    retryBaseMs:100,
+    retryMaximumMs:400,
+    writeLog:(line,level)=>logs.push({line,level}),
+  });
+  assert.equal(store.status(),"shared");
+  assert.deepEqual(await store.increment("hashed-client-key",1,1_000,60_000),{startedAt:1_000,count:1});
+  assert.equal(store.status(),"degraded");
+  assert.equal(attempts,1);
+  assert.deepEqual(await store.increment("hashed-client-key",1,1_050,60_000),{startedAt:1_000,count:2});
+  assert.equal(attempts,1,"backoff must skip the unavailable shared store");
+  assert.deepEqual(await store.increment("hashed-client-key",1,1_100,60_000),{startedAt:1_000,count:3});
+  assert.equal(attempts,2);
+  assert.equal(logs.length,2);
+  assert.ok(logs.every(log=>log.level==="warn"));
+  assert.deepEqual(logs.map(log=>JSON.parse(log.line).retryAfterMs),[100,200]);
+  assert.doesNotMatch(JSON.stringify(logs),/private|rate-store|hashed-client-key|shared path failed/i);
+});
+
+test("a degraded shared store recovers after its backoff probe",async()=>{
+  let attempts=0;
+  const logs=[];
+  const primary={
+    async increment(_key,cost,now){
+      attempts+=1;
+      if(attempts===1)throw new Error("temporary outage");
+      return{startedAt:now,count:cost};
+    },
+  };
+  const store=new api.ResilientRateLimitStore(primary,new api.MemoryRateLimitStore(10),{
+    retryBaseMs:100,
+    retryMaximumMs:400,
+    writeLog:(line,level)=>logs.push({line,level}),
+  });
+  await store.increment("client",1,2_000,60_000);
+  assert.equal(store.status(),"degraded");
+  await store.increment("client",1,2_100,60_000);
+  assert.equal(store.status(),"shared");
+  assert.equal(attempts,2);
+  assert.equal(JSON.parse(logs.at(-1).line).event,"rate_limit_store_recovered");
+  assert.equal(logs.at(-1).level,"info");
+});
+
+test("relative shared-store paths are rejected and reported as degraded",async()=>{
+  assert.throws(()=>new api.FileRateLimitStore("relative/rate-limit"),/absolute path/i);
+  const logs=[];
+  const store=api.createConfiguredRateLimitStore("relative/rate-limit",{
+    resilient:{retryBaseMs:100,probeTimeoutMs:100,writeLog:(line,level)=>logs.push({line,level})},
+  });
+  assert.equal(await store.probe(3_000),"degraded");
+  assert.equal(store.status(),"degraded");
+  assert.equal(logs.length,1);
+  assert.doesNotMatch(JSON.stringify(logs),/relative\/rate-limit/);
+});
+
+test("an absolute but unwritable shared-store target fails its real health probe",async()=>{
+  const directory=await mkdtemp(join(tmpdir(),"textanalysis-rate-limit-unwritable-"));
+  const blockingFile=join(directory,"not-a-directory");
+  await writeFile(blockingFile,"blocked","utf8");
+  try{
+    const logs=[];
+    const configuredPath=join(blockingFile,"rate-limit");
+    const store=api.createConfiguredRateLimitStore(configuredPath,{
+      resilient:{retryBaseMs:100,probeTimeoutMs:100,writeLog:(line,level)=>logs.push({line,level})},
+    });
+    assert.equal(await store.probe(4_000),"degraded");
+    assert.equal(store.status(),"degraded");
+    assert.deepEqual(await store.increment("client",1,4_001,60_000),{startedAt:4_001,count:1});
+    assert.doesNotMatch(JSON.stringify(logs),/not-a-directory|rate-limit-unwritable/);
+  }finally{
+    await rm(directory,{recursive:true,force:true});
+  }
+});
+
+test("shared health probes are bounded and never consume or reset user quota",async()=>{
+  const directory=await mkdtemp(join(tmpdir(),"textanalysis-rate-limit-probe-"));
+  try{
+    const fileStore=new api.FileRateLimitStore(directory,{bucketCount:1,maximumKeys:100});
+    assert.deepEqual(await fileStore.increment("user-key",1,5_000,60_000),{startedAt:5_000,count:1});
+    await fileStore.probe(5_100);
+    assert.deepEqual(await fileStore.increment("user-key",1,5_100,60_000),{startedAt:5_000,count:2});
+
+    const stalledPrimary={
+      async increment(){throw new Error("not used");},
+      async probe(){return new Promise(()=>{});},
+    };
+    const resilient=new api.ResilientRateLimitStore(stalledPrimary,new api.MemoryRateLimitStore(10),{
+      retryBaseMs:100,
+      probeTimeoutMs:100,
+      writeLog:()=>undefined,
+    });
+    const startedAt=Date.now();
+    assert.equal(await resilient.probe(5_200),"degraded");
+    assert.ok(Date.now()-startedAt<500,"health probe exceeded its bounded timeout");
+  }finally{
+    await rm(directory,{recursive:true,force:true});
+  }
+});
+
+test("file rate-limit store shares atomic counters across worker instances",async()=>{
+  const directory=await mkdtemp(join(tmpdir(),"textanalysis-rate-limit-"));
+  try{
+    const first=new api.FileRateLimitStore(directory,{bucketCount:1,maximumKeys:100});
+    const second=new api.FileRateLimitStore(directory,{bucketCount:1,maximumKeys:100});
+    const increments=Array.from({length:30},(_,index)=>(index%2?first:second).increment("203.0.113.10",1,1_000,60_000));
+    const windows=await Promise.all(increments);
+    assert.deepEqual(windows.map(window=>window.count).sort((a,b)=>a-b),Array.from({length:30},(_,index)=>index+1));
+    assert.deepEqual(await first.increment("203.0.113.10",1,61_001,60_000),{startedAt:61_001,count:1});
+  }finally{
+    await rm(directory,{recursive:true,force:true});
+  }
 });
 
 test("normalizeAnalyzeBody forwards an optional shared remote context",async()=>{

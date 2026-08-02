@@ -1,9 +1,17 @@
 import assert from "node:assert/strict";
+import {readFile} from "node:fs/promises";
+
+const cliPackage=JSON.parse(await readFile(new URL("../packages/cli/package.json",import.meta.url),"utf8"));
+const escapedCliVersion=cliPackage.version.replaceAll(/[.*+?^${}()|[\]\\]/g,"\\$&");
 
 const baseUrl=new URL(process.env.SMOKE_BASE_URL||"https://textanalysis.tools/");
 const canonicalOrigin=new URL(process.env.SMOKE_CANONICAL_ORIGIN||"https://textanalysis.tools/").origin;
 const expectedGaId=process.env.EXPECT_GA_MEASUREMENT_ID?.trim();
+const expectedRateLimitBackend=process.env.EXPECT_RATE_LIMIT_BACKEND?.trim();
+const expectedDeploymentRevision=process.env.EXPECT_DEPLOYMENT_REVISION?.trim().toLowerCase();
+const checkNpmRelease=process.env.CHECK_NPM_RELEASE==="1";
 const pageConcurrency=Number(process.env.SMOKE_PAGE_CONCURRENCY||8);
+const expectedSitemapPages=89;
 const toolPages=[
   "/tools/bag-of-words-analyzer",
   "/tools/word-frequency-counter",
@@ -35,11 +43,14 @@ async function request(path,init={}){
 }
 
 async function jsonPost(path,body){
-  return request(path,{
+  const response=await request(path,{
     method:"POST",
     headers:{"Content-Type":"application/json","Accept":"application/json"},
     body:JSON.stringify(body),
   });
+  assert.match(response.headers.get("x-request-id")||"",/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,`${path} is missing a random request ID.`);
+  assert.match(response.headers.get("access-control-expose-headers")||"",/\bX-Request-ID\b/i,`${path} does not expose its request ID to browser clients.`);
+  return response;
 }
 
 function assertDeploySafeCache(response,label){
@@ -126,7 +137,7 @@ async function checkAgentPage(){
   assert.equal(response.status,200,"Agent integration page must return HTTP 200.");
   const html=await response.text();
   assert.match(html,/Text Analysis Tools for AI Agents/i,"Agent integration page has the wrong heading.");
-  assert.match(html,/textanalysis-tools@0\.1\.2/i,"Agent integration page does not advertise the current npm release.");
+  assert.match(html,new RegExp(`textanalysis-tools@${escapedCliVersion}`,"i"),"Agent integration page does not advertise the current npm release.");
   assert.match(html,/analyze_text/i,"Agent integration page does not list MCP tools.");
   assert.match(html,/href="\/openapi\.json"/i,"Agent integration page is missing OpenAPI discovery.");
   assertDeploySafeCache(response,"Agent integration page");
@@ -137,7 +148,7 @@ async function checkSitemapPagesAndAssets(){
   assert.equal(sitemapResponse.status,200,"Sitemap must return HTTP 200.");
   const sitemap=await sitemapResponse.text();
   const locations=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/gi)].map(match=>match[1]);
-  assert.equal(locations.length,88,"Sitemap URL count changed unexpectedly.");
+  assert.equal(locations.length,expectedSitemapPages,"Sitemap URL count changed unexpectedly.");
 
   const pageAssets=await mapConcurrent(locations,pageConcurrency,async location=>{
     const canonicalUrl=new URL(location);
@@ -168,6 +179,46 @@ async function checkCors(path){
   assert.equal(response.status,204,`${path} preflight must return 204.`);
   assert.equal(response.headers.get("access-control-allow-origin"),"*",`${path} preflight is missing CORS access.`);
   assert.match(response.headers.get("access-control-allow-methods")||"",/POST/,`${path} preflight does not allow POST.`);
+  assert.match(response.headers.get("x-request-id")||"",/^[0-9a-f-]{36}$/i,`${path} preflight is missing a request ID.`);
+}
+
+async function checkHealth(){
+  const response=await request("/api/health");
+  assert.equal(response.status,200,"Health endpoint failed.");
+  assert.equal(response.headers.get("cache-control"),"no-store","Health response must not be cached.");
+  assert.match(response.headers.get("x-request-id")||"",/^[0-9a-f-]{36}$/i,"Health response is missing a request ID.");
+  const body=await response.json();
+  assert.deepEqual({...body,rateLimit:undefined,revision:undefined},{
+    status:"ok",
+    service:"textanalysis.tools",
+    apiVersion:"1.0",
+    storage:"none",
+    rateLimit:undefined,
+    revision:undefined,
+  });
+  assert.ok(["shared","local","degraded"].includes(body.rateLimit),`Unexpected health rate-limit state: ${body.rateLimit}`);
+  assert.match(body.revision,/^(?:[0-9a-f]{7,64}|unknown)$/,`Unexpected deployment revision: ${body.revision}`);
+  assert.notEqual(body.rateLimit,"degraded","Rate-limit backend is degraded and the service is using process-local fallback.");
+  if(expectedRateLimitBackend){
+    assert.ok(["shared","local"].includes(expectedRateLimitBackend),`Invalid EXPECT_RATE_LIMIT_BACKEND: ${expectedRateLimitBackend}`);
+    assert.equal(body.rateLimit,expectedRateLimitBackend,`Expected ${expectedRateLimitBackend} rate-limit backend, received ${body.rateLimit}.`);
+  }
+  if(expectedDeploymentRevision){
+    assert.match(expectedDeploymentRevision,/^[0-9a-f]{7,64}$/,`Invalid EXPECT_DEPLOYMENT_REVISION: ${expectedDeploymentRevision}`);
+    assert.equal(body.revision,expectedDeploymentRevision,`Expected deployed revision ${expectedDeploymentRevision}, received ${body.revision}.`);
+  }
+}
+
+async function checkPublishedNpmPackage(){
+  if(!checkNpmRelease)return;
+  const response=await fetch(`https://registry.npmjs.org/${encodeURIComponent(cliPackage.name)}/${encodeURIComponent(cliPackage.version)}`,{
+    headers:{Accept:"application/json"},
+    signal:AbortSignal.timeout(15_000),
+  });
+  assert.equal(response.status,200,`${cliPackage.name}@${cliPackage.version} is not available from the npm registry.`);
+  const manifest=await response.json();
+  assert.equal(manifest.name,cliPackage.name,"npm registry returned the wrong package.");
+  assert.equal(manifest.version,cliPackage.version,"npm registry returned the wrong package version.");
 }
 
 async function checkApis(){
@@ -257,6 +308,8 @@ await checkRedirect();
 await checkToolPages();
 await checkAgentPage();
 await checkSitemapPagesAndAssets();
+await checkHealth();
+await checkPublishedNpmPackage();
 await checkApis();
 
-console.log(`Production smoke check passed for ${baseUrl.origin}: 88 pages, linked assets, 8 tools, and 8 APIs.`);
+console.log(`Production smoke check passed for ${baseUrl.origin}: ${expectedSitemapPages} pages, linked assets, 8 tools, 8 APIs, and health.`);

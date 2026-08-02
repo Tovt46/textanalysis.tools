@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://textanalysis.tools/textanalysis-config.schema.json",
+  "title": "Text Analysis Tools check configuration",
+  "description": "Version 1 deterministic content checks for the textanalysis CLI.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "requiredPhrases": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "pattern": "[A-Za-zÁÉÍÓÚÜÑáéíóúüñА-Яа-яЁёІіЇїЄєҐґ]",
+        "description": "A phrase containing at least one letter supported by the analyzer. Punctuation-only and number-only values are invalid."
+      }
+    },
+    "forbiddenPhrases": {
+      "type": "array",
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "pattern": "[A-Za-zÁÉÍÓÚÜÑáéíóúüñА-Яа-яЁёІіЇїЄєҐґ]",
+        "description": "A phrase containing at least one letter supported by the analyzer. Punctuation-only and number-only values are invalid."
+      }
+    },
+    "minimumWords": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000
+    },
+    "maxTermDensity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Maximum percentage occupied by the most frequent non-stopword term."
+    },
+    "maxPhraseDensity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Maximum percentage occupied by any repeated bigram or trigram."
+    },
+    "maxSimilarity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Maximum TF-IDF cosine similarity to the configured baseline."
+    },
+    "baseline": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "\\S",
+      "description": "Local baseline path, resolved relative to this configuration file."
+    }
+  },
+  "anyOf": [
+    {"required": ["requiredPhrases"], "properties": {"requiredPhrases": {"minItems": 1}}},
+    {"required": ["forbiddenPhrases"], "properties": {"forbiddenPhrases": {"minItems": 1}}},
+    {"required": ["minimumWords"]},
+    {"required": ["maxTermDensity"]},
+    {"required": ["maxPhraseDensity"]},
+    {"required": ["maxSimilarity"]}
+  ]
+}

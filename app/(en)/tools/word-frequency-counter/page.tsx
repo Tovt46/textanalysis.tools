@@ -21,7 +21,7 @@ const schema=toolWebApplicationSchema({
   name:"Word Frequency Counter",
   description,
   path,
-  featureList:["Complete word-frequency table","Counts, percentages, and per-1,000 rates","Editable stop words","Text and URL input","CSV and JSON export"],
+  featureList:["Bounded word-frequency table","Counts, percentages, and per-1,000 rates","Editable stop words","Text and URL input","CSV and JSON export"],
 });
 
 export default function WordFrequencyCounterPage(){
@@ -45,7 +45,7 @@ export default function WordFrequencyCounterPage(){
           <div><h3>Search and sort</h3><p>Find a specific term or rank the table by word, count, percentage, or normalized frequency.</p></div>
           <div><h3>Editable stop words</h3><p>Use the defaults for EN, UKR, and RU, or adapt the list to your project and keep it locally.</p></div>
           <div><h3>Text and URL analysis</h3><p>Analyze pasted content locally or fetch the readable text of a public webpage.</p></div>
-          <div><h3>CSV and JSON export</h3><p>Download the complete vocabulary for a spreadsheet, script, or repeatable editorial workflow.</p></div>
+          <div><h3>CSV and JSON export</h3><p>Download the returned vocabulary page for a spreadsheet, script, or repeatable editorial workflow. A notice appears when the result is partial.</p></div>
         </div>
       </section>
       <section className="tool-next-links">

@@ -7,8 +7,10 @@ import {
   analyzeWordFrequency,
   calculateTextSimilarity,
   calculateTfIdfCorpus,
+  countAnalysisTokens,
 } from "../app/lib/analyze";
 import {
+  MAX_ANALYSIS_TOKENS,
   compareResults,
   normalizeAnalyzeBody,
   runComparisonAnalysis,
@@ -21,7 +23,7 @@ import type {SourceSpec} from "./sources";
 import {resolveCorpusSources,resolvePairSources,resolveSingleSource,StdinReader} from "./sources";
 
 type OutputFormat="table"|"json"|"csv";
-type CliAnalysisCommand=Exclude<CliCommand,"mcp">;
+type CliAnalysisCommand=Exclude<CliCommand,"mcp"|"check">;
 
 export type CliSettings={
   format:OutputFormat;
@@ -119,6 +121,15 @@ async function parseSettings(command:CliAnalysisCommand,parsed:ParsedCliArgs):Pr
 
   const keywords=stringOption(parsed,"keywords")??"";
   if(keywords.length>20_000) throw new CliUsageError("Option --keywords is limited to 20,000 characters.");
+  const trackedTerms=[...new Set(keywords.split(/[\n,;]+/).map(term=>term.trim()).filter(Boolean))];
+  if(trackedTerms.length>100||trackedTerms.some(term=>term.length>200||countAnalysisTokens(term,1)===0)){
+    throw new CliUsageError("Option --keywords must contain at most 100 analyzable phrases of up to 200 characters each.");
+  }
+  const focus=stringOption(parsed,"focus");
+  const focusTerms=focus===undefined||!focus.trim()?[]:focus.split(",");
+  if(focusTerms.length>100||focusTerms.some(term=>!term.trim()||term.length>200||countAnalysisTokens(term,1)===0)){
+    throw new CliUsageError("Option --focus must contain at most 100 non-empty analyzable phrases of up to 200 characters each.");
+  }
 
   return {
     format:formatValue as OutputFormat,
@@ -128,9 +139,9 @@ async function parseSettings(command:CliAnalysisCommand,parsed:ParsedCliArgs):Pr
     language:languageValue as CliSettings["language"],
     keepStopwords:booleanOption(parsed,"keep-stopwords"),
     stopwordLists,
-    focus:stringOption(parsed,"focus"),
+    focus,
     tolerance,
-    keywords,
+    keywords:trackedTerms.join("\n"),
     ngramSize,
     method:methodValue as "bow"|"tfidf",
   };
@@ -152,7 +163,27 @@ function bodyForSource(source:SourceSpec,settings:CliSettings,analysisOptions=fa
 }
 
 function limitedRows<T extends {count:number}>(rows:T[],settings:CliSettings){
-  return rows.filter((row)=>row.count>=settings.minCount).slice(0,settings.top);
+  const eligibleRows=rows.filter((row)=>row.count>=settings.minCount);
+  const returnedRows=eligibleRows.slice(0,settings.top);
+  return {
+    rows:returnedRows,
+    totalRows:eligibleRows.length,
+    returnedRows:returnedRows.length,
+    truncated:returnedRows.length<eligibleRows.length,
+  };
+}
+
+function limitedIdfTable<Result extends {idfTable?:Array<{term:string}>}>(result:Result,limit:number){
+  if(!result.idfTable)return result;
+  const totalIdfRows=result.idfTable.length;
+  const idfTable=result.idfTable.slice(0,limit);
+  return {
+    ...result,
+    idfTable,
+    totalIdfRows,
+    returnedIdfRows:idfTable.length,
+    idfTableTruncated:idfTable.length<totalIdfRows,
+  };
 }
 
 async function runSingle(command:Exclude<CliCommand,"compare"|"tfidf"|"similarity">,parsed:ParsedCliArgs,stdin:StdinReader,settings:CliSettings){
@@ -166,28 +197,47 @@ async function runSingle(command:Exclude<CliCommand,"compare"|"tfidf"|"similarit
   const input=await normalizeAnalyzeBody(body);
   if(command==="frequency"){
     const result=analyzeWordFrequency(input);
-    return {labels:[source.label],payload:{result:{...result,rows:limitedRows(result.rows,settings)}}};
+    return {labels:[source.label],payload:{result:{...result,...limitedRows(result.rows,settings)}}};
   }
   if(command==="density"){
     const result=analyzeKeywordDensity(input,settings.keywords);
+    const trackedKeywords=result.trackedKeywords.slice(0,settings.top);
+    const unigrams=limitedRows(result.unigrams,settings);
+    const bigrams=limitedRows(result.bigrams,settings);
+    const trigrams=limitedRows(result.trigrams,settings);
+    const totalRows={
+      trackedKeywords:result.trackedKeywords.length,
+      unigrams:unigrams.totalRows,
+      bigrams:bigrams.totalRows,
+      trigrams:trigrams.totalRows,
+    };
+    const returnedRows={
+      trackedKeywords:trackedKeywords.length,
+      unigrams:unigrams.returnedRows,
+      bigrams:bigrams.returnedRows,
+      trigrams:trigrams.returnedRows,
+    };
     return {
       labels:[source.label],
       payload:{result:{
         ...result,
-        trackedKeywords:result.trackedKeywords.slice(0,settings.top),
-        unigrams:limitedRows(result.unigrams,settings),
-        bigrams:limitedRows(result.bigrams,settings),
-        trigrams:limitedRows(result.trigrams,settings),
+        trackedKeywords,
+        unigrams:unigrams.rows,
+        bigrams:bigrams.rows,
+        trigrams:trigrams.rows,
+        totalRows,
+        returnedRows,
+        truncated:Object.keys(totalRows).some(key=>returnedRows[key as keyof typeof returnedRows]<totalRows[key as keyof typeof totalRows]),
       }},
     };
   }
   if(command==="ngram"){
     const result=analyzeNgram(input,settings.ngramSize);
-    return {labels:[source.label],payload:{result:{...result,rows:limitedRows(result.rows,settings)}}};
+    return {labels:[source.label],payload:{result:{...result,...limitedRows(result.rows,settings)}}};
   }
 
   const result=analyzeBagOfWords(input);
-  return {labels:[source.label],payload:{result:{...result,rows:limitedRows(result.rows,settings)}}};
+  return {labels:[source.label],payload:{result:{...result,...limitedRows(result.rows,settings)}}};
 }
 
 async function runCompare(parsed:ParsedCliArgs,stdin:StdinReader,settings:CliSettings){
@@ -196,22 +246,29 @@ async function runCompare(parsed:ParsedCliArgs,stdin:StdinReader,settings:CliSet
     runComparisonAnalysis(bodyForSource(sourceA,settings,true)),
     runComparisonAnalysis(bodyForSource(sourceB,settings,true)),
   ]);
-  const comparison=compareResults(analysisA,analysisB);
-  const wordChanges=limitedRows(comparison.wordChanges.map((row)=>({...row,count:Math.max(row.countA,row.countB)})),settings)
+  const comparison=compareResults(analysisA,analysisB,MAX_ANALYSIS_TOKENS*2);
+  const eligibleWordChanges=comparison.wordChanges.filter(row=>Math.max(row.countA,row.countB)>=settings.minCount);
+  const eligibleBigramChanges=comparison.bigramChanges.filter(row=>Math.max(row.countA,row.countB)>=settings.minCount);
+  const wordChanges=eligibleWordChanges.slice(0,settings.top)
+    .map((row)=>({...row,count:Math.max(row.countA,row.countB)}))
     .map(({count,...row})=>{void count;return row;});
-  const bigramChanges=limitedRows(comparison.bigramChanges.map((row)=>({...row,count:Math.max(row.countA,row.countB)})),settings)
+  const bigramChanges=eligibleBigramChanges.slice(0,settings.top)
+    .map((row)=>({...row,count:Math.max(row.countA,row.countB)}))
     .map(({count,...row})=>{void count;return row;});
+  const {offset:unusedOffset,nextOffset:unusedNextOffset,hasMore:unusedHasMore,...nonPaginatedComparison}=comparison;
+  void unusedOffset;void unusedNextOffset;void unusedHasMore;
   return {
     labels:[sourceA.label,sourceB.label],
     payload:{
       resultA:analysisA.result,
       resultB:analysisB.result,
       comparison:{
-        ...comparison,
+        ...nonPaginatedComparison,
         wordChanges,
         bigramChanges,
         returnedRows:{wordChanges:wordChanges.length,bigramChanges:bigramChanges.length},
-        truncated:wordChanges.length<comparison.totalRows.wordChanges||bigramChanges.length<comparison.totalRows.bigramChanges,
+        totalRows:{wordChanges:eligibleWordChanges.length,bigramChanges:eligibleBigramChanges.length},
+        truncated:wordChanges.length<eligibleWordChanges.length||bigramChanges.length<eligibleBigramChanges.length,
       },
     },
   };
@@ -228,7 +285,7 @@ async function runTfIdf(parsed:ParsedCliArgs,stdin:StdinReader,settings:CliSetti
     :"auto";
   return {
     labels:sources.map((source)=>source.label),
-    payload:{result:{
+    payload:{result:limitedIdfTable({
       language,
       documentCount:documents.length,
       top:settings.top,
@@ -236,7 +293,7 @@ async function runTfIdf(parsed:ParsedCliArgs,stdin:StdinReader,settings:CliSetti
       averageDocumentFrequency:calculated.averageDocumentFrequency,
       documents:calculated.documents,
       idfTable:calculated.idfTable,
-    }},
+    },settings.top)},
   };
 }
 
@@ -248,7 +305,7 @@ async function runSimilarity(parsed:ParsedCliArgs,stdin:StdinReader,settings:Cli
   ]);
   return {
     labels:[sourceA.label,sourceB.label],
-    payload:{result:calculateTextSimilarity(documentA,documentB,settings.method,settings.top)},
+    payload:{result:limitedIdfTable(calculateTextSimilarity(documentA,documentB,settings.method,settings.top),settings.top)},
   };
 }
 

@@ -7,7 +7,7 @@ import { languageAlternates,languagePaths } from "../../../localization";
 
 const path="/tools/ngram-analyzer";
 const title="Free N-gram Analyzer for Text & URLs";
-const description="Find recurring word sequences and compare phrase concentration in pasted text or a public webpage. Sort, search, and export full N-gram tables with count, percentage, and per-1,000 rates.";
+const description="Find recurring word sequences and compare phrase concentration in pasted text or a public webpage. Sort, search, and export bounded N-gram tables with count, percentage, and per-1,000 rates.";
 
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
@@ -43,7 +43,7 @@ export default function NgramAnalyzerPage(){
         <div className="feature-list">
           <div><h3>N-gram size</h3><p>Use n=1 for lexical repetition, n=2 for short phrases, and n=3+ for more specific linguistic patterns.</p></div>
           <div><h3>Stop words</h3><p>Turn off stop words to focus on content-bearing phrase fragments and reduce repeated filler phrases.</p></div>
-          <div><h3>Minimum count filter</h3><p>Filter out one-off windows to keep long outputs usable while preserving full exports.</p></div>
+          <div><h3>Minimum count filter</h3><p>Filter out one-off windows to keep long outputs usable while exporting every returned row.</p></div>
           <div><h3>Local vs URL mode</h3><p>Text mode runs immediately in-browser; URL mode fetches readable webpage text and applies the same calculations.</p></div>
         </div>
       </section>

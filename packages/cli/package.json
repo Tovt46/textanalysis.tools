@@ -1,13 +1,25 @@
 {
   "name": "textanalysis-tools",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Local-first text analysis CLI and MCP server for people, automation, and AI agents.",
   "type": "module",
+  "sideEffects": false,
   "bin": {
     "textanalysis": "dist/textanalysis.mjs"
   },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./dist/index.mjs"
+    },
+    "./schema/textanalysis.config.json": "./schema/textanalysis.config.schema.json"
+  },
+  "types": "index.d.ts",
   "files": [
-    "dist/textanalysis.mjs"
+    "dist/textanalysis.mjs",
+    "dist/index.mjs",
+    "index.d.ts",
+    "schema/textanalysis.config.schema.json"
   ],
   "engines": {
     "node": ">=22.13.0"

@@ -16,6 +16,8 @@ type HomeCopy={
   languages:string;
   storage:string;
   facts:string;
+  audienceLabel:string;
+  audiences:Array<{label:string;title:string;description:string;cta:string}>;
   status:string;
   available:string;
   choose:string;
@@ -50,6 +52,12 @@ const COPY:Record<UiLang,HomeCopy>={
     languages:"analysis languages",
     storage:"submitted text stored",
     facts:"Product facts",
+    audienceLabel:"Choose your entry path",
+    audiences:[
+      {label:"PEOPLE",title:"Analyze in the browser",description:"Load an example, paste your text, and inspect a transparent result without writing code.",cta:"Browse the eight tools"},
+      {label:"DEVELOPERS",title:"Automate with API or CLI",description:"Use stable JSON endpoints or the local-first npm CLI in scripts, CI, and editorial workflows.",cta:"Read developer docs"},
+      {label:"AI AGENTS",title:"Connect deterministic tools",description:"Give agents typed, read-only analysis operations through MCP instead of asking them to estimate counts.",cta:"Open agent integrations"},
+    ],
     status:"LIVE",
     available:"AVAILABLE NOW",
     choose:"Start with the question you need to answer",
@@ -70,7 +78,7 @@ const COPY:Record<UiLang,HomeCopy>={
     methodTitle:"Useful numbers, with the method left visible",
     methods:[
       {title:"Transparent calculations",description:"Counts, percentages, and per-1,000 rates stay visible so you can verify what each result means."},
-      {title:"Private by design",description:"Pasted text is analyzed in the browser. Public URLs are fetched only when you ask the tool to analyze one."},
+      {title:"Private by design",description:"Text-only work stays in your browser. If a workflow includes a public URL, required inputs use the stateless API and are not stored."},
       {title:"Made for comparison",description:"Normalize texts of different lengths and compare drafts, pages, or versions using the same settings."},
       {title:"No optimization score",description:"The tools expose patterns and repetition without pretending that one percentage determines content quality."},
     ],
@@ -104,6 +112,12 @@ const COPY:Record<UiLang,HomeCopy>={
     languages:"языка анализа",
     storage:"текста сохраняется",
     facts:"Факты о продукте",
+    audienceLabel:"Выберите свой сценарий",
+    audiences:[
+      {label:"ЛЮДЯМ",title:"Анализ в браузере",description:"Загрузите пример, вставьте текст и изучите прозрачный результат без программирования.",cta:"Открыть восемь инструментов"},
+      {label:"РАЗРАБОТЧИКАМ",title:"Автоматизация через API или CLI",description:"Используйте стабильный JSON API или локальный npm CLI в скриптах, CI и редакционных процессах.",cta:"Открыть документацию"},
+      {label:"AI-АГЕНТАМ",title:"Детерминированные инструменты",description:"Подключайте типизированные read-only операции через MCP вместо приблизительных подсчётов моделью.",cta:"Открыть интеграции"},
+    ],
     status:"РАБОТАЕТ",
     available:"ДОСТУПНО СЕЙЧАС",
     choose:"Начните с вопроса, на который нужен ответ",
@@ -124,7 +138,7 @@ const COPY:Record<UiLang,HomeCopy>={
     methodTitle:"Полезные цифры с понятной методикой",
     methods:[
       {title:"Прозрачные расчёты",description:"Количество, проценты и частота на 1 000 слов видны в результате — их можно проверить вручную."},
-      {title:"Приватность по умолчанию",description:"Вставленный текст анализируется в браузере. Публичный URL загружается только по вашему запросу."},
+      {title:"Приватность по умолчанию",description:"Работа только с текстом остаётся в браузере. Если в сценарии есть публичный URL, необходимые входные данные обрабатываются API без сохранения."},
       {title:"Создано для сравнения",description:"Сопоставляйте черновики, страницы и версии разной длины с одинаковыми настройками."},
       {title:"Без выдуманного SEO-балла",description:"Инструменты показывают повторы и закономерности, не выдавая один процент за оценку качества текста."},
     ],
@@ -158,6 +172,12 @@ const COPY:Record<UiLang,HomeCopy>={
     languages:"мови аналізу",
     storage:"тексту зберігається",
     facts:"Відомості про продукт",
+    audienceLabel:"Оберіть свій сценарій",
+    audiences:[
+      {label:"ЛЮДЯМ",title:"Аналіз у браузері",description:"Завантажте приклад, вставте текст і перегляньте прозорий результат без програмування.",cta:"Відкрити вісім інструментів"},
+      {label:"РОЗРОБНИКАМ",title:"Автоматизація через API або CLI",description:"Використовуйте стабільний JSON API або локальний npm CLI у скриптах, CI та редакційних процесах.",cta:"Відкрити документацію"},
+      {label:"AI-АГЕНТАМ",title:"Детерміновані інструменти",description:"Підключайте типізовані read-only операції через MCP замість приблизних підрахунків моделлю.",cta:"Відкрити інтеграції"},
+    ],
     status:"ПРАЦЮЄ",
     available:"ДОСТУПНО ЗАРАЗ",
     choose:"Почніть із запитання, на яке потрібна відповідь",
@@ -178,7 +198,7 @@ const COPY:Record<UiLang,HomeCopy>={
     methodTitle:"Корисні числа з прозорою методикою",
     methods:[
       {title:"Прозорі розрахунки",description:"Кількість, відсотки й частота на 1 000 слів залишаються видимими — їх можна перевірити вручну."},
-      {title:"Приватність за замовчуванням",description:"Вставлений текст аналізується у браузері. Публічний URL завантажується лише за вашим запитом."},
+      {title:"Приватність за замовчуванням",description:"Робота лише з текстом залишається у браузері. Якщо у сценарії є публічний URL, потрібні вхідні дані обробляються API без збереження."},
       {title:"Створено для порівняння",description:"Зіставляйте чернетки, сторінки й версії різної довжини з однаковими налаштуваннями."},
       {title:"Без вигаданого SEO-бала",description:"Інструменти показують повтори й закономірності, не видаючи один відсоток за оцінку якості тексту."},
     ],
@@ -212,6 +232,12 @@ const COPY:Record<UiLang,HomeCopy>={
     languages:"idiomas de análisis",
     storage:"texto enviado almacenado",
     facts:"Datos del producto",
+    audienceLabel:"Elige tu punto de entrada",
+    audiences:[
+      {label:"PERSONAS",title:"Analiza en el navegador",description:"Carga un ejemplo, pega tu texto y revisa un resultado transparente sin programar.",cta:"Ver las ocho herramientas"},
+      {label:"DESARROLLADORES",title:"Automatiza con API o CLI",description:"Usa endpoints JSON estables o el CLI npm local en scripts, CI y flujos editoriales.",cta:"Leer la documentación"},
+      {label:"AGENTES DE IA",title:"Conecta herramientas deterministas",description:"Ofrece operaciones tipadas y de solo lectura mediante MCP en lugar de estimar recuentos con el modelo.",cta:"Abrir integraciones"},
+    ],
     status:"ACTIVA",
     available:"DISPONIBLE AHORA",
     choose:"Empieza por la pregunta que necesitas responder",
@@ -232,7 +258,7 @@ const COPY:Record<UiLang,HomeCopy>={
     methodTitle:"Cifras útiles con una metodología visible",
     methods:[
       {title:"Cálculos transparentes",description:"Los recuentos, porcentajes y tasas por 1.000 permanecen visibles para que puedas verificar cada resultado."},
-      {title:"Privacidad por diseño",description:"El texto pegado se analiza en el navegador. Las URL públicas solo se descargan cuando solicitas su análisis."},
+      {title:"Privacidad por diseño",description:"El trabajo solo con texto permanece en el navegador. Si el flujo incluye una URL pública, la API procesa sin guardar las entradas necesarias."},
       {title:"Creado para comparar",description:"Normaliza textos de distinta longitud y compara borradores, páginas o versiones con los mismos ajustes."},
       {title:"Sin puntuaciones inventadas",description:"Las herramientas muestran patrones y repeticiones sin presentar un único porcentaje como medida de calidad."},
     ],
@@ -302,6 +328,12 @@ export default function HomePage({locale}:{locale:UiLang}){
       </div>
     </section>
     <section className="home-stats" aria-label={copy.facts}><div><strong>8</strong><span>{copy.live}</span></div><div><strong>4</strong><span>{copy.languages}</span></div><div><strong>0</strong><span>{copy.storage}</span></div></section>
+    <section className="home-audiences" aria-label={copy.audienceLabel}>
+      {copy.audiences.map((audience,index)=>{
+        const href=index===0?"#available-tools":localizedPath(locale,index===1?"/api-docs":"/agents");
+        return <Link href={href} key={audience.label} data-audience={index===0?"people":index===1?"developers":"agents"}><span>{audience.label}</span><h2>{audience.title}</h2><p>{audience.description}</p><strong>{audience.cta}<b>→</b></strong></Link>;
+      })}
+    </section>
     <section className="home-section home-tools" id="available-tools" aria-labelledby="home-tools-title">
       <div className="home-section-heading"><p className="section-number">{copy.available}</p><h2 id="home-tools-title">{copy.choose}</h2><p>{copy.chooseCopy}</p></div>
       <div className="home-tool-grid">{copy.tools.map((tool,index)=><Link className={`home-tool-card tool-${index+1}`} href={toolPaths[index]} key={tool.name}><div className="home-tool-card-top"><span>0{index+1} · {copy.status}</span></div><h3>{tool.name}</h3><p>{tool.description}</p><strong>{copy.open}<b>→</b></strong></Link>)}</div>

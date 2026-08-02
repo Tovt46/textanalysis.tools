@@ -2,12 +2,13 @@ import { SITE_URL } from "../seo-metadata";
 
 const content=`# Text Analysis Tools
 
-> Free, transparent tools for word frequency, keyword density, Bag of Words analysis, and text comparison. Pasted text is processed without server storage.
+> Free, transparent tools for word frequency, keyword density, Bag of Words analysis, and text comparison. Text-only web workflows run in the browser; the stateless API does not store submitted content.
 
 ## Agent API
 
 - OpenAPI specification: ${SITE_URL}/openapi.json
 - Human-readable API documentation: ${SITE_URL}/api-docs
+- API health: GET ${SITE_URL}/api/health
 - Analyze one input: POST ${SITE_URL}/api/v1/analyze
 - Compare two inputs: POST ${SITE_URL}/api/v1/compare
 - Count bounded vocabulary rows with explicit truncation metadata: POST ${SITE_URL}/api/v1/word-frequency
@@ -17,7 +18,7 @@ const content=`# Text Analysis Tools
 - Score corpus-aware terms (TF-IDF): POST ${SITE_URL}/api/v1/tf-idf
 - Measure text similarity (BoW or TF-IDF): POST ${SITE_URL}/api/v1/similarity
 
-Requests use application/json. Supported languages are English, Russian, Ukrainian, and Spanish. Pasted source fields are limited to 500,000 characters; remote downloads may contain up to 2,000,000 bytes or characters; every resolved source is limited to 100,000 analyzable words. Compound operations also have aggregate budgets. Word-frequency, Bag-of-Words, and n-gram operations accept limit for their rows; density applies it to generated n-gram tables; TF-IDF and similarity with method tf-idf apply it to idfTable. Analyze uses top, and compare returns up to 1,000 word changes plus 1,000 bigram changes with truncation metadata. Serialized responses are capped at 5 MB. The API is public, rate-limited, and requires no API key. Use it for analysis, not for claims about search-engine rankings.
+Requests use application/json. Supported languages are English, Russian, Ukrainian, and Spanish. Pasted source fields are limited to 500,000 characters; remote downloads may contain up to 2,000,000 bytes or characters; every resolved source is limited to 100,000 analyzable words. Compound operations also have aggregate budgets. Word-frequency, Bag-of-Words, n-gram, density, comparison, TF-IDF, and TF-IDF similarity tables accept limit and offset. Follow nextOffset or nextIdfOffset until null to retrieve a complete ordered table. Analyze uses top. Serialized responses are capped at 5 MB. The API is public, dynamically rate-limited by workload, and requires no API key. Every API response includes a random X-Request-ID. Operational logs contain only that ID, operation, method, status, duration, response size, and a coarse error class; they exclude submitted content, analyzed URLs, and result terms. Use the API for analysis, not for claims about search-engine rankings.
 
 ## Local CLI
 
@@ -26,9 +27,12 @@ Requests use application/json. Supported languages are English, Russian, Ukraini
 - npm package: https://www.npmjs.com/package/textanalysis-tools
 - Executable: textanalysis
 - Analysis commands: analyze, frequency, density, compare, ngram, bow, tfidf, similarity
+- Repeatable workflow checks: textanalysis check article.md --format ci
+- Version 1 check schema: ${SITE_URL}/textanalysis-config.schema.json
+- Importable ESM TypeScript API: import analysis functions from textanalysis-tools
 - Local MCP server: npx --yes textanalysis-tools mcp
 
-The CLI accepts UTF-8 files, public HTTP(S) URLs, inline text, and piped stdin. Local files and stdin are processed on the user's machine. Results can be returned as tables, JSON, or CSV.
+The CLI accepts UTF-8 files, public HTTP(S) URLs, inline text, and piped stdin. Local files and stdin are processed on the user's machine. Results can be returned as tables, JSON, or CSV. The check command enforces project-defined phrase, density, length, and baseline-similarity rules with stable exit codes. The package also exports the same deterministic analysis core directly to ESM applications with TypeScript declarations.
 
 ## Local MCP
 
@@ -57,6 +61,7 @@ The npm package exposes the same eight deterministic analysis operations as read
 - Text comparison by normalized word frequency: ${SITE_URL}/compare-texts-by-word-frequency
 - Command-line interface documentation: ${SITE_URL}/cli
 - AI agent and MCP documentation: ${SITE_URL}/agents
+- Privacy and data handling: ${SITE_URL}/privacy
 
 ## Russian pages
 

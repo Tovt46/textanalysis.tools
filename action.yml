@@ -1,0 +1,52 @@
+name: Text Analysis Check
+description: Run deterministic phrase, repetition, length, and similarity checks in CI.
+author: textanalysis.tools
+
+branding:
+  icon: check-circle
+  color: blue
+
+inputs:
+  file:
+    description: UTF-8 text or Markdown file to check.
+    required: true
+  config:
+    description: Path to a version 1 textanalysis.config.json file.
+    required: false
+    default: textanalysis.config.json
+  baseline:
+    description: Optional local baseline file overriding the config value.
+    required: false
+    default: ""
+  language:
+    description: auto, en, ru, uk, or es.
+    required: false
+    default: auto
+  package-version:
+    description: Published textanalysis-tools version to execute.
+    required: false
+    default: 0.2.0
+
+runs:
+  using: composite
+  steps:
+    - name: Use the supported Node.js runtime
+      uses: actions/setup-node@v6
+      with:
+        node-version: 22.13.0
+
+    - name: Run text analysis rules
+      shell: bash
+      env:
+        TEXTANALYSIS_FILE: ${{ inputs.file }}
+        TEXTANALYSIS_CONFIG: ${{ inputs.config }}
+        TEXTANALYSIS_BASELINE: ${{ inputs.baseline }}
+        TEXTANALYSIS_LANGUAGE: ${{ inputs.language }}
+        TEXTANALYSIS_PACKAGE_VERSION: ${{ inputs.package-version }}
+      run: |
+        set -euo pipefail
+        args=("$TEXTANALYSIS_FILE" --config "$TEXTANALYSIS_CONFIG" --language "$TEXTANALYSIS_LANGUAGE" --format ci)
+        if [[ -n "$TEXTANALYSIS_BASELINE" ]]; then
+          args+=(--baseline "$TEXTANALYSIS_BASELINE")
+        fi
+        npx --yes "textanalysis-tools@$TEXTANALYSIS_PACKAGE_VERSION" check "${args[@]}"
