@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 — Unreleased
+## 0.2.0 — 2026-08-02
 
 - add localized runnable examples and JSON copy actions to all eight web tools
 - add desktop and mobile browser interaction coverage
