@@ -45,7 +45,7 @@ test("renders the English product homepage with live tools and production SEO me
   const response = await request("/", { headers: { accept: "text/html" } });
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /<title>Free Text Analysis Tools for Words, Keywords &amp; Comparison<\/title>/i);
+  assert.match(html, /<title>Free Text Analysis Tools for Humans and AI Agents<\/title>/i);
   assert.match(html, /rel="canonical" href="https:\/\/textanalysis\.tools\/?"/i);
   assert.match(html, /property="og:image" content="https:\/\/textanalysis\.tools\/og\.png"/i);
   assert.match(html, /<h1>Free Text Analysis Tools<\/h1>/i);

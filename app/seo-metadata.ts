@@ -31,7 +31,7 @@ const HOME_COPY: Record<UiLang,{ path:string; title:string; description:string; 
   },
   en: {
     path: "/",
-    title: "Free Text Analysis Tools for Words, Keywords & Comparison",
+    title: "Free Text Analysis Tools for Humans and AI Agents",
     description: "Transparent word frequency, density, Bag of Words, and similarity for people and AI agents through Web, API, local CLI, and MCP.",
     locale: "en_US",
   },
