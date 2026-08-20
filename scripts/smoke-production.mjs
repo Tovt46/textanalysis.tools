@@ -105,7 +105,7 @@ async function checkHomepage(){
   const response=await request("/");
   assert.equal(response.status,200,"The bare homepage must return HTTP 200.");
   const html=await response.text();
-  assert.match(html,/Free text analysis tools\./i,"The bare homepage is not the current product homepage.");
+  assert.match(html,/<h1>Free Text Analysis Tools<\/h1>/i,"The bare homepage is not the current product homepage.");
   assert.doesNotMatch(html,/Free Bag of Words SEO analyzer\./i,"The bare homepage still contains the retired analyzer hero.");
   assertDeploySafeCache(response,"Homepage");
 
