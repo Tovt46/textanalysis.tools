@@ -93,9 +93,22 @@ for(const locale of [
 
 test("home exposes entry paths for people, developers, and AI agents",async({page})=>{
   await page.goto("/");
+  const heading=page.getByRole("heading",{level:1});
+  const tagline=page.locator(".home-hero-tagline");
+  await expect(heading).toHaveText("Free Text Analysis Tools");
+  await expect(tagline).toHaveText("For Humans and AI Agents");
+  const [headingSize,taglineSize]=await Promise.all([
+    heading.evaluate(element=>Number.parseFloat(getComputedStyle(element).fontSize)),
+    tagline.evaluate(element=>Number.parseFloat(getComputedStyle(element).fontSize)),
+  ]);
+  expect(taglineSize).toBeLessThan(headingSize/2);
   await expect(page.locator('[data-audience="people"]')).toBeVisible();
   await expect(page.locator('[data-audience="developers"]')).toHaveAttribute("href","/api-docs");
-  await expect(page.locator('[data-audience="agents"]')).toHaveAttribute("href","/agents");
+  const agents=page.locator('[data-audience="agents"]');
+  await expect(agents).toHaveAttribute("href","/agents");
+  await expect(agents).toContainText("Codex");
+  await expect(agents).toContainText("Claude Code");
+  await expect(agents).toContainText("Gemini CLI");
 });
 
 test("large local analysis runs in a cancellable Worker and enforces the browser limit",async({page})=>{

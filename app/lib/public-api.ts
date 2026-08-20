@@ -549,6 +549,8 @@ type PublicAnalyzeBody={
   top?:unknown;
   tolerance?:unknown;
   keepStopwords?:unknown;
+  keepNumbers?:unknown;
+  minimumTokenLength?:unknown;
   stopwordLists?:unknown;
 };
 
@@ -583,7 +585,11 @@ export async function normalizeAnalyzeBody(body:PublicAnalyzeBody,context:Remote
   }
   else if(text.length>MAX_TEXT_CHARS) throw new PublicApiError(413,"TEXT_TOO_LARGE",`Text input is limited to ${MAX_TEXT_CHARS.toLocaleString("en-US")} characters.`);
 
-  const analysisTokens=countAnalysisTokens(text,MAX_ANALYSIS_TOKENS+1);
+  if(body.keepNumbers!==undefined&&typeof body.keepNumbers!=="boolean") throw new PublicApiError(400,"INVALID_ARGUMENT","keepNumbers must be a boolean.");
+  const minimumTokenLength=optionalNumber(body.minimumTokenLength,"minimumTokenLength",1,100);
+  if(minimumTokenLength!==undefined&&!Number.isInteger(minimumTokenLength)) throw new PublicApiError(400,"INVALID_ARGUMENT","minimumTokenLength must be a whole number between 1 and 100.");
+  const keepNumbers=body.keepNumbers===undefined?false:body.keepNumbers;
+  const analysisTokens=countAnalysisTokens(text,MAX_ANALYSIS_TOKENS+1,{keepNumbers,minimumTokenLength});
   if(analysisTokens>MAX_ANALYSIS_TOKENS){
     throw new PublicApiError(413,"ANALYSIS_TOO_LARGE",`Each source is limited to ${MAX_ANALYSIS_TOKENS.toLocaleString("en-US")} analyzable words.`);
   }
@@ -599,7 +605,7 @@ export async function normalizeAnalyzeBody(body:PublicAnalyzeBody,context:Remote
         ?body.focus.trim()?body.focus.split(","):[]
         :undefined;
     if(!focusTerms||focusTerms.length>100||focusTerms.some(term=>
-      typeof term!=="string"||!term.trim()||term.length>200||countAnalysisTokens(term,1)===0
+      typeof term!=="string"||!term.trim()||term.length>200||countAnalysisTokens(term,1,{keepNumbers,minimumTokenLength})===0
     )){
       throw new PublicApiError(400,"INVALID_ARGUMENT","focus must contain up to 100 non-empty analyzable phrases of at most 200 characters each.");
     }
@@ -617,6 +623,8 @@ export async function normalizeAnalyzeBody(body:PublicAnalyzeBody,context:Remote
     top,
     tolerance:optionalNumber(body.tolerance,"tolerance",1.2,4),
     keepStopwords:body.keepStopwords===undefined?false:body.keepStopwords,
+    keepNumbers,
+    minimumTokenLength,
     stopwordLists:normalizeStopwordLists(body.stopwordLists),
     uiLanguage:"en",
   };

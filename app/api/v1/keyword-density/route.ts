@@ -21,11 +21,11 @@ export function POST(request:Request){
       if(typeof trackedKeywords!=="string"||trackedKeywords.length>20_000){
         throw new PublicApiError(400,"INVALID_ARGUMENT","trackedKeywords must be a string shorter than 20,000 characters.");
       }
+      const input=await normalizeAnalyzeBody(body);
       const trackedTerms=[...new Set(trackedKeywords.split(/[\n,;]+/).map(term=>term.trim()).filter(Boolean))];
-      if(trackedTerms.length>100||trackedTerms.some(term=>term.length>200||countAnalysisTokens(term,1)===0)){
+      if(trackedTerms.length>100||trackedTerms.some(term=>term.length>200||countAnalysisTokens(term,1,input)===0)){
         throw new PublicApiError(400,"INVALID_ARGUMENT","trackedKeywords must contain at most 100 analyzable phrases of up to 200 characters each.");
       }
-      const input=await normalizeAnalyzeBody(body);
       const result=limitDensityRows(
         analyzeKeywordDensity(input,trackedKeywords),
         parseResultRowLimit(body.limit,DEFAULT_DENSITY_ROW_LIMIT),

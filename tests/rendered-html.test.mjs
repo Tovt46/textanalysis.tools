@@ -48,8 +48,10 @@ test("renders the English product homepage with live tools and production SEO me
   assert.match(html, /<title>Free Text Analysis Tools for Words, Keywords &amp; Comparison<\/title>/i);
   assert.match(html, /rel="canonical" href="https:\/\/textanalysis\.tools\/?"/i);
   assert.match(html, /property="og:image" content="https:\/\/textanalysis\.tools\/og\.png"/i);
-  assert.match(html, /<h1>Free text analysis tools\./i);
-  assert.match(html, /For people, code, and AI agents\./i);
+  assert.match(html, /<h1>Free Text Analysis Tools<\/h1>/i);
+  assert.match(html, /class="home-hero-tagline">For Humans and AI Agents<\/p>/i);
+  assert.match(html, /Codex.*Claude Code.*Gemini CLI/i);
+  assert.doesNotMatch(html, /For people, code, and AI agents/i);
   assert.match(html, /href="\/agents"/i);
   assert.match(html, /Word Frequency Counter/i);
   assert.match(html, /Keyword Density Checker/i);
@@ -274,6 +276,23 @@ test("limits shared-cache lifetime for every sitemap page",async()=>{
       assert.equal(response.status,200,path);
       assert.match(response.headers.get("cache-control")||"",/s-maxage=300(?:\D|$)/i,path);
       await response.body?.cancel();
+    }));
+  }
+});
+
+test("renders every sitemap page without periods in H1 headings",async()=>{
+  const sitemapResponse=await request("/sitemap.xml");
+  const sitemap=await sitemapResponse.text();
+  const paths=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]).pathname);
+  for(let offset=0;offset<paths.length;offset+=12){
+    await Promise.all(paths.slice(offset,offset+12).map(async path=>{
+      const response=await request(path,{headers:{accept:"text/html"}});
+      assert.equal(response.status,200,path);
+      const html=await response.text();
+      const headings=[...html.matchAll(/<h1(?:\s[^>]*)?>([\s\S]*?)<\/h1>/gi)];
+      assert.equal(headings.length,1,`${path} must render exactly one H1`);
+      const heading=headings[0][1].replaceAll(/<[^>]+>/g," ").replaceAll(/\s+/g," ").trim();
+      assert.doesNotMatch(heading,/\./,`${path} H1 must not contain periods: ${heading}`);
     }));
   }
 });

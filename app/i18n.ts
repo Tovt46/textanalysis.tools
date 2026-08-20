@@ -1,7 +1,7 @@
 export type UiLang = "ru" | "en" | "uk" | "es";
 
 const RU: Record<string, string> = {
-  status:"данные не сохраняются на сервере", heroEye:"ЧАСТОТНОСТЬ КЛЮЧЕВЫХ СЛОВ И ЗАКОН ЦИПФА", heroLine:"Бесплатный Bag of Words SEO-анализатор.", heroEm:"Сравните два текста.", heroCopy:"Проверяйте текст или URL бесплатно: частотность и плотность ключевых слов, биграммы, стоп-слова и отклонения от закона Ципфа.",
+  status:"данные не сохраняются на сервере", heroEye:"ЧАСТОТНОСТЬ КЛЮЧЕВЫХ СЛОВ И ЗАКОН ЦИПФА", heroLine:"Бесплатный Bag of Words SEO-анализатор", heroEm:"Сравните два текста", heroCopy:"Проверяйте текст или URL бесплатно: частотность и плотность ключевых слов, биграммы, стоп-слова и отклонения от закона Ципфа.",
   source:"SEO-анализ текста или страницы", text:"Текст", url:"URL", textPlaceholder:"Вставьте текст или HTML…", chars:"знаков", focus:"Контрольные фразы", focusHelp:"Слова и фразы, которые вы хотите проверить отдельно. Это не список обязательных SEO-ключей.", focusNote:"Введите через запятую. Мы посчитаем точные упоминания каждой фразы.",
   settings:"Настройки Bag of Words-анализа", language:"Язык текста", languageHelp:"Определяет, какой список стоп-слов применяется. Редактор стоп-слов переключается вместе с языком.", auto:"Определить автоматически", autoNote:"После анализа откроется список определённого языка.", syncNote:"Редактор стоп-слов использует список {lang}.",
   top:"Слов в подробной таблице", topHelp:"Определяет только длину подробной таблицы и не влияет на расчёт.", topNote:"20 достаточно для быстрой проверки.", sensitivity:"Чувствительность", sensitivityHelp:"При ×2 слово отмечается, если встречается более чем вдвое чаще модели Ципфа.", sensitivityNote:"×2 — спокойный базовый режим.",
@@ -16,7 +16,7 @@ const RU: Record<string, string> = {
 };
 
 const EN: Record<string, string> = {
-  status:"data is not stored on the server", heroEye:"KEYWORD FREQUENCY & ZIPF ANALYSIS", heroLine:"Free Bag of Words SEO analyzer.", heroEm:"Compare two texts.", heroCopy:"Analyze text or a webpage for free: keyword density, word and bigram frequency, editable stop words, and deviations from Zipf’s law.",
+  status:"data is not stored on the server", heroEye:"KEYWORD FREQUENCY & ZIPF ANALYSIS", heroLine:"Free Bag of Words SEO analyzer", heroEm:"Compare two texts", heroCopy:"Analyze text or a webpage for free: keyword density, word and bigram frequency, editable stop words, and deviations from Zipf’s law.",
   source:"Analyze text or a webpage", text:"Text", url:"URL", textPlaceholder:"Paste text or HTML…", chars:"characters", focus:"Tracked phrases", focusHelp:"Words and phrases you want to check separately. This is not a list of required SEO keywords.", focusNote:"Separate phrases with commas. We will count exact occurrences.",
   settings:"Bag of Words analysis settings", language:"Text language", languageHelp:"Controls which stop-word list is used. The stop-word editor switches with it.", auto:"Detect automatically", autoNote:"After analysis, the detected language list will open.", syncNote:"The stop-word editor is using the {lang} list.",
   top:"Words in detailed table", topHelp:"Only changes the detailed table length; it does not affect calculations.", topNote:"20 is enough for a quick review.", sensitivity:"Sensitivity", sensitivityHelp:"At ×2, a word is flagged when it appears more than twice as often as the Zipf model expects.", sensitivityNote:"×2 is a balanced default.",
@@ -31,7 +31,7 @@ const EN: Record<string, string> = {
 };
 
 const UK: Record<string, string> = {
-  status:"дані не зберігаються на сервері", heroEye:"ЧАСТОТНІСТЬ КЛЮЧОВИХ СЛІВ І ЗАКОН ЦИПФА", heroLine:"Безкоштовний Bag of Words SEO-аналізатор.", heroEm:"Порівняйте два тексти.", heroCopy:"Перевіряйте текст або URL безкоштовно: частотність і щільність ключових слів, біграми, стоп-слова та відхилення від закону Ципфа.",
+  status:"дані не зберігаються на сервері", heroEye:"ЧАСТОТНІСТЬ КЛЮЧОВИХ СЛІВ І ЗАКОН ЦИПФА", heroLine:"Безкоштовний Bag of Words SEO-аналізатор", heroEm:"Порівняйте два тексти", heroCopy:"Перевіряйте текст або URL безкоштовно: частотність і щільність ключових слів, біграми, стоп-слова та відхилення від закону Ципфа.",
   source:"SEO-аналіз тексту або сторінки", text:"Текст", url:"URL", textPlaceholder:"Вставте текст або HTML…", chars:"символів", focus:"Контрольні фрази", focusHelp:"Слова й фрази, які ви хочете перевірити окремо. Це не список обов’язкових SEO-ключів.", focusNote:"Вводьте через кому. Ми порахуємо точні згадки кожної фрази.",
   settings:"Налаштування Bag of Words-аналізу", language:"Мова тексту", languageHelp:"Визначає список стоп-слів. Редактор стоп-слів перемикається разом із мовою.", auto:"Визначити автоматично", autoNote:"Після аналізу відкриється список визначеної мови.", syncNote:"Редактор стоп-слів використовує список {lang}.",
   top:"Слів у детальній таблиці", topHelp:"Змінює лише довжину детальної таблиці та не впливає на розрахунок.", topNote:"20 достатньо для швидкої перевірки.", sensitivity:"Чутливість", sensitivityHelp:"За ×2 слово позначається, якщо трапляється більш ніж удвічі частіше за модель Ципфа.", sensitivityNote:"×2 — збалансований режим.",
@@ -46,7 +46,7 @@ const UK: Record<string, string> = {
 };
 
 const ES: Record<string, string> = {
-  status:"los datos no se almacenan en el servidor", heroEye:"FRECUENCIA DE PALABRAS CLAVE Y LEY DE ZIPF", heroLine:"Analizador Bag of Words gratuito para SEO.", heroEm:"Compara dos textos.", heroCopy:"Analiza gratis un texto o una URL: densidad de palabras clave, frecuencia de palabras y bigramas, palabras vacías editables y desviaciones de la ley de Zipf.",
+  status:"los datos no se almacenan en el servidor", heroEye:"FRECUENCIA DE PALABRAS CLAVE Y LEY DE ZIPF", heroLine:"Analizador Bag of Words gratuito para SEO", heroEm:"Compara dos textos", heroCopy:"Analiza gratis un texto o una URL: densidad de palabras clave, frecuencia de palabras y bigramas, palabras vacías editables y desviaciones de la ley de Zipf.",
   source:"Analizar texto o página web", text:"Texto", url:"URL", textPlaceholder:"Pega texto o HTML…", chars:"caracteres", focus:"Frases controladas", focusHelp:"Palabras y frases que quieres comprobar por separado. No es una lista de palabras clave SEO obligatorias.", focusNote:"Separa las frases con comas. Contaremos sus apariciones exactas.",
   settings:"Ajustes del análisis Bag of Words", language:"Idioma del texto", languageHelp:"Determina qué lista de palabras vacías se usa. El editor cambia con el idioma.", auto:"Detectar automáticamente", autoNote:"Después del análisis se abrirá la lista del idioma detectado.", syncNote:"El editor usa la lista {lang}.",
   top:"Palabras en la tabla detallada", topHelp:"Solo cambia la longitud de la tabla; no afecta a los cálculos.", topNote:"20 bastan para una revisión rápida.", sensitivity:"Sensibilidad", sensitivityHelp:"Con ×2 se marca una palabra cuando aparece más del doble de lo esperado por el modelo de Zipf.", sensitivityNote:"×2 es un valor inicial equilibrado.",

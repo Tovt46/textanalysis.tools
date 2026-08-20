@@ -11,6 +11,8 @@ const sourceSchema={
     top:{type:"integer",minimum:5,maximum:100,default:20},
     tolerance:{type:"number",minimum:1.2,maximum:4,default:2,description:"Multiplier used for above/below Zipf model zones."},
     keepStopwords:{type:"boolean",default:false},
+    keepNumbers:{type:"boolean",default:false,description:"Keep numeric-only tokens. Numeric tokens are retained even when they are shorter than minimumTokenLength."},
+    minimumTokenLength:{type:"integer",minimum:1,maximum:100,default:1,description:"Discard non-numeric tokens shorter than this length."},
     stopwordLists:{type:"object",properties:{en:{type:"array",maxItems:1000,items:{type:"string",maxLength:100}},ru:{type:"array",maxItems:1000,items:{type:"string",maxLength:100}},uk:{type:"array",maxItems:1000,items:{type:"string",maxLength:100}},es:{type:"array",maxItems:1000,items:{type:"string",maxLength:100}}}},
   },
   allOf:[{oneOf:[

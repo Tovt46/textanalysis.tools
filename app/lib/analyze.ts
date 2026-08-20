@@ -17,9 +17,13 @@ export type AnalyzeInput = {
   top?: number;
   tolerance?: number;
   keepStopwords?: boolean;
+  keepNumbers?: boolean;
+  minimumTokenLength?: number;
   stopwordLists?: Partial<Record<Lang, string[]>>;
   uiLanguage?: UiLang;
 };
+
+type TokenizationOptions=Pick<AnalyzeInput,"keepNumbers"|"minimumTokenLength">;
 
 function detectLanguage(text: string): Lang {
   const lower = text.toLowerCase();
@@ -62,24 +66,38 @@ function cleanHtml(raw: string) {
     .trim();
 }
 
-export function tokenizeAnalysisTerms(text:string){
+function normalizedMinimumTokenLength(value:unknown){
+  const minimum=Number(value);
+  return Number.isInteger(minimum)&&minimum>=1?minimum:1;
+}
+
+export function tokenizeAnalysisTerms(text:string,{keepNumbers=false,minimumTokenLength=1}:TokenizationOptions={}){
+  const minimumLength=normalizedMinimumTokenLength(minimumTokenLength);
   const matches = text.normalize("NFKC").toLowerCase().replaceAll("’", "'").match(/[a-záéíóúüñа-яёіїєґ0-9']+/gi) || [];
   return matches
     .map((token) => token.replace(/^'+|'+$/g, ""))
-    .filter((token) => token.length > 0 && !/^\d+$/.test(token));
+    .filter((token) => {
+      if(!token)return false;
+      if(/^\d+$/.test(token))return keepNumbers;
+      return token.length>=minimumLength;
+    });
 }
 
-function tokenize(text: string, lang: Lang, keepStopwords: boolean, stopwords = STOPWORDS[lang]) {
-  return tokenizeAnalysisTerms(text)
+function tokenize(text: string, lang: Lang, keepStopwords: boolean, stopwords = STOPWORDS[lang], options:TokenizationOptions={}) {
+  return tokenizeAnalysisTerms(text,options)
     .filter((token) => keepStopwords || !stopwords.has(token));
 }
 
-export function countAnalysisTokens(text:string,stopAfter=Number.MAX_SAFE_INTEGER){
+export function countAnalysisTokens(text:string,stopAfter=Number.MAX_SAFE_INTEGER,{keepNumbers=false,minimumTokenLength=1}:TokenizationOptions={}){
   let count=0;
+  const minimumLength=normalizedMinimumTokenLength(minimumTokenLength);
   const normalized=cleanHtml(text).normalize("NFKC").toLowerCase().replaceAll("’", "'");
   for(const match of normalized.matchAll(/[a-záéíóúüñа-яёіїєґ0-9']+/gi)){
     const token=match[0].replace(/^'+|'+$/g,"");
-    if(!token||/^\d+$/.test(token))continue;
+    if(!token)continue;
+    if(/^\d+$/.test(token)){
+      if(!keepNumbers)continue;
+    }else if(token.length<minimumLength)continue;
     count+=1;
     if(count>=stopAfter)break;
   }
@@ -100,7 +118,7 @@ function prepareRawTokens(input: AnalyzeInput) {
   const language = input.language === "auto" || !input.language ? detectLanguage(plain) : input.language;
   const suppliedStopwords = input.stopwordLists?.[language];
   const activeStopwords = suppliedStopwords ? new Set(suppliedStopwords.map((word) => word.trim().toLowerCase()).filter(Boolean)) : STOPWORDS[language];
-  const rawTokens = tokenize(plain, language, true, activeStopwords);
+  const rawTokens = tokenize(plain, language, true, activeStopwords,input);
   return { language, rawTokens, activeStopwords, stopwordCount:activeStopwords.size };
 }
 
@@ -154,7 +172,7 @@ export function analyzeKeywordDensity(input:AnalyzeInput,trackedInput:string|str
   const suppliedTerms=Array.isArray(trackedInput)?trackedInput:trackedInput.split(/[\n,;]+/);
   const trackedTerms=[...new Set(suppliedTerms.map(term=>term.trim()).filter(Boolean))].slice(0,100);
   const trackedKeywords=trackedTerms.map(term=>{
-    const phraseTokens=tokenize(term,language,true,activeStopwords);
+    const phraseTokens=tokenize(term,language,true,activeStopwords,input);
     const count=exactPhraseCount(rawTokens,phraseTokens);
     const share=wordCount?count/wordCount:0;
     return {term:phraseTokens.join(" ")||term.toLowerCase(),count,n:phraseTokens.length,percentage:share*100,per1000:share*1000};
@@ -497,7 +515,7 @@ export function analyzeText(input: AnalyzeInput) {
     .map((term) => term.trim().toLowerCase())
     .filter(Boolean);
   const focusCoverage = focusTerms.map((term) => {
-    const phraseTokens = tokenize(term, language, true, activeStopwords);
+    const phraseTokens = tokenize(term, language, true, activeStopwords,input);
     const count=exactPhraseCount(rawTokens,phraseTokens);
     return { term, count, per1000: rawTokens.length ? (count / rawTokens.length) * 1000 : 0 };
   });

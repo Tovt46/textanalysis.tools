@@ -42,8 +42,8 @@ type HomeCopy={
 const COPY:Record<UiLang,HomeCopy>={
   en:{
     eyebrow:"WEB · API · CLI · MCP",
-    title:"Free text analysis tools.",
-    accent:"For people, code, and AI agents.",
+    title:"Free Text Analysis Tools",
+    accent:"For Humans and AI Agents",
     intro:"Use transparent text analysis in the browser, automate it through a stateless API, or run the same deterministic methods locally from a terminal or AI agent.",
     primary:"Choose a tool",
     secondary:"For AI agents",
@@ -56,7 +56,7 @@ const COPY:Record<UiLang,HomeCopy>={
     audiences:[
       {label:"PEOPLE",title:"Analyze in the browser",description:"Load an example, paste your text, and inspect a transparent result without writing code.",cta:"Browse the eight tools"},
       {label:"DEVELOPERS",title:"Automate with API or CLI",description:"Use stable JSON endpoints or the local-first npm CLI in scripts, CI, and editorial workflows.",cta:"Read developer docs"},
-      {label:"AI AGENTS",title:"Connect deterministic tools",description:"Give agents typed, read-only analysis operations through MCP instead of asking them to estimate counts.",cta:"Open agent integrations"},
+      {label:"AI AGENTS",title:"Connect deterministic tools",description:"Works with MCP-compatible agents such as Codex, Claude Code, and Gemini CLI. They can call precise, read-only analysis tools instead of guessing word counts.",cta:"Open agent integrations"},
     ],
     status:"LIVE",
     available:"AVAILABLE NOW",
@@ -102,8 +102,8 @@ const COPY:Record<UiLang,HomeCopy>={
   },
   ru:{
     eyebrow:"WEB · API · CLI · MCP",
-    title:"Бесплатные инструменты анализа текста.",
-    accent:"Для людей, кода и AI-агентов.",
+    title:"Бесплатные инструменты анализа текста",
+    accent:"Для людей и AI-агентов",
     intro:"Используйте прозрачный анализ в браузере, автоматизируйте его через API или запускайте те же детерминированные методы локально из терминала и AI-агентов.",
     primary:"Выбрать инструмент",
     secondary:"Для AI-агентов",
@@ -116,7 +116,7 @@ const COPY:Record<UiLang,HomeCopy>={
     audiences:[
       {label:"ЛЮДЯМ",title:"Анализ в браузере",description:"Загрузите пример, вставьте текст и изучите прозрачный результат без программирования.",cta:"Открыть восемь инструментов"},
       {label:"РАЗРАБОТЧИКАМ",title:"Автоматизация через API или CLI",description:"Используйте стабильный JSON API или локальный npm CLI в скриптах, CI и редакционных процессах.",cta:"Открыть документацию"},
-      {label:"AI-АГЕНТАМ",title:"Детерминированные инструменты",description:"Подключайте типизированные read-only операции через MCP вместо приблизительных подсчётов моделью.",cta:"Открыть интеграции"},
+      {label:"AI-АГЕНТАМ",title:"Детерминированные инструменты",description:"Работает с MCP-совместимыми агентами, включая Codex, Claude Code и Gemini CLI. Они получают точные инструменты анализа вместо приблизительных подсчётов.",cta:"Открыть интеграции"},
     ],
     status:"РАБОТАЕТ",
     available:"ДОСТУПНО СЕЙЧАС",
@@ -162,8 +162,8 @@ const COPY:Record<UiLang,HomeCopy>={
   },
   uk:{
     eyebrow:"WEB · API · CLI · MCP",
-    title:"Безкоштовні інструменти аналізу тексту.",
-    accent:"Для людей, коду й AI-агентів.",
+    title:"Безкоштовні інструменти аналізу тексту",
+    accent:"Для людей та AI-агентів",
     intro:"Використовуйте прозорий аналіз у браузері, автоматизуйте його через API або запускайте ті самі детерміновані методи локально з термінала й AI-агентів.",
     primary:"Вибрати інструмент",
     secondary:"Для AI-агентів",
@@ -176,7 +176,7 @@ const COPY:Record<UiLang,HomeCopy>={
     audiences:[
       {label:"ЛЮДЯМ",title:"Аналіз у браузері",description:"Завантажте приклад, вставте текст і перегляньте прозорий результат без програмування.",cta:"Відкрити вісім інструментів"},
       {label:"РОЗРОБНИКАМ",title:"Автоматизація через API або CLI",description:"Використовуйте стабільний JSON API або локальний npm CLI у скриптах, CI та редакційних процесах.",cta:"Відкрити документацію"},
-      {label:"AI-АГЕНТАМ",title:"Детерміновані інструменти",description:"Підключайте типізовані read-only операції через MCP замість приблизних підрахунків моделлю.",cta:"Відкрити інтеграції"},
+      {label:"AI-АГЕНТАМ",title:"Детерміновані інструменти",description:"Працює з MCP-сумісними агентами, зокрема Codex, Claude Code і Gemini CLI. Вони отримують точні інструменти аналізу замість приблизних підрахунків.",cta:"Відкрити інтеграції"},
     ],
     status:"ПРАЦЮЄ",
     available:"ДОСТУПНО ЗАРАЗ",
@@ -222,8 +222,8 @@ const COPY:Record<UiLang,HomeCopy>={
   },
   es:{
     eyebrow:"WEB · API · CLI · MCP",
-    title:"Herramientas gratuitas de análisis de texto.",
-    accent:"Para personas, código y agentes de IA.",
+    title:"Herramientas gratuitas de análisis de texto",
+    accent:"Para personas y agentes de IA",
     intro:"Usa análisis transparente en el navegador, automatízalo mediante la API o ejecuta los mismos métodos deterministas localmente desde una terminal o un agente de IA.",
     primary:"Elegir una herramienta",
     secondary:"Para agentes de IA",
@@ -236,7 +236,7 @@ const COPY:Record<UiLang,HomeCopy>={
     audiences:[
       {label:"PERSONAS",title:"Analiza en el navegador",description:"Carga un ejemplo, pega tu texto y revisa un resultado transparente sin programar.",cta:"Ver las ocho herramientas"},
       {label:"DESARROLLADORES",title:"Automatiza con API o CLI",description:"Usa endpoints JSON estables o el CLI npm local en scripts, CI y flujos editoriales.",cta:"Leer la documentación"},
-      {label:"AGENTES DE IA",title:"Conecta herramientas deterministas",description:"Ofrece operaciones tipadas y de solo lectura mediante MCP en lugar de estimar recuentos con el modelo.",cta:"Abrir integraciones"},
+      {label:"AGENTES DE IA",title:"Conecta herramientas deterministas",description:"Funciona con agentes compatibles con MCP, como Codex, Claude Code y Gemini CLI. Pueden usar herramientas de análisis precisas y de solo lectura en lugar de estimar recuentos.",cta:"Abrir integraciones"},
     ],
     status:"ACTIVA",
     available:"DISPONIBLE AHORA",
@@ -320,7 +320,7 @@ export default function HomePage({locale}:{locale:UiLang}){
     <SiteHeader locale={locale} active="home" languagePaths={HOME_PATHS}/>
     <section className="home-hero">
       <p className="eyebrow">{copy.eyebrow}</p>
-      <h1>{copy.title}<br/><em>{copy.accent}</em></h1>
+      <div className="home-hero-heading"><h1>{copy.title}</h1><p className="home-hero-tagline">{copy.accent}</p></div>
       <div className="home-hero-aside">
         <p>{copy.intro}</p>
         <div className="home-actions"><a className="home-primary" href="#available-tools">{copy.primary}<span>↓</span></a><Link href={localizedPath(locale,"/agents")}>{copy.secondary}<span>→</span></Link></div>

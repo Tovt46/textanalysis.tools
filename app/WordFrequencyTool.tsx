@@ -36,6 +36,8 @@ export default function WordFrequencyTool({uiLang="en"}:{uiLang?:UiLang}){
   const [source,setSource]=useState("");
   const [language,setLanguage]=useState<"auto"|TextLanguage>("auto");
   const [keepStopwords,setKeepStopwords]=useState(false);
+  const [keepNumbers,setKeepNumbers]=useState(false);
+  const [minimumTokenLength,setMinimumTokenLength]=useState(1);
   const [editorLanguage,setEditorLanguage]=useState<TextLanguage>("en");
   const [stopwordLists,setStopwordLists]=useState<Record<TextLanguage,string>>({...DEFAULT_STOPWORD_TEXT});
   const [result,setResult]=useState<Analysis|null>(null);
@@ -90,13 +92,13 @@ export default function WordFrequencyTool({uiLang="en"}:{uiLang?:UiLang}){
       let next:Analysis;
       if(sourceType==="text"){
         validateBrowserInputs([source],uiLang);
-        next=await runWorker<Analysis>("word-frequency",{text:source,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang});
+        next=await runWorker<Analysis>("word-frequency",{text:source,language,keepStopwords,keepNumbers,minimumTokenLength,stopwordLists:parsedStopwords,uiLanguage:uiLang});
       }else{
         next=await runRemote(async signal=>{
           const response=await fetch("/api/v1/word-frequency",{
             method:"POST",signal,
             headers:{"Content-Type":"application/json","Accept":"application/json"},
-            body:JSON.stringify({sourceType,source,language,keepStopwords,stopwordLists:parsedStopwords}),
+            body:JSON.stringify({sourceType,source,language,keepStopwords,keepNumbers,minimumTokenLength,stopwordLists:parsedStopwords}),
           });
           const raw=await response.text();
           let payload:unknown;
@@ -171,6 +173,8 @@ export default function WordFrequencyTool({uiLang="en"}:{uiLang?:UiLang}){
         <div className="section-head simple"><div><span>02</span><h2>{copy.settings}</h2></div></div>
         <label className="field"><span>{copy.language}</span><select value={language} onChange={event=>changeLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option></select><small>{copy.languageHelp}</small></label>
         <label className="check"><input type="checkbox" checked={keepStopwords} onChange={event=>{cancel();setKeepStopwords(event.target.checked);}}/><span><b>{copy.keepStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
+        <label className="check"><input type="checkbox" checked={keepNumbers} onChange={event=>{cancel();setKeepNumbers(event.target.checked);}}/><span><b>{copy.keepNumbers}</b><small>{keepNumbers?copy.numbersOn:copy.numbersOff}</small></span></label>
+        <label className="field"><span>{copy.minimumTokenLength}</span><input type="number" min="1" max="100" value={minimumTokenLength} onChange={event=>{cancel();setMinimumTokenLength(Math.max(1,Math.min(100,Number(event.target.value)||1)));}}/><small>{copy.minimumTokenLengthHelp}</small></label>
         <details className="stopword-editor"><summary>{copy.editStops} <span>{parsedStopwords[editorLanguage].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru","es"] as TextLanguage[]).map(item=><button type="button" key={item} className={editorLanguage===item?"active":""} onClick={()=>changeEditorLanguage(item)}>{item.toUpperCase()}</button>)}</div><p>{copy.editorHelp}</p><textarea value={stopwordLists[editorLanguage]} onChange={event=>updateStopwords(event.target.value)} aria-label={`${copy.editAria}: ${editorLanguage.toUpperCase()}`}/><div className="stopword-actions"><small>{parsedStopwords[editorLanguage].length} {copy.saved}</small><button type="button" onClick={resetStopwords}>{copy.restore}</button></div></div></details>
         <button className="analyze-button" disabled={loading||!source.trim()}><span>{loading?copy.loading:copy.submit}</span><b>→</b></button>
         <AnalysisProgress active={loading} progress={progress} label={copy.loading}/>

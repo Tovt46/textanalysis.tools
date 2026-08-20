@@ -110,3 +110,18 @@ test("SDK keeps Spanish stop-word and focus phrase behavior",()=>{
   assert.equal(frequency.rows.some(row=>row.term==="el"),false);
   assert.equal(analysis.focusCoverage[0].count,2);
 });
+
+test("keepNumbers preserves short numeric tokens before applying minimum token length",()=>{
+  const input={
+    text:"4 4 4 alpha be c",
+    language:"en",
+    keepStopwords:true,
+    keepNumbers:true,
+    minimumTokenLength:3,
+  };
+  const result=analyzeWordFrequency(input);
+  assert.equal(result.rows[0].term,"4");
+  assert.equal(result.rows[0].count,3);
+  assert.deepEqual(result.rows.map(row=>row.term),["4","alpha"]);
+  assert.equal(countAnalysisTokens(input.text,Number.MAX_SAFE_INTEGER,input),4);
+});
