@@ -23,6 +23,7 @@ development roadmap.
 - stateless JSON API for text and public URLs
 - OpenAPI schema, `llms.txt`, sitemap, and multilingual SEO metadata
 - local stdio MCP server with eight read-only tools and structured results
+- WebMCP evidence workspace with a required 3–5 item agent review plan and human-only patch approval
 - importable ESM TypeScript API with bundled declarations
 - deterministic `textanalysis check` rules for local and CI workflows
 
@@ -156,6 +157,29 @@ The server exposes the same eight deterministic operations as read-only tools.
 See `/agents` for a copy-ready MCP client configuration and `/openapi.json`
 when an agent or application should use the public HTTP API instead.
 
+## WebMCP evidence workspace
+
+`/tools/evidence-workspace` is an English-first, browser-local workflow for
+human-agent document review. In a WebMCP-capable ChatGPT browser it registers
+five page tools: `create_analysis_workspace`, `analyze_workspace`,
+`submit_review_plan`, `apply_approved_patch`, and `export_analysis_report`.
+
+The agent can create a case and build a claim-aware decision brief: exact block
+changes, a ledger of prices, offers, ratings, advisor counts, availability,
+channels, guarantees, accuracy language, privacy, refunds, and social proof,
+plus a prioritized verification queue. Results are deterministic signals for
+review, not assertions that a claim is true or false. The agent must submit a
+complete set of 3–5 exact proposals with substantive structure, clarity, trust,
+or verification work and no more than one cleanup item. Approval is not
+a WebMCP tool. A person must approve or reject each patch in the visible page
+before `apply_approved_patch` can change the current revision. The same controls
+work manually when `document.modelContext` is unavailable. Workspace data is
+kept in browser session storage; there is no account, database, or server-side
+OpenAI call.
+
+Challenge materials: [implementation notes](WEBMCP-CHALLENGE.md) and the
+[Devpost copy plus under-three-minute demo script](WEBMCP-SUBMISSION.md).
+
 ## Main routes
 
 - `/`, `/uk`, `/ru`, `/es` — localized product homepages
@@ -174,6 +198,7 @@ when an agent or application should use the public HTTP API instead.
 - `/tools/word-frequency-counter` — searchable word counts for text and URLs
 - `/tools/keyword-density-checker` — 1–3-word density tables and A/B comparison
 - `/tools/text-analysis-comparison` — normalized A/B word and bigram changes
+- `/tools/evidence-workspace` — WebMCP-assisted evidence, patch review, and before/after export
 - `/tools/ngram-analyzer` — recurring phrase analysis for 1–10-word n-grams
 - `/tools/bag-of-words-generator` — bounded Bag-of-Words rows with counts and frequencies
 - `/tools/tf-idf-calculator` — corpus-aware TF-IDF scoring for 2–10 documents
@@ -226,7 +251,7 @@ After each deployment run:
 npm run smoke:production
 ```
 
-The smoke check verifies all 89 sitemap pages, a shared-cache lifetime of no
+The smoke check verifies all 90 sitemap pages, a shared-cache lifetime of no
 more than five minutes, the current navigation marker, every linked Next.js
 static asset (including JavaScript and CSS), the canonical `/en` redirect,
 versioned API operations, request IDs, health, and CORS preflight responses. Set `SMOKE_BASE_URL` to

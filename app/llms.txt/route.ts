@@ -38,6 +38,13 @@ The CLI accepts UTF-8 files, public HTTP(S) URLs, inline text, and piped stdin. 
 
 The npm package exposes the same eight deterministic analysis operations as read-only MCP tools over stdio. Start it with \`npx --yes textanalysis-tools mcp\`. Text arguments stay in the local process; explicit URL inputs require a request to that public page.
 
+## WebMCP Evidence Workspace
+
+- Human-agent workspace: ${SITE_URL}/tools/evidence-workspace
+- Page tools: create_analysis_workspace, analyze_workspace, submit_review_plan, apply_approved_patch, export_analysis_report
+
+The English workspace registers five tools through document.modelContext when WebMCP is available. analyze_workspace returns an exact block-change map, a commercial claim ledger, and a prioritized queue of changed or verification-sensitive claims. submit_review_plan then requires one complete set of 3–5 evidence-linked exact diffs, including substantive structure or clarity work and trust or verification work when claim risks exist; at most one item may be cleanup. These are review signals and proposals, not truth judgments. Human approval is intentionally not exposed as a tool: the reviewer must approve or reject each patch in the visible page before apply_approved_patch can succeed. The complete workflow also remains usable through normal page controls when WebMCP is unavailable.
+
 ## Main pages
 
 - Product homepage: ${SITE_URL}/
@@ -47,6 +54,7 @@ The npm package exposes the same eight deterministic analysis operations as read
 - Word frequency counter: ${SITE_URL}/tools/word-frequency-counter
 - Keyword density checker: ${SITE_URL}/tools/keyword-density-checker
 - Text analysis comparison: ${SITE_URL}/tools/text-analysis-comparison
+- Text Analysis Evidence Workspace: ${SITE_URL}/tools/evidence-workspace
 - N-gram analyzer: ${SITE_URL}/tools/ngram-analyzer
 - Bag of Words generator: ${SITE_URL}/tools/bag-of-words-generator
 - TF-IDF calculator: ${SITE_URL}/tools/tf-idf-calculator

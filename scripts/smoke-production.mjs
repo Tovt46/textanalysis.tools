@@ -11,7 +11,7 @@ const expectedRateLimitBackend=process.env.EXPECT_RATE_LIMIT_BACKEND?.trim();
 const expectedDeploymentRevision=process.env.EXPECT_DEPLOYMENT_REVISION?.trim().toLowerCase();
 const checkNpmRelease=process.env.CHECK_NPM_RELEASE==="1";
 const pageConcurrency=Number(process.env.SMOKE_PAGE_CONCURRENCY||8);
-const expectedSitemapPages=89;
+const expectedSitemapPages=90;
 const toolPages=[
   "/tools/bag-of-words-analyzer",
   "/tools/word-frequency-counter",
@@ -130,6 +130,16 @@ async function checkToolPages(){
     assert.match(html,/class="[^"]*analyze-button/i,`${path} did not render its analysis action.`);
     assertDeploySafeCache(response,path);
   }));
+}
+
+async function checkEvidenceWorkspace(){
+  const response=await request("/tools/evidence-workspace");
+  assert.equal(response.status,200,"Evidence Workspace must return HTTP 200.");
+  const html=await response.text();
+  assert.match(html,/Text Analysis Evidence Workspace/i,"Evidence Workspace has the wrong product identity.");
+  assert.match(html,/WEBMCP/i,"Evidence Workspace is missing its WebMCP explanation.");
+  assert.match(html,/data-testid="evidence-workspace"/i,"Evidence Workspace did not render its client workflow shell.");
+  assertDeploySafeCache(response,"Evidence Workspace");
 }
 
 async function checkAgentPage(){
@@ -306,6 +316,7 @@ async function checkApis(){
 await checkHomepage();
 await checkRedirect();
 await checkToolPages();
+await checkEvidenceWorkspace();
 await checkAgentPage();
 await checkSitemapPagesAndAssets();
 await checkHealth();

@@ -214,6 +214,7 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/bag-of-words-generator<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/tf-idf-calculator<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/text-similarity-calculator<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/evidence-workspace<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/how-to-calculate-word-frequency<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/keyword-density-formula<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/guides<\/loc>/);
@@ -230,7 +231,7 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/es\/tf-idf-formula<\/loc>/);
   assert.match(xml, /hreflang="es" href="https:\/\/textanalysis\.tools\/es\/tools\/tf-idf-calculator"/);
   assert.match(xml, /hreflang="x-default" href="https:\/\/textanalysis\.tools\/tools\/tf-idf-calculator"/);
-  assert.equal((xml.match(/<url>/g)||[]).length,89);
+  assert.equal((xml.match(/<url>/g)||[]).length,90);
 });
 
 test("documents every tool page as a free WebApplication", async () => {
@@ -243,6 +244,7 @@ test("documents every tool page as a free WebApplication", async () => {
     "/tools/bag-of-words-generator",
     "/tools/tf-idf-calculator",
     "/tools/text-similarity-calculator",
+    "/tools/evidence-workspace",
   ];
   const responses=await Promise.all(paths.map(path=>request(path,{headers:{accept:"text/html"}})));
   for(let index=0;index<responses.length;index+=1){
@@ -269,7 +271,7 @@ test("limits shared-cache lifetime for every sitemap page",async()=>{
   const sitemapResponse=await request("/sitemap.xml");
   const sitemap=await sitemapResponse.text();
   const paths=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]).pathname);
-  assert.equal(paths.length,89);
+  assert.equal(paths.length,90);
   for(let offset=0;offset<paths.length;offset+=12){
     await Promise.all(paths.slice(offset,offset+12).map(async path=>{
       const response=await request(path,{headers:{accept:"text/html"}});
@@ -788,6 +790,9 @@ test("renders versioned npm CLI documentation and advertises it in llms.txt", as
   const llmsText=await llms.text();
   assert.match(llmsText,/## Local CLI/);
   assert.match(llmsText,/## Local MCP/);
+  assert.match(llmsText,/## WebMCP Evidence Workspace/);
+  assert.match(llmsText,/create_analysis_workspace/);
+  assert.match(llmsText,/https:\/\/textanalysis\.tools\/tools\/evidence-workspace/);
   assert.match(llmsText,/https:\/\/textanalysis\.tools\/cli/);
   assert.match(llmsText,/https:\/\/textanalysis\.tools\/agents/);
   assert.match(llmsText,/https:\/\/textanalysis\.tools\/tf-idf-formula/);
