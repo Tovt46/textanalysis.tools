@@ -239,7 +239,6 @@ function claimSegments(text:string){
   return text.split(/\r?\n+/).flatMap(line=>{
     const clean=line.trim();
     if(!clean)return[];
-    if(clean.length<=280)return[clean];
     return clean.split(/(?<=[.!?])\s+/).map(item=>item.trim()).filter(Boolean);
   });
 }

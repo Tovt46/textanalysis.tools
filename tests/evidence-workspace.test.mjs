@@ -69,6 +69,16 @@ Privacy terms available`;
   assert.match(domain.exportWorkspaceReport(state,"markdown").content,/Commercial claim ledger/);
 });
 
+test("claim extraction does not join a number to readers in a later sentence",()=>{
+  const originalText="The starter plan costs $20 per month. Results arrive in 24 hours. Readers should verify every quoted price.";
+  const currentText="The starter plan costs $29 per month. Thousands of teams use the product. Readers should verify every quoted price.";
+  let state=domain.createAnalysisWorkspace({originalText,currentText,goal:"Verify changed commercial claims."},{id:"workspace-sentence-boundaries"});
+  state=domain.analyzeWorkspace(state,{id:"analysis-sentence-boundaries"});
+
+  assert.ok(state.analysis.claims.some(item=>item.category==="price"&&item.value==="$29"));
+  assert.equal(state.analysis.claims.some(item=>item.category==="advisor_count"),false);
+});
+
 test("a patch requires current evidence, a finding, and explicit human approval",()=>{
   let state=analyzedWorkspace();
   const evidenceRef=state.analysis.evidence.find(item=>item.label==="Focus: verify").id;
