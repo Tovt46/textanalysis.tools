@@ -1,4 +1,6 @@
 import Link from "next/link";
+import HomeIntegrations from "./HomeIntegrations";
+import "./home-redesign.css";
 import type { UiLang } from "./i18n";
 import { BOW_LANGUAGE_PATHS } from "./seo-metadata";
 import { SiteFooter,SiteHeader } from "./SiteChrome";
@@ -303,53 +305,93 @@ const GUIDE_PATHS=[
   "/compare-texts-by-word-frequency",
 ] as const;
 
-export default function HomePage({locale}:{locale:UiLang}){
-  const copy=COPY[locale];
-  const toolPaths=[
-    localizedPath(locale,TOOL_PATHS[0]),
-    localizedPath(locale,TOOL_PATHS[1]),
-    BOW_LANGUAGE_PATHS[locale],
-    localizedPath(locale,TOOL_PATHS[3]),
-    localizedPath(locale,TOOL_PATHS[4]),
-    localizedPath(locale,TOOL_PATHS[5]),
-    localizedPath(locale,TOOL_PATHS[6]),
-    localizedPath(locale,TOOL_PATHS[7]),
-  ];
-  const guidePaths=GUIDE_PATHS.map(path=>localizedPath(locale,path));
-  return <main className="home-page">
+type RedesignCopy = {
+  title: string; accent: string; intro: string; start: string; bringAgent: string;
+  demo: string; methods: string; workspace: string; explore: string; yourTools: string;
+  local: string; sample: string; words: string; word: string; count: string; density: string;
+  openSample: string; formula: string; steps: [string, string, string];
+  toolEye: string; toolTitle: string; toolIntro: string; agentEye: string;
+  agentTitle: string; agentAccent: string; agentIntro: string; developers: string;
+};
+const REDESIGN: Record<UiLang, RedesignCopy> = {
+  en: {
+    title: "Every word", accent: "in focus", intro: "Find the patterns in your writing. Explore words, compare drafts, and see exactly how the numbers add up.", start: "Start analyzing", bringAgent: "Bring your agent",
+    demo: "A clear view of what’s on the page", methods: "REAL WORDS. VISIBLE METHODS.", workspace: "Workspace", explore: "Explore the workspace", yourTools: "YOUR TOOLS", local: "Runs in your browser", sample: "English sample", words: "12 words", word: "WORD", count: "COUNT", density: "DENSITY", openSample: "Open word frequency", formula: "Density = occurrences ÷ 12 words × 100", steps: ["Paste your text", "Inspect the patterns", "Take the results with you"],
+    toolEye: "A TOOL FOR THE QUESTION", toolTitle: "Go beyond the word count", toolIntro: "A focused toolkit for the way you work with language.", agentEye: "ONE ENGINE. YOUR WAY OF WORKING.", agentTitle: "Good tools.", agentAccent: "For you & your agents.", agentIntro: "Use the browser when you want to look closer. Use API, CLI, or MCP when you want to go further. The same transparent methods, wherever you work.", developers: "Read API documentation",
+  },
+  ru: {
+    title: "Каждое слово", accent: "в фокусе", intro: "Увидьте закономерности в своём тексте. Изучайте слова, сравнивайте черновики и проверяйте, как складываются цифры.", start: "Анализировать текст", bringAgent: "Подключить агента",
+    demo: "Всё, что стоит за словами", methods: "РЕАЛЬНЫЕ СЛОВА. ПОНЯТНЫЕ МЕТОДЫ.", workspace: "Рабочая область", explore: "Открыть инструмент", yourTools: "ИНСТРУМЕНТЫ", local: "Работает в браузере", sample: "Пример на английском", words: "12 слов", word: "СЛОВО", count: "ЧИСЛО", density: "ПЛОТНОСТЬ", openSample: "Открыть счётчик слов", formula: "Плотность = вхождения ÷ 12 слов × 100", steps: ["Вставьте текст", "Изучите закономерности", "Сохраните результаты"],
+    toolEye: "ИНСТРУМЕНТ ПОД ЗАДАЧУ", toolTitle: "Больше, чем подсчёт слов", toolIntro: "Всё для внимательной работы с текстом — в одном наборе.", agentEye: "ОДИН ДВИЖОК. ВАШ СПОСОБ РАБОТЫ.", agentTitle: "Хорошие инструменты.", agentAccent: "Для вас и ваших агентов.", agentIntro: "Откройте браузер, чтобы рассмотреть детали. Подключите API, CLI или MCP, чтобы встроить анализ в свой процесс. Прозрачные методы в каждом интерфейсе.", developers: "Документация API",
+  },
+  uk: {
+    title: "Кожне слово", accent: "у фокусі", intro: "Помічайте закономірності у своєму тексті. Досліджуйте слова, порівнюйте чернетки та перевіряйте, як складаються цифри.", start: "Аналізувати текст", bringAgent: "Підключити агента",
+    demo: "Усе, що стоїть за словами", methods: "СПРАВЖНІ СЛОВА. ЗРОЗУМІЛІ МЕТОДИ.", workspace: "Робоча область", explore: "Відкрити інструмент", yourTools: "ІНСТРУМЕНТИ", local: "Працює у браузері", sample: "Приклад англійською", words: "12 слів", word: "СЛОВО", count: "КІЛЬКІСТЬ", density: "ЩІЛЬНІСТЬ", openSample: "Відкрити лічильник слів", formula: "Щільність = входження ÷ 12 слів × 100", steps: ["Вставте текст", "Дослідіть закономірності", "Збережіть результати"],
+    toolEye: "ІНСТРУМЕНТ ДЛЯ ВАШОЇ ЗАДАЧІ", toolTitle: "Більше, ніж підрахунок слів", toolIntro: "Усе для уважної роботи з текстом — в одному наборі.", agentEye: "ОДИН РУШІЙ. ВАШ СПОСІБ РОБОТИ.", agentTitle: "Хороші інструменти.", agentAccent: "Для вас і ваших агентів.", agentIntro: "Відкрийте браузер, щоб розглянути деталі. Підключіть API, CLI або MCP, щоб додати аналіз до свого процесу. Прозорі методи в кожному інтерфейсі.", developers: "Документація API",
+  },
+  es: {
+    title: "Cada palabra", accent: "en foco", intro: "Descubre los patrones de tu escritura. Explora palabras, compara borradores y comprueba cómo se calculan los resultados.", start: "Analizar texto", bringAgent: "Conecta tu agente",
+    demo: "Una mirada clara a lo que escribes", methods: "PALABRAS REALES. MÉTODOS VISIBLES.", workspace: "Espacio de trabajo", explore: "Abrir la herramienta", yourTools: "TUS HERRAMIENTAS", local: "Funciona en tu navegador", sample: "Ejemplo en inglés", words: "12 palabras", word: "PALABRA", count: "RECUENTO", density: "DENSIDAD", openSample: "Abrir frecuencia de palabras", formula: "Densidad = apariciones ÷ 12 palabras × 100", steps: ["Pega tu texto", "Explora los patrones", "Guarda los resultados"],
+    toolEye: "UNA HERRAMIENTA PARA CADA PREGUNTA", toolTitle: "Más allá de contar palabras", toolIntro: "Herramientas que se adaptan a tu forma de trabajar con el lenguaje.", agentEye: "UN MOTOR. TU FORMA DE TRABAJAR.", agentTitle: "Buenas herramientas.", agentAccent: "Para ti y tus agentes.", agentIntro: "Usa el navegador para ver los detalles. Usa API, CLI o MCP para integrar el análisis en tu trabajo. Los mismos métodos transparentes en cada interfaz.", developers: "Documentación de la API",
+  },
+};
+const TOOL_ICONS = ["▥", "⌗", "▦", "⇄", "≋", "[ ]", "ƒ", "◉"];
+const TOOL_ORDER = [0, 1, 4, 3, 2, 5, 6, 7];
+const SAMPLE_ROWS = [{ term: "clear", count: 2 }, { term: "good", count: 2 }, { term: "thinking", count: 2 }, { term: "writing", count: 2 }, { term: "makes", count: 1 }];
+
+export default function HomePage({ locale }: { locale: UiLang }) {
+  const copy = COPY[locale];
+  const design = REDESIGN[locale];
+  const toolPaths = TOOL_PATHS.map((path, index) => index === 2 ? BOW_LANGUAGE_PATHS[locale] : localizedPath(locale, path));
+  const guidePaths = GUIDE_PATHS.map(path => localizedPath(locale, path));
+  return <div className="redesign-home">
     <SiteHeader locale={locale} active="home" languagePaths={HOME_PATHS}/>
-    <section className="home-hero">
-      <p className="eyebrow">{copy.eyebrow}</p>
-      <div className="home-hero-heading"><h1>{copy.title}</h1><p className="home-hero-tagline">{copy.accent}</p></div>
-      <div className="home-hero-aside">
-        <p>{copy.intro}</p>
-        <div className="home-actions"><a className="home-primary" href="#available-tools">{copy.primary}<span>↓</span></a><Link href={localizedPath(locale,"/agents")}>{copy.secondary}<span>→</span></Link></div>
-        <span className="privacy-note"><b/>{copy.privacy}</span>
-      </div>
-    </section>
-    <section className="home-stats" aria-label={copy.facts}><div><strong>8</strong><span>{copy.live}</span></div><div><strong>4</strong><span>{copy.languages}</span></div><div><strong>0</strong><span>{copy.storage}</span></div></section>
-    <section className="home-audiences" aria-label={copy.audienceLabel}>
-      {copy.audiences.map((audience,index)=>{
-        const href=index===0?"#available-tools":localizedPath(locale,index===1?"/api-docs":"/agents");
-        return <Link href={href} key={audience.label} data-audience={index===0?"people":index===1?"developers":"agents"}><span>{audience.label}</span><h2>{audience.title}</h2><p>{audience.description}</p><strong>{audience.cta}<b>→</b></strong></Link>;
-      })}
-    </section>
-    <section className="home-section home-tools" id="available-tools" aria-labelledby="home-tools-title">
-      <div className="home-section-heading"><p className="section-number">{copy.available}</p><h2 id="home-tools-title">{copy.choose}</h2><p>{copy.chooseCopy}</p></div>
-      <div className="home-tool-grid">{copy.tools.map((tool,index)=><Link className={`home-tool-card tool-${index+1}`} href={toolPaths[index]} key={tool.name}><div className="home-tool-card-top"><span>0{index+1} · {copy.status}</span></div><h3>{tool.name}</h3><p>{tool.description}</p><strong>{copy.open}<b>→</b></strong></Link>)}</div>
-    </section>
-    <section className="home-method">
-      <div className="home-section-heading"><p className="section-number">{copy.methodEye}</p><h2>{copy.methodTitle}</h2></div>
-      <div className="home-method-grid">{copy.methods.map((method,index)=><article key={method.title}><span>0{index+1}</span><h3>{method.title}</h3><p>{method.description}</p></article>)}</div>
-    </section>
-    <section className="home-section home-guides">
-      <div className="home-section-heading"><p className="section-number">{copy.guidesEye}</p><h2>{copy.guidesTitle}</h2></div>
-      <div className="learning-grid">{copy.guides.map((guide,index)=><Link href={guidePaths[index]} key={guide.title}><span>{guide.label}</span><h3>{guide.title}</h3><p>{guide.description}</p></Link>)}</div>
-    </section>
-    <section className="home-api">
-      <div><p className="eyebrow">{copy.apiEye}</p><h2>{copy.apiTitle}</h2></div>
-      <div><p>{copy.apiCopy}</p><div className="home-developer-links"><Link href={localizedPath(locale,"/api-docs")}>{copy.apiCta}<span>→</span></Link><Link href={localizedPath(locale,"/cli")}>{copy.cliCta}<span>→</span></Link><Link href={localizedPath(locale,"/agents")}>{copy.agentCta}<span>→</span></Link></div></div>
-    </section>
+    <main id="main-content" className="rh-main">
+      <section className="rh-hero rh-container">
+        <div className="rh-hero-copy">
+          <p className="rh-eyebrow"><span className="rh-live-dot"/>{copy.title}</p>
+          <h1>{design.title}{" "}<br/><span>{design.accent}</span></h1>
+          <p className="rh-hero-description">{design.intro}</p>
+          <div className="rh-hero-actions"><Link className="rh-button rh-primary" data-audience="people" href={toolPaths[0]}>{design.start}<span aria-hidden="true">↗</span></Link><a className="rh-quiet-link" href="#agents">{design.bringAgent}<span aria-hidden="true">→</span></a></div>
+          <p className="home-hero-tagline">{copy.accent}</p>
+        </div>
+        <div className="rh-hero-art" aria-hidden="true">
+          <div className="rh-orbital"/><div className="rh-orbital rh-orbital-two"/>
+          <span className="rh-art-coordinate rh-art-top">INPUT / WORDS</span>
+          <div className="rh-art-word">fo<span>c</span>us<i/></div>
+          <div className="rh-art-baseline">{Array.from({ length: 12 }, (_, i) => <i key={i}/>)}</div>
+          <div className="rh-art-label"><span/>COUNTS → CONTEXT → CLARITY</div>
+          <span className="rh-art-coordinate rh-art-bottom">WEB · API · CLI · MCP</span>
+        </div>
+      </section>
+
+      <section className="rh-demo rh-container" aria-labelledby="home-demo-title">
+        <div className="rh-demo-caption"><h2 id="home-demo-title">{design.demo}</h2><span>{design.methods}</span></div>
+        <div className="rh-mini-app">
+          <div className="rh-mini-top"><div><span className="rh-small-symbol" aria-hidden="true">▥</span>{design.workspace}<span className="rh-slash">/</span><b>{copy.tools[0].name}</b></div><Link href={toolPaths[0]}>{design.explore}<span aria-hidden="true">↗</span></Link></div>
+          <div className="rh-mini-body">
+            <nav className="rh-mini-sidebar" aria-label={design.yourTools}><span className="rh-mini-label">{design.yourTools}</span>{[0, 1, 4, 3].map((index, position) => <Link key={index} className={`rh-mini-nav${position === 0 ? " selected" : ""}`} href={toolPaths[index]}><span aria-hidden="true">{TOOL_ICONS[index]}</span>{copy.tools[index].name}</Link>)}<p className="rh-mini-privacy"><span className="rh-live-dot"/>{design.local}</p></nav>
+            <div className="rh-mini-editor"><div className="rh-mini-editor-title"><span>sample.txt</span><span>{design.words}</span></div><p lang="en"><mark>Good</mark> writing starts with <mark>clear</mark> thinking.<br/><br/><mark>Clear</mark> thinking makes <mark>good</mark> writing possible.</p><Link className="rh-mini-open" href={toolPaths[0]}>{design.openSample}<span aria-hidden="true">→</span></Link></div>
+            <div className="rh-mini-results"><div className="rh-mini-result-heading"><span>{copy.tools[0].name}</span><span className="rh-mini-badge">{design.sample}</span></div><table><caption className="rh-sr-only">{design.demo}</caption><thead><tr><th scope="col">{design.word}</th><th scope="col">{design.count}</th><th scope="col">{design.density}</th></tr></thead><tbody>{SAMPLE_ROWS.map(row => <tr key={row.term}><th scope="row" lang="en">{row.term}</th><td>{row.count}</td><td>{new Intl.NumberFormat(locale, { maximumFractionDigits: 1, minimumFractionDigits: 1 }).format(row.count / 12 * 100)}%<i aria-hidden="true" style={{ width: row.count * 11.5 }}/></td></tr>)}</tbody></table><p className="rh-mini-formula">{design.formula}</p></div>
+          </div>
+        </div>
+        <div className="rh-demo-footnotes">{design.steps.map((step, index) => <span key={step}><b>0{index + 1}</b>{step}</span>)}</div>
+      </section>
+
+      <section className="rh-toolkit rh-container" id="available-tools" aria-labelledby="home-tools-title">
+        <div className="rh-section-heading"><div><p className="rh-eyebrow">{design.toolEye}</p><h2 id="home-tools-title">{design.toolTitle}</h2></div><p>{design.toolIntro}</p></div>
+        <div className="rh-tool-cards">{TOOL_ORDER.map(index => <Link className="rh-tool-card" href={toolPaths[index]} key={toolPaths[index]}><span className="rh-tool-icon" aria-hidden="true">{TOOL_ICONS[index]}</span><span className="rh-tool-arrow" aria-hidden="true">↗</span><h3>{copy.tools[index].name}</h3><p>{copy.tools[index].description}</p><span className="rh-tool-meta">{copy.open}<span aria-hidden="true">→</span></span></Link>)}</div>
+        <div className="rh-facts" aria-label={copy.facts}><div><strong>8</strong><span>{copy.live}</span></div><div><strong>4</strong><span>{copy.languages}</span></div><p>{copy.privacy}</p></div>
+      </section>
+
+      <section className="rh-agent-section rh-container" id="agents" aria-labelledby="home-agents-title">
+        <div className="rh-agent-copy"><p className="rh-eyebrow">{design.agentEye}</p><h2 id="home-agents-title">{design.agentTitle}<br/><span>{design.agentAccent}</span></h2><p>{design.agentIntro}</p><div className="rh-developer-links"><Link className="rh-agent-link" data-audience="agents" href={localizedPath(locale, "/agents")}><span>{copy.agentCta}<b aria-hidden="true">↗</b></span><small>Codex · Claude Code · Gemini CLI</small></Link><Link data-audience="developers" href={localizedPath(locale, "/api-docs")}>{design.developers}<span aria-hidden="true">→</span></Link></div></div>
+        <HomeIntegrations locale={locale}/>
+      </section>
+
+      <section className="rh-methods rh-container" aria-labelledby="home-methods-title"><div className="rh-section-heading"><div><p className="rh-eyebrow">{copy.methodEye}</p><h2 id="home-methods-title">{copy.methodTitle}</h2></div></div><div className="rh-method-grid">{copy.methods.map((method, index) => <article key={method.title}><span>0{index + 1}</span><h3>{method.title}</h3><p>{method.description}</p></article>)}</div></section>
+      <section className="rh-guides rh-container" aria-labelledby="home-guides-title"><div className="rh-section-heading"><div><p className="rh-eyebrow">{copy.guidesEye}</p><h2 id="home-guides-title">{copy.guidesTitle}</h2></div><Link className="rh-quiet-link" href={localizedPath(locale, "/guides")}>{copy.guidesEye}<span aria-hidden="true">↗</span></Link></div><div className="rh-guide-grid">{copy.guides.map((guide, index) => <Link href={guidePaths[index]} key={guide.title}><span>{guide.label}</span><h3>{guide.title}<b aria-hidden="true">↗</b></h3><p>{guide.description}</p></Link>)}</div></section>
+    </main>
     <SiteFooter locale={locale}/>
-  </main>;
+  </div>;
 }

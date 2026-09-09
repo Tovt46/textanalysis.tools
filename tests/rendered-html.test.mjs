@@ -48,7 +48,9 @@ test("renders the English product homepage with live tools and production SEO me
   assert.match(html, /<title>Free Text Analysis Tools for Humans and AI Agents<\/title>/i);
   assert.match(html, /rel="canonical" href="https:\/\/textanalysis\.tools\/?"/i);
   assert.match(html, /property="og:image" content="https:\/\/textanalysis\.tools\/og\.png"/i);
-  assert.match(html, /<h1>Free Text Analysis Tools<\/h1>/i);
+  const homepageHeading=html.match(/<h1(?:\s[^>]*)?>([\s\S]*?)<\/h1>/i)?.[1];
+  assert.ok(homepageHeading,"The homepage must render a primary heading.");
+  assert.equal(homepageHeading.replaceAll(/<[^>]+>/g," ").replaceAll(/\s+/g," ").trim(),"Every word in focus");
   assert.match(html, /class="home-hero-tagline">For Humans and AI Agents<\/p>/i);
   assert.match(html, /Codex.*Claude Code.*Gemini CLI/i);
   assert.doesNotMatch(html, /For people, code, and AI agents/i);

@@ -95,7 +95,7 @@ test("home exposes entry paths for people, developers, and AI agents",async({pag
   await page.goto("/");
   const heading=page.getByRole("heading",{level:1});
   const tagline=page.locator(".home-hero-tagline");
-  await expect(heading).toHaveText("Free Text Analysis Tools");
+  await expect(heading).toHaveText("Every word in focus",{useInnerText:true});
   await expect(tagline).toHaveText("For Humans and AI Agents");
   const [headingSize,taglineSize]=await Promise.all([
     heading.evaluate(element=>Number.parseFloat(getComputedStyle(element).fontSize)),
@@ -103,6 +103,7 @@ test("home exposes entry paths for people, developers, and AI agents",async({pag
   ]);
   expect(taglineSize).toBeLessThan(headingSize/2);
   await expect(page.locator('[data-audience="people"]')).toBeVisible();
+  await expect(page.locator('[data-audience="people"]')).toHaveAttribute("href","/tools/word-frequency-counter");
   await expect(page.locator('[data-audience="developers"]')).toHaveAttribute("href","/api-docs");
   const agents=page.locator('[data-audience="agents"]');
   await expect(agents).toHaveAttribute("href","/agents");
@@ -111,29 +112,65 @@ test("home exposes entry paths for people, developers, and AI agents",async({pag
   await expect(agents).toContainText("Gemini CLI");
 });
 
+test("light and dark theme choices persist between the homepage and tool workspace",async({page})=>{
+  await page.goto("/");
+  const documentRoot=page.locator("html");
+  const body=page.locator("body");
+  await expect(documentRoot).toHaveAttribute("data-theme","dark");
+  const darkBackground=await body.evaluate(element=>getComputedStyle(element).backgroundColor);
+
+  await page.getByRole("button",{name:"Switch to light theme",exact:true}).click();
+  await expect(documentRoot).toHaveAttribute("data-theme","light");
+  await expect(body).not.toHaveCSS("background-color",darkBackground);
+  const lightBackground=await body.evaluate(element=>getComputedStyle(element).backgroundColor);
+  await expect(page.getByRole("button",{name:"Switch to dark theme",exact:true})).toBeVisible();
+
+  await page.locator('[data-audience="people"]').click();
+  await expect(page).toHaveURL(/\/tools\/word-frequency-counter$/);
+  await expect(documentRoot).toHaveAttribute("data-theme","light");
+  await expect(body).toHaveCSS("background-color",lightBackground);
+  await page.reload();
+  await expect(documentRoot).toHaveAttribute("data-theme","light");
+  await expect(body).toHaveCSS("background-color",lightBackground);
+
+  await page.locator(".workspace-topbar").getByRole("button",{name:"Switch to dark theme",exact:true}).click();
+  await expect(documentRoot).toHaveAttribute("data-theme","dark");
+  await expect(body).toHaveCSS("background-color",darkBackground);
+  await page.goto("/");
+  await expect(documentRoot).toHaveAttribute("data-theme","dark");
+  await expect(body).toHaveCSS("background-color",darkBackground);
+  await expect(page.getByRole("button",{name:"Switch to light theme",exact:true})).toBeVisible();
+});
+
 test("large local analysis runs in a cancellable Worker and enforces the browser limit",async({page})=>{
   test.setTimeout(90_000);
   await page.goto("/tools/word-frequency-counter");
   const form=page.locator("form.frequency-workspace");
   const textarea=form.locator("textarea").first();
   const submit=form.locator(".analyze-button");
+  const results=page.locator("#frequency-results");
   const largeText=Array.from({length:42_000},(_,index)=>`term${index}`).join(" ");
   await textarea.fill(largeText);
 
   const workerStarted=page.waitForEvent("worker");
   await submit.click();
   const worker=await workerStarted;
-  expect(decodeURIComponent(worker.url())).toMatch(/browser-analysis[_-]worker/);
+  const workerUrl=new URL(worker.url());
+  expect(workerUrl.origin).toBe(new URL(page.url()).origin);
+  expect(workerUrl.pathname).toMatch(/\.m?js$/);
+  expect(await worker.evaluate(()=>typeof self.postMessage)).toBe("function");
 
   await textarea.fill("replacement text cancels the previous local analysis");
   await expect(form).toHaveAttribute("aria-busy","false");
-  await expect(page.locator("#frequency-results")).toHaveCount(0);
+  await expect(results.locator("tbody tr")).toHaveCount(0);
+  await expect(results.locator(".frequency-waiting")).toBeVisible();
 
   await textarea.fill("x".repeat(500_001));
   await submit.click();
   await expect(form.getByRole("alert")).toContainText("500,000");
   await expect(form).toHaveAttribute("aria-busy","false");
-  await expect(page.locator("#frequency-results")).toHaveCount(0);
+  await expect(results.locator("tbody tr")).toHaveCount(0);
+  await expect(results.locator(".frequency-waiting")).toBeVisible();
 });
 
 test("local Worker caps vocabulary rows and exposes partial-result metadata",async({page,context})=>{

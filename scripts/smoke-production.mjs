@@ -105,7 +105,9 @@ async function checkHomepage(){
   const response=await request("/");
   assert.equal(response.status,200,"The bare homepage must return HTTP 200.");
   const html=await response.text();
-  assert.match(html,/<h1>Free Text Analysis Tools<\/h1>/i,"The bare homepage is not the current product homepage.");
+  const homepageHeading=html.match(/<h1(?:\s[^>]*)?>([\s\S]*?)<\/h1>/i)?.[1];
+  assert.ok(homepageHeading,"The bare homepage must render a primary heading.");
+  assert.equal(homepageHeading.replaceAll(/<[^>]+>/g," ").replaceAll(/\s+/g," ").trim(),"Every word in focus","The bare homepage is not the current product homepage.");
   assert.doesNotMatch(html,/Free Bag of Words SEO analyzer\./i,"The bare homepage still contains the retired analyzer hero.");
   assertDeploySafeCache(response,"Homepage");
 
