@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../seo-metadata";
+import { SITE_MANIFEST,SITE_SOCIAL_IMAGE,SITE_ICONS,SITE_NAME,SITE_URL } from "../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../SiteChrome";
 import { languageAlternates,languagePaths } from "../../localization";
 
@@ -8,7 +8,7 @@ const path="/keyword-density-formula";
 const title="Keyword Density: Formula, Examples & Limitations";
 const description="Learn the keyword density formula, calculate words and phrases with examples, compare pages correctly, and understand why density is not a Google ranking score.";
 
-export const metadata:Metadata={metadataBase:new URL(SITE_URL),title,description,alternates:{canonical:path,languages:languageAlternates(path)},openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},twitter:{card:"summary",title,description},verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest"};
+export const metadata:Metadata={metadataBase:new URL(SITE_URL),title,description,alternates:{canonical:path,languages:languageAlternates(path)},openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US",images:[SITE_SOCIAL_IMAGE]},twitter:{card:"summary_large_image",title,description,images:[SITE_SOCIAL_IMAGE]},verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:SITE_MANIFEST};
 const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"Keyword Density: Formula, Examples and Limitations",description,inLanguage:"en",datePublished:"2026-07-22",dateModified:"2026-07-23",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:SITE_NAME}};
 
 export default function KeywordDensityFormulaPage(){

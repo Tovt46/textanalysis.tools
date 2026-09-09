@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_ICONS, SITE_NAME, SITE_URL } from "../../seo-metadata";
+import { SITE_MANIFEST,SITE_SOCIAL_IMAGE,SITE_ICONS, SITE_NAME, SITE_URL } from "../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../SiteChrome";
 
 const path="/bag-of-words-model";
@@ -12,11 +12,11 @@ export const metadata:Metadata={
   title,
   description,
   alternates:{canonical:path,languages:{en:path,ru:"/ru/bag-of-words-model",uk:"/uk/bag-of-words-model",es:"/es/bag-of-words-model","x-default":path}},
-  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US",alternateLocale:["ru_RU","uk_UA","es_ES"]},
-  twitter:{card:"summary",title,description},
+  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US",alternateLocale:["ru_RU","uk_UA","es_ES"],images:[SITE_SOCIAL_IMAGE]},
+  twitter:{card:"summary_large_image",title,description,images:[SITE_SOCIAL_IMAGE]},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
   icons:SITE_ICONS,
-  manifest:"/site.webmanifest",
+  manifest:SITE_MANIFEST,
 };
 
 const schema={

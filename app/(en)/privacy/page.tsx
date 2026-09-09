@@ -1,7 +1,7 @@
 import type {Metadata} from "next";
 import Link from "next/link";
 import {SiteFooter,SiteHeader} from "../../SiteChrome";
-import {SITE_ICONS,SITE_NAME,SITE_URL} from "../../seo-metadata";
+import {SITE_MANIFEST,SITE_SOCIAL_IMAGE,SITE_ICONS,SITE_NAME,SITE_URL} from "../../seo-metadata";
 
 const path="/privacy";
 const title="Privacy and Data Handling | Text Analysis Tools";
@@ -12,10 +12,10 @@ export const metadata:Metadata={
   title,
   description,
   alternates:{canonical:path},
-  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
-  twitter:{card:"summary",title,description},
+  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US",images:[SITE_SOCIAL_IMAGE]},
+  twitter:{card:"summary_large_image",title,description,images:[SITE_SOCIAL_IMAGE]},
   icons:SITE_ICONS,
-  manifest:"/site.webmanifest",
+  manifest:SITE_MANIFEST,
 };
 
 const handlingRows=[

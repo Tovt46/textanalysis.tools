@@ -33,7 +33,7 @@
 .tool-shell .word-frequency-workbench .tool-example-action button span{margin-left:7px;color:var(--accent)}
 .tool-shell .word-frequency-workbench .tool-example-action small{display:none}
 .tool-shell .word-frequency-workbench .frequency-submit-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
-.tool-shell .word-frequency-workbench .analyze-button{display:flex;align-items:center;justify-content:space-between;gap:13px;width:auto;min-height:37px;margin:0;padding:9px 12px;border:1px solid transparent;border-radius:5px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:550;line-height:1.45}
+.tool-shell .word-frequency-workbench .analyze-button{display:flex;align-items:center;justify-content:space-between;gap:13px;width:auto;min-height:37px;margin:0;padding:9px 12px;border:1px solid transparent;border-radius:5px;background:var(--action);color:var(--action-ink);font-size:11px;font-weight:550;line-height:1.45}
 .tool-shell .word-frequency-workbench .analyze-button b{font-size:15px;font-weight:400}
 .tool-shell .word-frequency-workbench .analyze-button:hover:not(:disabled){filter:brightness(1.06)}
 .tool-shell .word-frequency-workbench .frequency-cancel{border:0;background:transparent;color:var(--muted);font-size:11px;min-height:35px;padding:4px}
@@ -47,7 +47,7 @@
 .tool-shell .word-frequency-workbench .field select,.tool-shell .word-frequency-workbench .field input{height:37px;padding:7px 9px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);font-size:12px}
 .tool-shell .word-frequency-workbench .field small,.tool-shell .word-frequency-workbench .check small{color:var(--faint);font-size:10px;line-height:1.6}
 .tool-shell .word-frequency-workbench .frequency-settings-card .check{margin:0 0 18px;align-items:flex-start;gap:10px}
-.tool-shell .word-frequency-workbench .check input{flex:none;width:14px;height:14px;margin:2px 0 0;accent-color:var(--accent)}
+.tool-shell .word-frequency-workbench .check input{flex:none;width:14px;height:14px;margin:2px 0 0;accent-color:var(--action)}
 .tool-shell .word-frequency-workbench .check span{display:flex;flex-direction:column;gap:3px}
 .tool-shell .word-frequency-workbench .stopword-editor{margin:8px 0 0;border:1px solid var(--line);border-radius:5px;background:var(--bg)}
 .tool-shell .word-frequency-workbench .stopword-editor summary{padding:12px;color:var(--muted);font-size:11px;font-weight:450}
@@ -96,7 +96,7 @@
 .tool-shell .word-frequency-workbench .url-input{height:42px;margin:0 0 12px;padding:10px 12px;border-color:var(--line);border-radius:5px;background:var(--bg);color:var(--ink);font-size:13px}
 .tool-shell .word-frequency-workbench .url-help{min-height:234px;margin:0;color:var(--faint);font-size:12px;line-height:1.7}
 .tool-shell .word-frequency-workbench .analysis-progress{margin:0 18px 17px;color:var(--muted)}
-.tool-shell .word-frequency-workbench .analysis-progress progress{accent-color:var(--accent)}
+.tool-shell .word-frequency-workbench .analysis-progress progress{accent-color:var(--action)}
 .tool-shell .word-frequency-workbench .error,.tool-shell .word-frequency-workbench .partial-result-notice{margin:0;padding:13px 18px;border-top:1px solid var(--line);background:var(--accent-wash);color:var(--accent);font-size:11px;line-height:1.7}
 .tool-shell .word-frequency-workbench button:disabled,.tool-shell .word-frequency-workbench input:disabled{opacity:.4;cursor:default}
 .tool-shell .word-frequency-workbench button:focus-visible,.tool-shell .word-frequency-workbench summary:focus-visible,.tool-shell .word-frequency-workbench .table-scroll:focus-visible{outline:2px solid var(--accent);outline-offset:3px}

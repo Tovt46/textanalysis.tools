@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { languagePaths } from "../../../localization";
-import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../../seo-metadata";
+import { SITE_MANIFEST,SITE_SOCIAL_IMAGE,SITE_ICONS,SITE_NAME,SITE_URL } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
 
 const path="/es/bag-of-words-model";
@@ -9,7 +9,7 @@ const title="Modelo Bag of Words: cómo funciona en NLP | Text Analysis Tools";
 const description="Guía del modelo Bag of Words: tokenización, vectores, características, limitaciones, comparación con Word2Vec y uso en análisis de texto.";
 const languages={en:"/bag-of-words-model",ru:"/ru/bag-of-words-model",uk:"/uk/bag-of-words-model",es:path,"x-default":"/bag-of-words-model"};
 
-export const metadata:Metadata={metadataBase:new URL(SITE_URL),title,description,alternates:{canonical:path,languages},openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"es_ES",alternateLocale:["en_US","ru_RU","uk_UA"]},twitter:{card:"summary",title,description},verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest"};
+export const metadata:Metadata={metadataBase:new URL(SITE_URL),title,description,alternates:{canonical:path,languages},openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"es_ES",alternateLocale:["en_US","ru_RU","uk_UA"],images:[SITE_SOCIAL_IMAGE]},twitter:{card:"summary_large_image",title,description,images:[SITE_SOCIAL_IMAGE]},verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:SITE_MANIFEST};
 
 const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"Modelo Bag of Words: cómo funciona en NLP",description,inLanguage:"es",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:SITE_NAME,url:SITE_URL}};
 

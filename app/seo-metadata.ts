@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
 import type { UiLang } from "./i18n";
+import { BRAND_VERSION } from "./brand";
 
 export const SITE_URL = "https://textanalysis.tools";
 export const SITE_NAME = "Text Analysis Tools";
+export const SITE_MANIFEST = `/site.webmanifest?v=${BRAND_VERSION}`;
+export const SITE_SOCIAL_IMAGE = {
+  url:`/og.png?v=${BRAND_VERSION}`,
+  width:1200,
+  height:630,
+  alt:"textanalysis.tools — text analysis for humans and AI agents",
+};
 
 type ToolSchemaInput={
   name:string;
@@ -14,12 +22,13 @@ type ToolSchemaInput={
 
 export const SITE_ICONS:Metadata["icons"] = {
   icon:[
-    {url:"/favicon.ico"},
-    {url:"/favicon-16x16.png",sizes:"16x16",type:"image/png"},
-    {url:"/favicon-32x32.png",sizes:"32x32",type:"image/png"},
+    {url:`/favicon.ico?v=${BRAND_VERSION}`},
+    {url:`/favicon-16x16.png?v=${BRAND_VERSION}`,sizes:"16x16",type:"image/png"},
+    {url:`/favicon-32x32.png?v=${BRAND_VERSION}`,sizes:"32x32",type:"image/png"},
+    {url:`/favicon.svg?v=${BRAND_VERSION}`,sizes:"any",type:"image/svg+xml"},
   ],
-  shortcut:"/favicon.ico",
-  apple:[{url:"/apple-touch-icon.png",sizes:"180x180",type:"image/png"}],
+  shortcut:`/favicon.ico?v=${BRAND_VERSION}`,
+  apple:[{url:`/apple-touch-icon.png?v=${BRAND_VERSION}`,sizes:"180x180",type:"image/png"}],
 };
 
 const HOME_COPY: Record<UiLang,{ path:string; title:string; description:string; locale:string }> = {
@@ -99,12 +108,12 @@ function metadata(page:{path:string;title:string;description:string;locale:strin
       description:page.description,
       locale:page.locale,
       alternateLocale:["en_US","ru_RU","uk_UA","es_ES"].filter(locale=>locale!==page.locale),
-      images:[{url:"/og.png",width:1200,height:630,alt:imageAlt}],
+      images:[{...SITE_SOCIAL_IMAGE,alt:imageAlt}],
     },
-    twitter:{ card:"summary_large_image", title:page.title, description:page.description, images:["/og.png"] },
+    twitter:{ card:"summary_large_image", title:page.title, description:page.description, images:[{...SITE_SOCIAL_IMAGE,alt:imageAlt}] },
     verification:{ google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU" },
     icons:SITE_ICONS,
-    manifest:"/site.webmanifest",
+    manifest:SITE_MANIFEST,
   };
 }
 
@@ -140,7 +149,7 @@ export function toolWebApplicationSchema({
     }[inLanguage],
     isAccessibleForFree:true,
     offers:{"@type":"Offer",price:"0",priceCurrency:"USD"},
-    provider:{"@type":"Organization",name:SITE_NAME,url:SITE_URL},
+    provider:{"@type":"Organization",name:SITE_NAME,url:SITE_URL,logo:`${SITE_URL}/android-chrome-512x512.png?v=${BRAND_VERSION}`},
     featureList,
   };
 }
