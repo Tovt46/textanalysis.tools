@@ -47,7 +47,7 @@ test("renders the English product homepage with live tools and production SEO me
   const html = await response.text();
   assert.match(html, /<title>Free Text Analysis Tools for Humans and AI Agents<\/title>/i);
   assert.match(html, /rel="canonical" href="https:\/\/textanalysis\.tools\/?"/i);
-  assert.match(html, /property="og:image" content="https:\/\/textanalysis\.tools\/og\.png"/i);
+  assert.match(html, /property="og:image" content="https:\/\/textanalysis\.tools\/og\.png\?v=20260909"/i);
   const homepageHeading=html.match(/<h1(?:\s[^>]*)?>([\s\S]*?)<\/h1>/i)?.[1];
   assert.ok(homepageHeading,"The homepage must render a primary heading.");
   assert.equal(homepageHeading.replaceAll(/<[^>]+>/g," ").replaceAll(/\s+/g," ").trim(),"Every word in focus");

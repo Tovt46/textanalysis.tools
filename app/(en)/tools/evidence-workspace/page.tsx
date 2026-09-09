@@ -1,7 +1,7 @@
 import type {Metadata} from "next";
 import Link from "next/link";
 import EvidenceWorkspace from "../../../EvidenceWorkspace";
-import {SITE_ICONS,SITE_NAME,SITE_URL,toolWebApplicationSchema} from "../../../seo-metadata";
+import {SITE_MANIFEST,SITE_SOCIAL_IMAGE,SITE_ICONS,SITE_NAME,SITE_URL,toolWebApplicationSchema} from "../../../seo-metadata";
 import {SiteFooter,SiteHeader} from "../../../SiteChrome";
 
 const path="/tools/evidence-workspace";
@@ -11,9 +11,9 @@ const description="Compare two text versions, map commercial claim drift and ver
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
   alternates:{canonical:path},
-  openGraph:{type:"website",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
-  twitter:{card:"summary",title,description},
-  verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest",
+  openGraph:{type:"website",url:path,siteName:SITE_NAME,title,description,locale:"en_US",images:[SITE_SOCIAL_IMAGE]},
+  twitter:{card:"summary_large_image",title,description,images:[SITE_SOCIAL_IMAGE]},
+  verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:SITE_MANIFEST,
 };
 
 const schema=toolWebApplicationSchema({

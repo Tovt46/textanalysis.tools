@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { UiLang } from "./i18n";
-import { SITE_ICONS,SITE_NAME,SITE_URL } from "./seo-metadata";
+import { SITE_ICONS,SITE_MANIFEST,SITE_NAME,SITE_SOCIAL_IMAGE,SITE_URL } from "./seo-metadata";
 
 export const UI_LOCALES:Record<UiLang,string>={
   en:"en-US",
@@ -70,11 +70,12 @@ export function localizedMetadata({
       description,
       locale:OPEN_GRAPH_LOCALES[locale],
       alternateLocale:Object.entries(OPEN_GRAPH_LOCALES).filter(([key])=>key!==locale).map(([,value])=>value),
+      images:[SITE_SOCIAL_IMAGE],
     },
-    twitter:{card:"summary",title,description},
+    twitter:{card:"summary_large_image",title,description,images:[SITE_SOCIAL_IMAGE]},
     verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
     icons:SITE_ICONS,
-    manifest:"/site.webmanifest",
+    manifest:SITE_MANIFEST,
   };
 }
 

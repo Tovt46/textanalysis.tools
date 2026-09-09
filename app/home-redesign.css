@@ -10,7 +10,7 @@
 .redesign-home .rh-live-dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--green); vertical-align:middle; margin-right:8px; }
 .redesign-home .rh-button { min-height:45px; display:inline-flex; align-items:center; justify-content:center; gap:30px; border:1px solid var(--line); border-radius:7px; padding:11px 18px; font-size:13px; font-weight:500; transition:background .15s,transform .15s; }
 .redesign-home .rh-button:hover { transform:translateY(-1px); filter:brightness(1.07); }
-.redesign-home .rh-button.rh-primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); box-shadow:0 3px 0 #0001; }
+.redesign-home .rh-button.rh-primary { background:var(--action); border-color:var(--action); color:var(--action-ink); box-shadow:0 3px 0 #0001; }
 .redesign-home .rh-quiet-link { display:inline-flex; align-items:center; gap:24px; font-size:13px; }
 .redesign-home .rh-quiet-link:hover { color:var(--accent); }
 .redesign-home .rh-hero { display:grid; grid-template-columns:minmax(0,1.08fr) minmax(0,1fr); align-items:center; min-height:555px; padding-block:62px 55px; gap:52px; }
@@ -19,13 +19,13 @@
 .redesign-home .rh-hero-description { max-width:380px; font-size:17px; line-height:1.7; color:var(--muted); }
 .redesign-home .rh-hero-actions { display:flex; align-items:center; flex-wrap:wrap; gap:27px; margin-top:30px; }
 .redesign-home .home-hero-tagline { font-size:11px; line-height:1.6; font-weight:400; letter-spacing:0; color:var(--faint); margin-top:19px; }
-.redesign-home .rh-hero-art { height:375px; position:relative; display:flex; align-items:center; justify-content:center; isolation:isolate; overflow:hidden; background:radial-gradient(ellipse at 60% 48%,var(--accent-wash),transparent 68%); }
+.redesign-home .rh-hero-art { height:375px; position:relative; display:flex; align-items:center; justify-content:center; isolation:isolate; overflow:hidden; background:radial-gradient(ellipse at 60% 48%,var(--art-glow),transparent 68%); }
 .redesign-home .rh-hero-art:before { content:''; position:absolute; inset:19px 22px; border:1px solid var(--line); border-radius:50%; transform:rotate(-20deg); }
 .redesign-home .rh-orbital { position:absolute; width:470px; height:180px; border:1px solid var(--line); border-radius:50%; transform:rotate(-28deg); opacity:.55; }
 .redesign-home .rh-orbital-two { width:245px; height:425px; transform:rotate(35deg); opacity:.35; }
 .redesign-home .rh-art-word { font-size:clamp(80px,9.6vw,146px); font-weight:500; letter-spacing:-.11em; position:relative; line-height:1; padding-right:18px; }
 .redesign-home .rh-art-word>span { color:var(--accent); }
-.redesign-home .rh-art-word>i { height:.86em; display:inline-block; width:2px; background:var(--accent); vertical-align:-.05em; margin-left:19px; box-shadow:0 0 18px var(--accent); }
+.redesign-home .rh-art-word>i { height:.86em; display:inline-block; width:2px; background:var(--accent); vertical-align:-.05em; margin-left:19px; box-shadow:none; }
 .redesign-home .rh-art-coordinate { position:absolute; font:8px var(--font-geist-mono),monospace; letter-spacing:.16em; color:var(--faint); }
 .redesign-home .rh-art-top { left:38px; top:30px; }
 .redesign-home .rh-art-bottom { right:35px; bottom:29px; }

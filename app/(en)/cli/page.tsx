@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import cliPackage from "../../../packages/cli/package.json";
-import { SITE_ICONS,SITE_NAME,SITE_URL } from "../../seo-metadata";
+import { SITE_MANIFEST,SITE_SOCIAL_IMAGE,SITE_ICONS,SITE_NAME,SITE_URL } from "../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../SiteChrome";
 import { languageAlternates,languagePaths } from "../../localization";
 
@@ -12,9 +12,9 @@ const description="Install the textanalysis-tools npm package for local analysis
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
   alternates:{canonical:path,languages:languageAlternates(path)},
-  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
-  twitter:{card:"summary",title,description},
-  verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:"/site.webmanifest",
+  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"en_US",images:[SITE_SOCIAL_IMAGE]},
+  twitter:{card:"summary_large_image",title,description,images:[SITE_SOCIAL_IMAGE]},
+  verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},icons:SITE_ICONS,manifest:SITE_MANIFEST,
 };
 
 const schema={

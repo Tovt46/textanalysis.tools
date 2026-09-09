@@ -1,6 +1,7 @@
 import type { UiLang } from "./i18n";
 import { languagePaths,localizedPath } from "./localization";
 import ThemeToggle from "./ThemeToggle";
+import BrandSymbol from "./BrandSymbol";
 
 type ActiveNav="home"|"tools"|"guide"|"api"|"agents"|"privacy";
 type LanguagePaths=Record<UiLang,string>;
@@ -36,7 +37,7 @@ function navItems(locale:UiLang){
 }
 
 export function SiteBrand({locale}:{locale:UiLang}){
-  return <a className="brand" href={ROOT_LANGUAGE_PATHS[locale]} aria-label={`textanalysis.tools — ${LABELS[locale].home}`}><span className="brand-bars" aria-hidden="true"><i/><i/><i/><i/></span><span>textanalysis<span className="brand-tail">.tools</span></span></a>;
+  return <a className="brand" href={ROOT_LANGUAGE_PATHS[locale]} aria-label={`textanalysis.tools — ${LABELS[locale].home}`}><BrandSymbol/><span className="brand-wordmark">textanalysis<span className="brand-dot">.</span>tools</span></a>;
 }
 
 export function SiteHeader({locale,active,languagePaths=ROOT_LANGUAGE_PATHS}:{locale:UiLang;active:ActiveNav;languagePaths?:LanguagePaths}){

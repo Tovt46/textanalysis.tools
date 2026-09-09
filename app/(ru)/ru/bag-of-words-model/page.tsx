@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_ICONS, SITE_NAME, SITE_URL } from "../../../seo-metadata";
+import { SITE_MANIFEST,SITE_SOCIAL_IMAGE,SITE_ICONS, SITE_NAME, SITE_URL } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
 
 const path="/ru/bag-of-words-model";
@@ -11,11 +11,11 @@ const languages={en:"/bag-of-words-model",ru:path,uk:"/uk/bag-of-words-model",es
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),title,description,
   alternates:{canonical:path,languages},
-  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"ru_RU",alternateLocale:["en_US","uk_UA","es_ES"]},
-  twitter:{card:"summary",title,description},
+  openGraph:{type:"article",url:path,siteName:SITE_NAME,title,description,locale:"ru_RU",alternateLocale:["en_US","uk_UA","es_ES"],images:[SITE_SOCIAL_IMAGE]},
+  twitter:{card:"summary_large_image",title,description,images:[SITE_SOCIAL_IMAGE]},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
   icons:SITE_ICONS,
-  manifest:"/site.webmanifest",
+  manifest:SITE_MANIFEST,
 };
 
 const schema={"@context":"https://schema.org","@type":"TechArticle",headline:"Модель Bag of Words: как она работает в NLP",description,inLanguage:"ru",mainEntityOfPage:`${SITE_URL}${path}`,publisher:{"@type":"Organization",name:SITE_NAME}};

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import BagOfWordsGeneratorTool from "../../../BagOfWordsGeneratorTool";
-import { SITE_ICONS,SITE_NAME,SITE_URL,toolWebApplicationSchema } from "../../../seo-metadata";
+import { SITE_MANIFEST,SITE_SOCIAL_IMAGE,SITE_ICONS,SITE_NAME,SITE_URL,toolWebApplicationSchema } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
 import { languageAlternates,languagePaths } from "../../../localization";
 
@@ -14,11 +14,11 @@ export const metadata:Metadata={
   title,
   description,
   alternates:{canonical:path,languages:languageAlternates(path)},
-  openGraph:{type:"website",url:path,siteName:SITE_NAME,title,description,locale:"en_US"},
-  twitter:{card:"summary",title,description},
+  openGraph:{type:"website",url:path,siteName:SITE_NAME,title,description,locale:"en_US",images:[SITE_SOCIAL_IMAGE]},
+  twitter:{card:"summary_large_image",title,description,images:[SITE_SOCIAL_IMAGE]},
   verification:{google:"EHMYng8W4h43q3z7zXOfviXigYp0afX9hUkmWwzykdU"},
   icons:SITE_ICONS,
-  manifest:"/site.webmanifest",
+  manifest:SITE_MANIFEST,
 };
 
 const schema=toolWebApplicationSchema({
