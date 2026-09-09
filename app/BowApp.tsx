@@ -111,14 +111,18 @@ function ZipfChart({ rows, t }: { rows:ZipfRow[]; t:T }) {
       const maxRank=Math.max(...rows.map(r=>r.rank)),maxCount=Math.max(...rows.map(r=>r.actualCount));
       const x=(rank:number)=>p.l+(Math.log(rank)/Math.log(maxRank))*pw;
       const y=(count:number)=>p.t+(1-Math.log(Math.max(count,1))/Math.log(Math.max(maxCount,2)))*ph;
-      ctx.clearRect(0,0,w,h); ctx.strokeStyle="#dfe3dc"; ctx.lineWidth=1;
+      const palette=getComputedStyle(document.documentElement);
+      const tone=(name:string)=>palette.getPropertyValue(name).trim();
+      ctx.clearRect(0,0,w,h); ctx.strokeStyle=tone("--line"); ctx.lineWidth=1;
       for(let i=0;i<=4;i++){const gy=p.t+(ph/4)*i;ctx.beginPath();ctx.moveTo(p.l,gy);ctx.lineTo(w-p.r,gy);ctx.stroke();}
       const line=(key:"actualCount"|"expectedCount",color:string,dash=false)=>{ctx.beginPath();rows.forEach((r,i)=>i?ctx.lineTo(x(r.rank),y(r[key])):ctx.moveTo(x(r.rank),y(r[key])));ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash(dash?[6,5]:[]);ctx.stroke();ctx.setLineDash([]);};
-      line("expectedCount","#a6ada3",true); line("actualCount","#175c4b");
-      rows.forEach(r=>{ctx.beginPath();ctx.arc(x(r.rank),y(r.actualCount),3,0,Math.PI*2);ctx.fillStyle=r.zone==="above"?"#d26b45":"#175c4b";ctx.fill();});
-      ctx.fillStyle="#747b74";ctx.font="10px ui-monospace, monospace";ctx.fillText(t("frequency"),2,12);ctx.fillText(t("rankArrow"),w-62,h-6);
+      line("expectedCount",tone("--faint"),true); line("actualCount",tone("--accent"));
+      rows.forEach(r=>{ctx.beginPath();ctx.arc(x(r.rank),y(r.actualCount),3,0,Math.PI*2);ctx.fillStyle=r.zone==="above"?tone("--warning"):tone("--accent");ctx.fill();});
+      ctx.fillStyle=tone("--muted");ctx.font="10px ui-monospace, monospace";ctx.fillText(t("frequency"),2,12);ctx.fillText(t("rankArrow"),w-62,h-6);
     };
-    draw(); const observer=new ResizeObserver(draw);observer.observe(canvas);return()=>observer.disconnect();
+    draw(); const observer=new ResizeObserver(draw);observer.observe(canvas);
+    const themeObserver=new MutationObserver(draw);themeObserver.observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+    return()=>{observer.disconnect();themeObserver.disconnect();};
   },[rows,t]);
   return <canvas ref={ref} className="chart compact-chart" aria-label={t("chartTitle")} />;
 }

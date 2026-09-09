@@ -1,5 +1,6 @@
 import type { UiLang } from "./i18n";
 import { languagePaths,localizedPath } from "./localization";
+import ThemeToggle from "./ThemeToggle";
 
 type ActiveNav="home"|"tools"|"guide"|"api"|"agents"|"privacy";
 type LanguagePaths=Record<UiLang,string>;
@@ -34,19 +35,23 @@ function navItems(locale:UiLang){
   ];
 }
 
+export function SiteBrand({locale}:{locale:UiLang}){
+  return <a className="brand" href={ROOT_LANGUAGE_PATHS[locale]} aria-label={`textanalysis.tools — ${LABELS[locale].home}`}><span className="brand-bars" aria-hidden="true"><i/><i/><i/><i/></span><span>textanalysis<span className="brand-tail">.tools</span></span></a>;
+}
+
 export function SiteHeader({locale,active,languagePaths=ROOT_LANGUAGE_PATHS}:{locale:UiLang;active:ActiveNav;languagePaths?:LanguagePaths}){
   const labels=LABELS[locale];
   return <header className="topbar site-header">
-    <a className="brand" href={ROOT_LANGUAGE_PATHS[locale]}><span className="brand-mark" aria-hidden="true"/><span>TEXT ANALYSIS TOOLS</span></a>
+    <SiteBrand locale={locale}/>
     <nav className="site-nav" aria-label={labels.navigation}>{navItems(locale).map(item=><a key={item.key} className={active===item.key?"active":undefined} href={item.href} aria-current={active===item.key?"page":undefined}>{item.label}</a>)}</nav>
-    <div className="header-tools"><nav className="ui-languages" aria-label={labels.languages}>{(["en","uk","ru","es"] as UiLang[]).map(language=><a key={language} href={languagePaths[language]} className={locale===language?"active":undefined} hrefLang={language} lang={language} aria-current={locale===language?"page":undefined}>{language==="uk"?"UKR":language.toUpperCase()}</a>)}</nav></div>
+    <div className="header-tools"><nav className="ui-languages" aria-label={labels.languages}>{(["en","uk","ru","es"] as UiLang[]).map(language=><a key={language} href={languagePaths[language]} className={locale===language?"active":undefined} hrefLang={language} lang={language} aria-current={locale===language?"page":undefined}>{language==="uk"?"UKR":language.toUpperCase()}</a>)}</nav><ThemeToggle locale={locale}/></div>
   </header>;
 }
 
 export function SiteFooter({locale}:{locale:UiLang}){
   const labels=LABELS[locale];
   return <footer className="site-footer">
-    <div className="site-footer-brand"><a className="brand" href={ROOT_LANGUAGE_PATHS[locale]}><span className="brand-mark" aria-hidden="true"/><span>TEXT ANALYSIS TOOLS</span></a><p>{labels.privacy}</p></div>
+    <div className="site-footer-brand"><SiteBrand locale={locale}/><p>{labels.privacy}</p></div>
     <div className="site-footer-links"><nav className="site-footer-nav" aria-label={labels.navigation}>{navItems(locale).map(item=><a key={item.key} href={item.href}>{item.label}</a>)}</nav><nav className="site-footer-utility" aria-label={labels.resources}><a href={localizedPath(locale,"/cli")}>CLI</a><a href={localizedPath(locale,"/agents")}>{labels.agents}</a><a href="/privacy">Privacy</a><a href="/openapi.json">OpenAPI</a><a href="/llms.txt">llms.txt</a><a href="/sitemap.xml">{labels.sitemap}</a></nav></div>
   </footer>;
 }
