@@ -85,11 +85,11 @@ test("validates DNS again before following every redirect",async()=>{
   assert.equal(fetches,1);
 });
 
-test("maps DNS failures to the existing structured fetch error",async()=>{
+test("maps DNS failures to a dedicated remote DNS error",async()=>{
   await expectApiError(api.fetchRemoteText("https://missing.example/",{
     lookup:async()=>{throw new Error("ENOTFOUND");},
     fetchImpl:async()=>textResponse(),
-  }),{status:422,code:"FETCH_FAILED"});
+  }),{status:422,code:"REMOTE_DNS_LOOKUP_FAILED"});
 });
 
 test("applies one deadline to DNS resolution",async()=>{
@@ -98,7 +98,7 @@ test("applies one deadline to DNS resolution",async()=>{
     timeoutMs:25,
     lookup:async()=>new Promise(()=>{}),
     fetchImpl:async()=>textResponse(),
-  }),{status:422,code:"FETCH_FAILED"});
+  }),{status:422,code:"REMOTE_FETCH_TIMEOUT"});
   assert.ok(Date.now()-startedAt<500);
 });
 
@@ -211,6 +211,19 @@ test("streams a normal chunked text response",async()=>{
     fetchImpl:async()=>new Response(body,{headers:{"content-type":"text/html"}}),
   });
   assert.equal(text,"alpha beta");
+});
+
+test("maps remote stream read failure to a remote content read failure",async()=>{
+  const body=new ReadableStream({
+    start(){},
+    pull(controller){
+      controller.error(new Error("network reset"));
+    },
+  });
+  await expectApiError(api.fetchRemoteText("https://public.example/read",{
+    lookup:publicLookup,
+    fetchImpl:async()=>new Response(body,{headers:{"content-type":"text/plain"}}),
+  }),{status:422,code:"REMOTE_CONTENT_READ_FAILED"});
 });
 
 test("aborts a chunked response as soon as its byte cap is exceeded",async()=>{
