@@ -18,6 +18,7 @@ import {
   runComparisonAnalysis,
   runPublicAnalysis,
 } from "../app/lib/public-api";
+import {DEFAULT_TEXT_SIMILARITY_TOP} from "../app/lib/api-result-limits";
 
 const languageSchema=z.enum(["auto","en","ru","uk","es"]).default("auto");
 const resultLanguageSchema=z.enum(["en","ru","uk","es"]);
@@ -27,7 +28,7 @@ const sourceSchema=z.object({
   language:languageSchema,
   keepStopwords:z.boolean().default(false),
 });
-const topSchema=z.number().int().min(1).max(100).default(50);
+const topSchema=z.number().int().min(1).max(100).default(DEFAULT_TEXT_SIMILARITY_TOP);
 const analysisTopSchema=z.number().int().min(5).max(100).default(20);
 const nonNegativeIntegerSchema=z.number().int().nonnegative();
 const positiveIntegerSchema=z.number().int().positive();
@@ -296,7 +297,17 @@ function success<T>(result:T){
   };
 }
 
-const networkErrorCodes=new Set(["FETCH_FAILED","TOO_MANY_REDIRECTS","UNSUPPORTED_REMOTE_TYPE"]);
+const networkErrorCodes=new Set([
+  "FETCH_FAILED",
+  "TOO_MANY_REDIRECTS",
+  "REMOTE_FETCH_TIMEOUT",
+  "REMOTE_DNS_LOOKUP_FAILED",
+  "REMOTE_REQUEST_FAILED",
+  "REMOTE_CONTENT_READ_FAILED",
+  "REMOTE_INVALID_REDIRECT",
+  "REMOTE_HTTP_ERROR",
+  "UNSUPPORTED_REMOTE_TYPE",
+]);
 
 function structuredError(error:unknown):ToolError{
   if(error instanceof PublicApiError){
@@ -310,7 +321,12 @@ function structuredError(error:unknown):ToolError{
       code:error.code,
       status:error.status,
       category,
-      retryable:error.status===429||error.status>=500||error.code==="FETCH_FAILED",
+      retryable:error.retryable??(error.status===429||error.status>=500||[
+        "FETCH_FAILED",
+        "REMOTE_FETCH_TIMEOUT",
+        "REMOTE_REQUEST_FAILED",
+        "REMOTE_CONTENT_READ_FAILED",
+      ].includes(error.code)),
       message:error.message,
       ...(error.retryAfter?{retryAfter:error.retryAfter}:{}),
     };

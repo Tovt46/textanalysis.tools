@@ -1,0 +1,30 @@
+{
+  "verifiedOn": "2026-09-09",
+  "responsive": [
+    {
+      "allLoaded": true,
+      "duplicateIds": [],
+      "images": 12,
+      "scrollWidth": 1440,
+      "width": 1440
+    },
+    {
+      "allLoaded": true,
+      "scrollWidth": 768,
+      "width": 768
+    },
+    {
+      "allLoaded": true,
+      "scrollWidth": 390,
+      "scrollY": 0,
+      "width": 390
+    }
+  ],
+  "interactions": {
+    "filters": "all=8, style=3, workflow=5",
+    "desktopLightbox": "opened, image loaded, Escape closed, focus restored",
+    "mobileLightbox": "opened, image loaded, button closed, focus restored",
+    "accent": "green switch and aria-pressed verified"
+  },
+  "scope": "Standalone moodboard only. No product build or deployment tested."
+}

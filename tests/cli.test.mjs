@@ -262,8 +262,119 @@ test("TF-IDF, similarity, and comparison accept file pairs",async(t)=>{
   assert.equal(limitedComparisonData.comparison.returnedRows.wordChanges,5);
   assert.equal(limitedComparisonData.comparison.truncated,true);
   assert.equal(limitedComparisonData.comparison.totalRows.wordChanges,14);
-  assert.equal("hasMore" in limitedComparisonData.comparison,false);
-  assert.equal("nextOffset" in limitedComparisonData.comparison,false);
+  assert.equal(limitedComparisonData.comparison.offset,0);
+  assert.equal(limitedComparisonData.comparison.hasMore,true);
+  assert.equal(limitedComparisonData.comparison.nextOffset,5);
+});
+
+test("comparison pagination visits every row once even when one table ends first",async()=>{
+  const args=[
+    "compare",
+    "--text-a","alpha beta alpha gamma alpha delta alpha epsilon",
+    "--text-b","beta gamma beta delta beta epsilon beta alpha",
+    "--language","en","--keep-stopwords","--format","json",
+  ];
+  const [fullResponse,firstResponse]=await Promise.all([
+    runCli([...args,"--top","100"]),
+    runCli([...args,"--top","5"]),
+  ]);
+  for(const response of [fullResponse,firstResponse]) assert.equal(response.code,0,response.stderr);
+  const full=JSON.parse(fullResponse.stdout).comparison;
+  const first=JSON.parse(firstResponse.stdout).comparison;
+  const totalRows={wordChanges:5,bigramChanges:13};
+  assert.deepEqual(full.totalRows,totalRows);
+  assert.deepEqual(first.totalRows,totalRows);
+  assert.deepEqual(first.returnedRows,{wordChanges:5,bigramChanges:5});
+  assert.equal(first.offset,0);
+  assert.equal(first.nextOffset,5);
+  assert.equal(first.hasMore,true);
+  assert.equal(first.truncated,true);
+
+  const nextResponse=await runCli([...args,"--top","5","--offset",String(first.nextOffset)]);
+  assert.equal(nextResponse.code,0,nextResponse.stderr);
+  const next=JSON.parse(nextResponse.stdout).comparison;
+  assert.deepEqual(next.totalRows,totalRows);
+  assert.deepEqual(next.returnedRows,{wordChanges:0,bigramChanges:5});
+  assert.equal(next.offset,5);
+  assert.equal(next.nextOffset,10);
+  assert.equal(next.hasMore,true);
+  assert.equal(next.truncated,true);
+
+  const lastResponse=await runCli([...args,"--top","5","--offset",String(next.nextOffset)]);
+  assert.equal(lastResponse.code,0,lastResponse.stderr);
+  const last=JSON.parse(lastResponse.stdout).comparison;
+  assert.deepEqual(last.totalRows,totalRows);
+  assert.deepEqual(last.returnedRows,{wordChanges:0,bigramChanges:3});
+  assert.equal(last.offset,10);
+  assert.equal(last.nextOffset,null);
+  assert.equal(last.hasMore,false);
+  assert.equal(last.truncated,false);
+
+  for(const table of ["wordChanges","bigramChanges"]){
+    const rows=[...first[table],...next[table],...last[table]];
+    assert.deepEqual(rows,full[table]);
+    assert.equal(new Set(rows.map(row=>row.term)).size,totalRows[table]);
+  }
+
+  for(const offset of [13,250_000]){
+    const response=await runCli([...args,"--top","5","--offset",String(offset)]);
+    assert.equal(response.code,0,response.stderr);
+    const comparison=JSON.parse(response.stdout).comparison;
+    assert.deepEqual(comparison.totalRows,totalRows);
+    assert.deepEqual(comparison.returnedRows,{wordChanges:0,bigramChanges:0});
+    assert.deepEqual(comparison.wordChanges,[]);
+    assert.deepEqual(comparison.bigramChanges,[]);
+    assert.equal(comparison.offset,offset);
+    assert.equal(comparison.nextOffset,null);
+    assert.equal(comparison.hasMore,false);
+    assert.equal(comparison.truncated,false);
+  }
+});
+
+test("comparison filters minimum counts before applying page offsets",async()=>{
+  const shared="alpha beta gamma delta epsilon zeta eta theta ".repeat(3);
+  const args=[
+    "compare","--text-a",`${shared}rareone raretwo`,"--text-b",`${shared}rarethree rarefour`,
+    "--language","en","--keep-stopwords","--format","json",
+  ];
+  const [unfilteredResponse,firstResponse,nextResponse]=await Promise.all([
+    runCli([...args,"--top","100"]),
+    runCli([...args,"--min-count","2","--top","5"]),
+    runCli([...args,"--min-count","2","--top","5","--offset","5"]),
+  ]);
+  for(const response of [unfilteredResponse,firstResponse,nextResponse]) assert.equal(response.code,0,response.stderr);
+  const unfiltered=JSON.parse(unfilteredResponse.stdout).comparison;
+  const first=JSON.parse(firstResponse.stdout).comparison;
+  const next=JSON.parse(nextResponse.stdout).comparison;
+  for(const table of ["wordChanges","bigramChanges"]){
+    assert.ok(unfiltered[table].slice(0,5).some(row=>Math.max(row.countA,row.countB)<2));
+    const eligible=unfiltered[table].filter(row=>Math.max(row.countA,row.countB)>=2);
+    assert.equal(eligible.length,8);
+    assert.equal(first.totalRows[table],8);
+    assert.equal(next.totalRows[table],8);
+    assert.equal(first.returnedRows[table],5);
+    assert.equal(next.returnedRows[table],3);
+    assert.deepEqual(first[table],eligible.slice(0,5));
+    assert.deepEqual(next[table],eligible.slice(5));
+  }
+  assert.equal(first.nextOffset,5);
+  assert.equal(first.hasMore,true);
+  assert.equal(next.offset,5);
+  assert.equal(next.nextOffset,null);
+  assert.equal(next.hasMore,false);
+  assert.equal(next.truncated,false);
+});
+
+test("comparison rejects offsets outside the supported integer range",async()=>{
+  for(const offset of ["-1","1.5","250001","NaN","Infinity"]){
+    const response=await runCli([
+      "compare","--text-a","alpha beta gamma","--text-b","alpha beta delta","--offset",offset,
+    ]);
+    assert.equal(response.code,2,`offset ${offset}: ${response.stderr}`);
+    assert.match(response.stderr,/Option --offset must be an integer between 0 and 250000/);
+    assert.match(response.stderr,/Run textanalysis --help for usage/);
+    assert.equal(response.stdout,"");
+  }
 });
 
 test("similarity CSV includes the score even when documents have no shared terms",async()=>{

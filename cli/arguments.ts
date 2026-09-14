@@ -54,6 +54,7 @@ const VALUE_OPTIONS=new Set([
   "format",
   "output",
   "top",
+  "offset",
   "focus",
   "tolerance",
   "keywords",

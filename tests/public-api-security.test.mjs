@@ -92,6 +92,25 @@ test("maps DNS failures to a dedicated remote DNS error",async()=>{
   }),{status:422,code:"REMOTE_DNS_LOOKUP_FAILED"});
 });
 
+test("preserves a structured safety rejection from DNS lookup",async()=>{
+  const failure=new api.PublicApiError(400,"UNSAFE_URL","Blocked by the resolver.");
+  let fetched=false;
+  await assert.rejects(api.fetchRemoteText("https://blocked.example/",{
+    lookup:async()=>{throw failure;},
+    fetchImpl:async()=>{fetched=true;return textResponse();},
+  }),error=>error===failure);
+  assert.equal(fetched,false);
+});
+
+test("classifies DNS abort and timeout exceptions as remote timeouts",async()=>{
+  for(const name of ["AbortError","TimeoutError"]){
+    await expectApiError(api.fetchRemoteText("https://slow.example/",{
+      lookup:async()=>{throw new DOMException("DNS lookup interrupted",name);},
+      fetchImpl:async()=>textResponse(),
+    }),{status:422,code:"REMOTE_FETCH_TIMEOUT"});
+  }
+});
+
 test("applies one deadline to DNS resolution",async()=>{
   const startedAt=Date.now();
   await expectApiError(api.fetchRemoteText("https://slow.example/",{
@@ -132,6 +151,33 @@ test("falls back across validated public addresses within one budget",async()=>{
   assert.equal(budget.snapshot().requests,2);
 });
 
+test("reports a request failure after every validated address fails",async()=>{
+  const attempted=[];
+  const budget=api.createRemoteFetchBudget({maxRequests:2,maxBytes:20,maxConcurrent:1});
+  await expectApiError(api.fetchRemoteText("https://unreachable.example/",{
+    budget,
+    lookup:async()=>[
+      {address:"93.184.216.34",family:4},
+      {address:"93.184.216.35",family:4},
+    ],
+    fetchImpl:async(_url,_init,address)=>{
+      attempted.push(address.address);
+      throw new Error("ECONNREFUSED");
+    },
+  }),{status:422,code:"REMOTE_REQUEST_FAILED"});
+  assert.deepEqual(attempted,["93.184.216.34","93.184.216.35"]);
+  assert.equal(budget.snapshot().requests,2);
+});
+
+test("classifies transport abort and timeout exceptions as remote timeouts",async()=>{
+  for(const name of ["AbortError","TimeoutError"]){
+    await expectApiError(api.fetchRemoteText("https://slow.example/",{
+      lookup:publicLookup,
+      fetchImpl:async()=>{throw new DOMException("Remote request interrupted",name);},
+    }),{status:422,code:"REMOTE_FETCH_TIMEOUT"});
+  }
+});
+
 test("a blackholed address cannot consume the whole multi-address deadline",async()=>{
   const attempted=[];
   const startedAt=Date.now();
@@ -152,6 +198,48 @@ test("a blackholed address cannot consume the whole multi-address deadline",asyn
   assert.equal(text,"fallback after timeout");
   assert.deepEqual(attempted,["93.184.216.34","93.184.216.35"]);
   assert.ok(Date.now()-startedAt<500);
+});
+
+test("rejects missing and malformed redirect locations and cancels their bodies",async()=>{
+  for(const location of [undefined,"http://["]){
+    let cancelled=false;
+    let fetched=0;
+    await expectApiError(api.fetchRemoteText("https://public.example/start",{
+      lookup:publicLookup,
+      fetchImpl:async()=>{
+        fetched+=1;
+        return new Response(new ReadableStream({cancel(){cancelled=true;}}),{
+          status:302,
+          headers:location===undefined?{}:{location},
+        });
+      },
+    }),{status:422,code:"REMOTE_INVALID_REDIRECT"});
+    assert.equal(fetched,1);
+    assert.equal(cancelled,true);
+  }
+});
+
+test("preserves URL policy errors for unsupported redirect protocols",async()=>{
+  await expectApiError(api.fetchRemoteText("https://public.example/start",{
+    lookup:publicLookup,
+    fetchImpl:async()=>new Response(null,{status:302,headers:{location:"ftp://public.example/file"}}),
+  }),{status:400,code:"INVALID_URL"});
+});
+
+test("reports upstream HTTP errors and cancels their response bodies",async()=>{
+  for(const status of [403,503]){
+    let cancelled=false;
+    await assert.rejects(api.fetchRemoteText("https://public.example/error",{
+      lookup:publicLookup,
+      fetchImpl:async()=>new Response(new ReadableStream({cancel(){cancelled=true;}}),{status}),
+    }),error=>{
+      assert.equal(error?.status,422);
+      assert.equal(error?.code,"REMOTE_HTTP_ERROR");
+      assert.match(error.message,new RegExp(`HTTP ${status}`));
+      return true;
+    });
+    assert.equal(cancelled,true);
+  }
 });
 
 test("the default pinned transport preserves the original Host header",async t=>{
@@ -226,6 +314,36 @@ test("maps remote stream read failure to a remote content read failure",async()=
   }),{status:422,code:"REMOTE_CONTENT_READ_FAILED"});
 });
 
+test("classifies stream abort and timeout exceptions as remote timeouts",async()=>{
+  for(const name of ["AbortError","TimeoutError"]){
+    const body=new ReadableStream({
+      pull(controller){controller.error(new DOMException("Remote body interrupted",name));},
+    });
+    await expectApiError(api.fetchRemoteText("https://public.example/read",{
+      lookup:publicLookup,
+      fetchImpl:async()=>new Response(body,{headers:{"content-type":"text/plain"}}),
+    }),{status:422,code:"REMOTE_FETCH_TIMEOUT"});
+  }
+});
+
+test("a stalled response deadline cancels its reader and releases the remote budget",{timeout:1_000},async()=>{
+  let cancelled=false;
+  const budget=api.createRemoteFetchBudget({maxRequests:1,maxBytes:20,maxConcurrent:1});
+  const body=new ReadableStream({
+    start(controller){controller.enqueue(Uint8Array.of(97));},
+    cancel(){cancelled=true;},
+  });
+  await expectApiError(api.fetchRemoteText("https://public.example/stalled",{
+    timeoutMs:50,
+    budget,
+    lookup:publicLookup,
+    fetchImpl:async()=>new Response(body,{headers:{"content-type":"text/plain"}}),
+  }),{status:422,code:"REMOTE_FETCH_TIMEOUT"});
+  assert.equal(cancelled,true,"The timed-out stream must be cancelled through its locked reader.");
+  assert.equal(budget.snapshot().active,0);
+  assert.equal(budget.snapshot().bytes,1);
+});
+
 test("aborts a chunked response as soon as its byte cap is exceeded",async()=>{
   let cancelled=false;
   const body=new ReadableStream({
@@ -253,6 +371,34 @@ test("rejects an oversized declared body without reading it",async()=>{
     }}),
   }),{status:413,code:"REMOTE_CONTENT_TOO_LARGE"});
   assert.equal(cancelled,true);
+});
+
+test("known remote failures do not wait for stuck response cancellation",{timeout:1_000},async()=>{
+  const cases=[
+    {responseStatus:200,headers:{"content-length":String(api.MAX_REMOTE_BYTES+1)},status:413,code:"REMOTE_CONTENT_TOO_LARGE"},
+    {responseStatus:200,headers:{"content-length":"1"},exhausted:true,status:413,code:"REMOTE_BUDGET_EXCEEDED"},
+    {responseStatus:503,status:422,code:"REMOTE_HTTP_ERROR"},
+    {responseStatus:302,status:422,code:"REMOTE_INVALID_REDIRECT"},
+  ];
+  for(const entry of cases){
+    let cancelled=false;
+    const budget=api.createRemoteFetchBudget({maxRequests:1,maxBytes:20,maxConcurrent:1});
+    if(entry.exhausted)budget.consumeBytes(20);
+    const body=new ReadableStream({
+      cancel(){cancelled=true;return new Promise(()=>{});},
+    });
+    await expectApiError(api.fetchRemoteText("https://public.example/rejected",{
+      timeoutMs:50,
+      budget,
+      lookup:publicLookup,
+      fetchImpl:async()=>new Response(body,{
+        status:entry.responseStatus,
+        headers:{"content-type":"text/plain",...entry.headers},
+      }),
+    }),entry);
+    assert.equal(cancelled,true,`${entry.code} must attempt body cancellation.`);
+    assert.equal(budget.snapshot().active,0,`${entry.code} must release the remote budget.`);
+  }
 });
 
 test("a shared remote budget bounds requests, bytes, and concurrency",async()=>{

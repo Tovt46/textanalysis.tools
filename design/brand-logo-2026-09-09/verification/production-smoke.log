@@ -1,0 +1,5 @@
+
+> textanalysis-tools@0.2.0 smoke:production
+> node scripts/smoke-production.mjs
+
+Production smoke check passed for https://textanalysis.tools: 90 pages, linked assets, 8 tools, 8 APIs, and health.

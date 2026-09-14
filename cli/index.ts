@@ -47,7 +47,7 @@ Command options:
   analyze:     --focus <phrases> --tolerance <1.2-4>
   frequency:   --min-count <number>
   density:     --keywords <comma-separated phrases> --min-count <number>
-  compare:     --focus <phrases> --tolerance <1.2-4> --min-count <number>
+  compare:     --focus <phrases> --tolerance <1.2-4> --min-count <number> --offset <number>
   ngram:       --size <1-10> --min-count <number>
   bow:         --min-count <number>
   similarity:  --method <bow|tfidf>

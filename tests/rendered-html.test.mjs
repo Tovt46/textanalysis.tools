@@ -217,6 +217,7 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/tf-idf-calculator<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/text-similarity-calculator<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/evidence-workspace<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/text-contract<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/how-to-calculate-word-frequency<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/keyword-density-formula<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/guides<\/loc>/);
@@ -233,7 +234,7 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/es\/tf-idf-formula<\/loc>/);
   assert.match(xml, /hreflang="es" href="https:\/\/textanalysis\.tools\/es\/tools\/tf-idf-calculator"/);
   assert.match(xml, /hreflang="x-default" href="https:\/\/textanalysis\.tools\/tools\/tf-idf-calculator"/);
-  assert.equal((xml.match(/<url>/g)||[]).length,90);
+  assert.equal((xml.match(/<url>/g)||[]).length,91);
 });
 
 test("documents every tool page as a free WebApplication", async () => {
@@ -247,6 +248,7 @@ test("documents every tool page as a free WebApplication", async () => {
     "/tools/tf-idf-calculator",
     "/tools/text-similarity-calculator",
     "/tools/evidence-workspace",
+    "/tools/text-contract",
   ];
   const responses=await Promise.all(paths.map(path=>request(path,{headers:{accept:"text/html"}})));
   for(let index=0;index<responses.length;index+=1){
@@ -254,6 +256,29 @@ test("documents every tool page as a free WebApplication", async () => {
     const html=await responses[index].text();
     assert.match(html,/"@type":"WebApplication"/i,paths[index]);
     assert.match(html,/"isAccessibleForFree":true/i,paths[index]);
+  }
+});
+
+test("renders TextContract as a one-source approval workflow and keeps paid routes same-origin",async()=>{
+  const page=await request("/tools/text-contract",{headers:{accept:"text/html"}});
+  assert.equal(page.status,200);
+  const html=await page.text();
+  assert.match(html,/<title>TextContract Agent \| Guarded AI Rewriting<\/title>/i);
+  assert.match(html,/rel="canonical" href="https:\/\/textanalysis\.tools\/tools\/text-contract"/i);
+  assert.match(html,/data-testid="text-contract-workspace"/i);
+  assert.match(html,/ONE SOURCE · ONE BRIEF/i);
+  assert.doesNotMatch(html,/Draft 2|paste four|four versions/i);
+  assert.match(html,/"@type":"WebApplication"/i);
+
+  for(const endpoint of ["compile","generate","evaluate"]){
+    const path=`/api/text-contract/${endpoint}`;
+    const metadata=await request(path);
+    assert.equal(metadata.status,200,path);
+    assert.equal(metadata.headers.get("access-control-allow-origin"),null,path);
+    const denied=await request(path,{method:"POST",headers:{"content-type":"application/json","sec-fetch-site":"cross-site"},body:"{}"});
+    assert.equal(denied.status,403,path);
+    assert.equal(denied.headers.get("access-control-allow-origin"),null,path);
+    assert.equal((await denied.json()).error.code,"CROSS_ORIGIN_DENIED",path);
   }
 });
 
@@ -273,7 +298,7 @@ test("limits shared-cache lifetime for every sitemap page",async()=>{
   const sitemapResponse=await request("/sitemap.xml");
   const sitemap=await sitemapResponse.text();
   const paths=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]).pathname);
-  assert.equal(paths.length,90);
+  assert.equal(paths.length,91);
   for(let offset=0;offset<paths.length;offset+=12){
     await Promise.all(paths.slice(offset,offset+12).map(async path=>{
       const response=await request(path,{headers:{accept:"text/html"}});
@@ -793,8 +818,10 @@ test("renders versioned npm CLI documentation and advertises it in llms.txt", as
   assert.match(llmsText,/## Local CLI/);
   assert.match(llmsText,/## Local MCP/);
   assert.match(llmsText,/## WebMCP Evidence Workspace/);
+  assert.match(llmsText,/## TextContract Agent/);
   assert.match(llmsText,/create_analysis_workspace/);
   assert.match(llmsText,/https:\/\/textanalysis\.tools\/tools\/evidence-workspace/);
+  assert.match(llmsText,/https:\/\/textanalysis\.tools\/tools\/text-contract/);
   assert.match(llmsText,/https:\/\/textanalysis\.tools\/cli/);
   assert.match(llmsText,/https:\/\/textanalysis\.tools\/agents/);
   assert.match(llmsText,/https:\/\/textanalysis\.tools\/tf-idf-formula/);

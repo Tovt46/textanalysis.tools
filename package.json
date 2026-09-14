@@ -25,15 +25,21 @@
     "test:package": "npm run cli:build --silent && node scripts/test-package.mjs",
     "test:browser": "playwright test -c playwright.config.mjs",
     "release:verify": "node scripts/verify-release.mjs",
+    "smoke:text-contract-providers": "node scripts/smoke-text-contract-providers.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "prepack": "npm run cli:build",
     "smoke:hostinger": "SMOKE_BASE_URL=http://127.0.0.1:3000 node scripts/smoke-production.mjs",
     "smoke:production": "node scripts/smoke-production.mjs",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "eval:text-contract": "node scripts/evaluate-text-contract-fixtures.mjs"
   },
   "dependencies": {
+    "@tavily/core": "^0.7.9",
+    "diff": "^9.0.0",
     "drizzle-orm": "0.45.2",
     "next": "16.3.4",
+    "openai": "^7.9.0",
+    "parse5": "^8.0.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

@@ -1,0 +1,373 @@
+
+> textanalysis-tools@0.2.0 test
+> npm run cli:build && npm run build:hostinger && node scripts/run-rendered-tests.mjs
+
+
+> textanalysis-tools@0.2.0 cli:build
+> npm run cli:build:bin --silent && npm run sdk:build --silent
+
+
+  packages/cli/dist/textanalysis.mjs  185.6kb
+
+⚡ Done in 13ms
+
+  packages/cli/dist/index.mjs  91.3kb
+
+⚡ Done in 3ms
+
+> textanalysis-tools@0.2.0 build:hostinger
+> next build
+
+▲ Next.js 16.3.4 (Turbopack)
+✓ Running next.config.ts took 28ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 736ms
+  Running TypeScript ...
+  Finished TypeScript in 1308ms ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/107) ...
+  Generating static pages using 7 workers (26/107) 
+  Generating static pages using 7 workers (53/107) 
+  Generating static pages using 7 workers (80/107) 
+✓ Generating static pages using 7 workers (107/107) in 490ms
+  Finalizing page optimization ...
+
+Route (app)                               Revalidate  Expire
+┌ ○ /                                             5m      5m
+├ ○ /_not-found
+├ ○ /agents                                       5m      5m
+├ ○ /api-docs                                     5m      5m
+├ ƒ /api/health
+├ ƒ /api/v1/analyze
+├ ƒ /api/v1/bag-of-words
+├ ƒ /api/v1/compare
+├ ƒ /api/v1/keyword-density
+├ ƒ /api/v1/ngram-analyzer
+├ ƒ /api/v1/similarity
+├ ƒ /api/v1/tf-idf
+├ ƒ /api/v1/word-frequency
+├ ○ /bag-of-words-model                           5m      5m
+├ ○ /bag-of-words-vs-word2vec                     5m      5m
+├ ○ /cli                                          5m      5m
+├ ○ /compare-texts-by-word-frequency              5m      5m
+├ ○ /cosine-similarity-for-text                   5m      5m
+├ ƒ /en
+├ ○ /es                                           5m      5m
+├   /es/[slug]
+│ ├ ● /es/guides                                  5m      5m
+│ ├ ● /es/api-docs                                5m      5m
+│ ├ ● /es/cli                                     5m      5m
+│ └ ● [+8 more paths]
+├ ○ /es/bag-of-words-model                        5m      5m
+├ ○ /es/tools                                     5m      5m
+├   /es/tools/[slug]
+│ ├ ● /es/tools/word-frequency-counter            5m      5m
+│ ├ ● /es/tools/keyword-density-checker           5m      5m
+│ ├ ● /es/tools/text-analysis-comparison          5m      5m
+│ └ ● [+4 more paths]
+├ ○ /es/tools/bag-of-words-analyzer               5m      5m
+├ ○ /guides                                       5m      5m
+├ ○ /how-to-calculate-word-frequency              5m      5m
+├ ○ /keyword-density-formula                      5m      5m
+├ ƒ /llms.txt
+├ ƒ /openapi.json
+├ ○ /privacy                                      5m      5m
+├ ○ /robots.txt
+├ ○ /ru                                           5m      5m
+├   /ru/[slug]
+│ ├ ● /ru/guides                                  5m      5m
+│ ├ ● /ru/api-docs                                5m      5m
+│ ├ ● /ru/cli                                     5m      5m
+│ └ ● [+8 more paths]
+├ ○ /ru/bag-of-words-model                        5m      5m
+├ ○ /ru/tools                                     5m      5m
+├   /ru/tools/[slug]
+│ ├ ● /ru/tools/word-frequency-counter            5m      5m
+│ ├ ● /ru/tools/keyword-density-checker           5m      5m
+│ ├ ● /ru/tools/text-analysis-comparison          5m      5m
+│ └ ● [+4 more paths]
+├ ○ /ru/tools/bag-of-words-analyzer               5m      5m
+├ ƒ /site.webmanifest
+├ ○ /sitemap.xml
+├ ƒ /textanalysis-config.schema.json
+├ ○ /tf-idf-formula                               5m      5m
+├ ○ /tools                                        5m      5m
+├ ○ /tools/bag-of-words-analyzer                  5m      5m
+├ ○ /tools/bag-of-words-generator                 5m      5m
+├ ○ /tools/evidence-workspace                     5m      5m
+├ ○ /tools/keyword-density-checker                5m      5m
+├ ○ /tools/ngram-analyzer                         5m      5m
+├ ○ /tools/text-analysis-comparison               5m      5m
+├ ○ /tools/text-similarity-calculator             5m      5m
+├ ○ /tools/tf-idf-calculator                      5m      5m
+├ ○ /tools/word-frequency-counter                 5m      5m
+├ ○ /uk                                           5m      5m
+├   /uk/[slug]
+│ ├ ● /uk/guides                                  5m      5m
+│ ├ ● /uk/api-docs                                5m      5m
+│ ├ ● /uk/cli                                     5m      5m
+│ └ ● [+8 more paths]
+├ ○ /uk/bag-of-words-model                        5m      5m
+├ ○ /uk/tools                                     5m      5m
+├   /uk/tools/[slug]
+│ ├ ● /uk/tools/word-frequency-counter            5m      5m
+│ ├ ● /uk/tools/keyword-density-checker           5m      5m
+│ ├ ● /uk/tools/text-analysis-comparison          5m      5m
+│ └ ● [+4 more paths]
+├ ○ /uk/tools/bag-of-words-analyzer               5m      5m
+└ ○ /what-are-n-grams                             5m      5m
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+[next:out] ▲ Next.js 16.3.4
+[next:out] - Local:         http://127.0.0.1:3000
+- Network:       http://127.0.0.1:3000
+✓ Ready in 82ms
+[next:out] ✓ Running next.config.ts took 24ms
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:51.919Z","requestId":"cf1af8de-b7be-4b1e-ad63-f2c269d8cd1b","operation":"word-frequency","method":"POST","status":200,"durationMs":18,"responseBytes":477,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:51.950Z","requestId":"b65a7735-a163-4e02-9581-fbb9f6b4de15","operation":"bag-of-words","method":"POST","status":200,"durationMs":2,"responseBytes":573,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:51.957Z","requestId":"85446fb5-7e56-4a73-96f1-4f198fb9b572","operation":"ngram-analyzer","method":"POST","status":200,"durationMs":1,"responseBytes":381,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:51.967Z","requestId":"1ce9ce79-f077-437e-add9-8eca2f6676cf","operation":"word-frequency","method":"POST","status":200,"durationMs":1,"responseBytes":390,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:51.977Z","requestId":"97819b01-63d8-484d-881b-186119100634","operation":"word-frequency","method":"POST","status":200,"durationMs":1,"responseBytes":393,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:51.984Z","requestId":"5b407636-2e9b-4986-9cca-e2d36eb758cf","operation":"tf-idf","method":"POST","status":200,"durationMs":3,"responseBytes":1544,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:51.990Z","requestId":"acf82f4a-881d-437f-9c37-f2fb59120fcd","operation":"tf-idf","method":"POST","status":200,"durationMs":0,"responseBytes":1545,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:51.996Z","requestId":"4d59893f-e74a-4fe8-abf4-9fc35f700c52","operation":"keyword-density","method":"POST","status":200,"durationMs":2,"responseBytes":877,"errorClass":null}
+✔ adds a request ID and logs only the bounded operational schema (8.779292ms)
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.002Z","requestId":"8e3d6fee-0b1e-44be-a5bf-237be3eb1150","operation":"keyword-density","method":"POST","status":200,"durationMs":1,"responseBytes":1313,"errorClass":null}
+✔ classifies quota responses without inspecting or logging their body (1.41625ms)
+✔ uses an explicitly marked safe error class without exposing error content (1.208792ms)
+✔ records a safe class and rethrows unexpected handler errors (0.519ms)
+✔ logging failures cannot break a completed API response (0.304792ms)
+✔ health endpoint returns only bounded liveness metadata (1.010416ms)
+✔ versioned route propagates request IDs and a safe API error class (4.64975ms)
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.007Z","requestId":"00dae3e1-107d-4446-bccf-3ff3dd6b57b4","operation":"keyword-density","method":"POST","status":400,"durationMs":1,"responseBytes":158,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.010Z","requestId":"203b80a7-a004-4417-bc9e-361909f6d570","operation":"keyword-density","method":"POST","status":400,"durationMs":1,"responseBytes":158,"errorClass":"invalid_request"}
+✔ caps large single-table API results and reports truncation (107.474209ms)
+✔ paginates complete vocabulary and corpus support tables without overlap (29.098958ms)
+✔ caps every generated density table without dropping tracked phrases (21.172209ms)
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.016Z","requestId":"5bd9f730-8f2d-48b6-ae04-3f182443be2f","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":158,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.020Z","requestId":"0e788978-d17e-4261-a486-fcb29abc05cb","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":158,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.023Z","requestId":"310456a7-a4d9-4c56-9f06-3c25c062dc21","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":158,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.025Z","requestId":"bbb96cbc-fb86-4f07-84b4-88ac366b06ef","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":158,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.028Z","requestId":"709e9055-98f6-4ce2-914e-647e704ae699","operation":"analyze","method":"POST","status":200,"durationMs":2,"responseBytes":7453,"errorClass":null}
+✔ rejects excessive or non-analyzable focus phrase work (20.445416ms)
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.036Z","requestId":"7de0e828-7ec8-4847-8c57-296a4e823e63","operation":"tf-idf","method":"POST","status":200,"durationMs":1,"responseBytes":1767,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.040Z","requestId":"4ddebee4-da7b-41ea-83f2-ad6a56642af2","operation":"word-frequency","method":"POST","status":400,"durationMs":1,"responseBytes":113,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.043Z","requestId":"f44d256c-39e4-483b-b2fe-cb4a9dd61fce","operation":"word-frequency","method":"POST","status":400,"durationMs":1,"responseBytes":116,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.047Z","requestId":"10d2bdca-f295-4e79-b0cb-aa31d00727d9","operation":"tf-idf","method":"POST","status":400,"durationMs":1,"responseBytes":124,"errorClass":"invalid_request"}
+✔ caps TF-IDF support tables and validates the requested limit (16.328166ms)
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.054Z","requestId":"d6ba5f61-3955-4334-b4f2-46d270474360","operation":"similarity","method":"POST","status":200,"durationMs":1,"responseBytes":1752,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.056Z","requestId":"e2e28ba7-7e02-4bcc-a6bc-e1e768a3468a","operation":"similarity","method":"POST","status":400,"durationMs":1,"responseBytes":113,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.059Z","requestId":"cb0b3ad1-c3dc-477e-aaf0-832846ab0f45","operation":"similarity","method":"POST","status":400,"durationMs":1,"responseBytes":116,"errorClass":"invalid_request"}
+✔ caps optional TF-IDF details in similarity responses (11.576875ms)
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.064Z","requestId":"b40b8499-c25c-49ac-aac1-9d13ffbe2ee1","operation":"compare","method":"POST","status":200,"durationMs":7,"responseBytes":332028,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.075Z","requestId":"24ae02b9-5300-4e8c-88fd-68ccb06f59a5","operation":"compare","method":"POST","status":200,"durationMs":8,"responseBytes":15859,"errorClass":null}
+✔ reports comparison truncation instead of silently dropping rows (22.840917ms)
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.098Z","requestId":"56222bd0-5cad-4403-849c-41e4d25ff956","operation":"word-frequency","method":"POST","status":413,"durationMs":26,"responseBytes":122,"errorClass":"resource_limit"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.131Z","requestId":"0d345de6-1b45-4327-86fa-f875b5eda71e","operation":"tf-idf","method":"POST","status":413,"durationMs":144,"responseBytes":133,"errorClass":"resource_limit"}
+✔ rejects workloads above the analysis-token budgets before building result tables (193.472792ms)
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.283Z","requestId":"a0b417dd-da42-41f4-9247-17aa18826acd","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":108,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.288Z","requestId":"b9b728a6-9873-4672-859c-b192d16345e1","operation":"compare","method":"POST","status":400,"durationMs":1,"responseBytes":108,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.298Z","requestId":"02a8dffe-d2b0-4e5a-90a4-62cdf3f95247","operation":"word-frequency","method":"POST","status":400,"durationMs":0,"responseBytes":108,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.301Z","requestId":"660bd874-4a7d-4a1e-804c-11e926ec623b","operation":"keyword-density","method":"POST","status":400,"durationMs":1,"responseBytes":108,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.305Z","requestId":"e1f27092-4d05-4071-8cbd-b2fd9326df19","operation":"ngram-analyzer","method":"POST","status":400,"durationMs":0,"responseBytes":108,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.310Z","requestId":"b575ba29-7136-46a5-bc97-839d07f47c8e","operation":"bag-of-words","method":"POST","status":400,"durationMs":1,"responseBytes":108,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.316Z","requestId":"4918188a-ca89-4fe1-87f6-c5986f09a565","operation":"tf-idf","method":"POST","status":400,"durationMs":1,"responseBytes":108,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.324Z","requestId":"74516f4c-c954-4db0-aabe-8c2c8551c637","operation":"similarity","method":"POST","status":400,"durationMs":1,"responseBytes":108,"errorClass":"invalid_request"}
+✔ rejects non-object JSON bodies consistently across every v1 operation (43.460625ms)
+✔ Bag of Words URL analysis uses and safely unwraps the versioned API (4.294958ms)
+✔ versioned analysis preserves explicit Spanish and Spanish custom stop words (95.774458ms)
+✔ legacy endpoint routes and application consumers are removed (54.863167ms)
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.348Z","requestId":"6e3e3e66-4bf0-4a05-9be3-716f9d2fb2dd","operation":"analyze","method":"POST","status":200,"durationMs":1,"responseBytes":1646,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.354Z","requestId":"be669327-ae82-4ce3-ae07-023bc6a743f5","operation":"analyze","method":"POST","status":200,"durationMs":2,"responseBytes":2371,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.358Z","requestId":"cd4d45e4-6b7d-4739-9b9a-fce49e8776a0","operation":"analyze","method":"POST","status":200,"durationMs":0,"responseBytes":3443,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.363Z","requestId":"3789837d-21d1-4ee3-8b54-a5352d25da91","operation":"analyze","method":"POST","status":200,"durationMs":0,"responseBytes":977,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.369Z","requestId":"178ba109-84a9-41d5-b408-c556dc6da15b","operation":"analyze","method":"POST","status":200,"durationMs":0,"responseBytes":2038,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.373Z","requestId":"ea13ca0f-58e3-4b0a-acb7-41166dfdb65a","operation":"analyze","method":"POST","status":200,"durationMs":1,"responseBytes":3480,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.382Z","requestId":"3284439e-c70f-4921-8fc3-6a5a3c6f1e94","operation":"compare","method":"POST","status":200,"durationMs":2,"responseBytes":6906,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.387Z","requestId":"f3a336ca-19b0-4a6a-bce5-05154710cb43","operation":"analyze","method":"POST","status":422,"durationMs":0,"responseBytes":116,"errorClass":"unprocessable_input"}
+✔ check passes a versioned deterministic rule set (323.387125ms)
+✔ check explains failures and exits non-zero in CI format (279.437792ms)
+✔ check applies a config-relative baseline similarity threshold (241.122458ms)
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.846Z","requestId":"a899d133-eb9c-48ab-a77e-14f8be49dc41","operation":"word-frequency","method":"POST","status":200,"durationMs":0,"responseBytes":11798,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.851Z","requestId":"9a1d6294-5af1-445e-80f0-e7ecb86a9afc","operation":"word-frequency","method":"POST","status":200,"durationMs":0,"responseBytes":715,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.854Z","requestId":"f9549b95-72dd-47bf-b598-0d7b8bb60e7e","operation":"word-frequency","method":"GET","status":200,"durationMs":0,"responseBytes":152,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.855Z","requestId":"9669801a-6819-4330-bbc4-89f7c2a23d3b","operation":"word-frequency","method":"OPTIONS","status":204,"durationMs":1,"responseBytes":0,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.857Z","requestId":"9fbd67bd-64cd-4785-97fe-03295375d29c","operation":"word-frequency","method":"POST","status":200,"durationMs":0,"responseBytes":391,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.881Z","requestId":"8cef449e-b283-4a77-a926-a3d3d1845e49","operation":"keyword-density","method":"POST","status":200,"durationMs":1,"responseBytes":2317,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.884Z","requestId":"c099d81c-5f6c-4704-b9ec-4bce23724629","operation":"keyword-density","method":"POST","status":200,"durationMs":0,"responseBytes":1193,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.887Z","requestId":"ad0709de-aced-41b4-84a0-e80407e22077","operation":"keyword-density","method":"OPTIONS","status":204,"durationMs":0,"responseBytes":0,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.892Z","requestId":"da084e69-91ad-4e75-9eb7-ecf3a797984f","operation":"keyword-density","method":"POST","status":200,"durationMs":1,"responseBytes":916,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.899Z","requestId":"8e59d392-6613-4432-bef8-9cd8f0733d59","operation":"ngram-analyzer","method":"GET","status":200,"durationMs":1,"responseBytes":152,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.902Z","requestId":"0a300fa4-2612-4fb8-879e-2bc6b24570b0","operation":"ngram-analyzer","method":"OPTIONS","status":204,"durationMs":0,"responseBytes":0,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.903Z","requestId":"6fa88fd4-344c-4f83-941a-1cbed00fa753","operation":"ngram-analyzer","method":"POST","status":200,"durationMs":0,"responseBytes":1093,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.905Z","requestId":"f5fd5fff-ec9b-4029-8197-1330cce8e57d","operation":"bag-of-words","method":"GET","status":200,"durationMs":0,"responseBytes":150,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.906Z","requestId":"4bb3ba85-7d94-44ac-aec4-cda4bbfb310b","operation":"bag-of-words","method":"OPTIONS","status":204,"durationMs":0,"responseBytes":0,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.906Z","requestId":"db58b16a-9ad0-4c6e-8a68-547542c17836","operation":"bag-of-words","method":"POST","status":200,"durationMs":0,"responseBytes":440,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.907Z","requestId":"27dfdc80-2c0e-4b74-bf5a-8910d563f47f","operation":"tf-idf","method":"GET","status":200,"durationMs":1,"responseBytes":144,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.908Z","requestId":"5491520d-635b-406c-9f9f-b727e735e196","operation":"tf-idf","method":"OPTIONS","status":204,"durationMs":0,"responseBytes":0,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.908Z","requestId":"45541e9e-440c-46fb-8bb9-bde0528b4e0c","operation":"tf-idf","method":"POST","status":200,"durationMs":1,"responseBytes":1787,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.910Z","requestId":"eecc154d-b7f8-4560-b44a-7a9241cabd50","operation":"similarity","method":"GET","status":200,"durationMs":0,"responseBytes":153,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.910Z","requestId":"8d4ba5bd-b8a6-49ed-ac27-3be174f1e412","operation":"similarity","method":"OPTIONS","status":204,"durationMs":0,"responseBytes":0,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.910Z","requestId":"1ccc1e99-508e-4a55-8499-aaa9cdbe3350","operation":"similarity","method":"POST","status":200,"durationMs":1,"responseBytes":1433,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.913Z","requestId":"2f139d10-e8e8-4b58-a19d-c8c35fc33570","operation":"similarity","method":"POST","status":200,"durationMs":0,"responseBytes":367,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.914Z","requestId":"e7c29aa0-21ec-4956-8ee4-26eddd707a46","operation":"similarity","method":"POST","status":200,"durationMs":0,"responseBytes":1262,"errorClass":null}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.915Z","requestId":"9313ff70-37dd-40cb-be1b-1a2bd4ed7111","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.916Z","requestId":"5fa4aafc-4303-44b2-9ae4-c85c63c89cfa","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.917Z","requestId":"2e8587fe-201b-442d-98d4-e6c99d77ba6d","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.918Z","requestId":"ce27a149-6e58-41e6-a093-4f5641ae90ca","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.921Z","requestId":"de2beffe-2538-48fa-bced-a75e2cf3829b","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.922Z","requestId":"3176b480-fced-468b-9fa0-4167d6573d5d","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.923Z","requestId":"b07109d5-0a70-4a16-b13b-9fdfe4324e95","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.924Z","requestId":"492baf92-bd0c-4ad7-9c31-960988d7b56c","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.925Z","requestId":"0820c980-d9f2-4764-928d-5dfc351d2671","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.926Z","requestId":"fe9121f7-b690-4079-b91c-47e0382389c2","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.927Z","requestId":"796445e5-e471-416d-944f-ca74eab5fe70","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+✔ check clamps identical-document cosine similarity at one (215.075791ms)
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.928Z","requestId":"b06705a7-58f0-47da-9001-c9bee3d1d5d9","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.929Z","requestId":"a9ba7132-a971-4fff-9de6-4ed4224a19bd","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.929Z","requestId":"613c7b6f-c447-485f-8bff-a452ac8a0492","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.930Z","requestId":"b157f914-18e0-42c7-b2ac-011a3f7a05b6","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.931Z","requestId":"f6efe5d0-0e01-48e3-a40b-08f65314fe85","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.932Z","requestId":"57651a66-6b39-4143-adf9-c558b1658aa6","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.933Z","requestId":"1797af7c-3c7c-46f9-9232-c02dd27c5b63","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.933Z","requestId":"d2948583-5dfa-44b7-8cff-0581869af0d9","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.934Z","requestId":"bb82882a-3ccf-4ed5-a7cb-c2da1fe08206","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.935Z","requestId":"bf71a08a-3c5d-4a9f-baa9-d8743f3bd8cb","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.936Z","requestId":"2215ffd0-e5b9-4acf-ba68-e56e4ee0aa1a","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.936Z","requestId":"46992bb9-27ae-4289-8cc3-410fc1d2d3e6","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.937Z","requestId":"8ad4f68f-75c4-4d3e-a5e5-ce4944c5539d","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.938Z","requestId":"b9a36526-7978-49ad-856e-4fae7f391416","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.939Z","requestId":"6782c23c-dc68-4010-9027-68c1e26508a4","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.939Z","requestId":"27780caa-0c7b-4e3b-b952-7878146e74fc","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.940Z","requestId":"5a198475-3143-4dff-9706-9946a090de6a","operation":"analyze","method":"POST","status":400,"durationMs":0,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.941Z","requestId":"2f4b604e-e399-4101-8f06-b5cf21af1813","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.942Z","requestId":"d597ce39-82ea-4272-a0cd-7cef53a5fc7f","operation":"analyze","method":"POST","status":400,"durationMs":1,"responseBytes":100,"errorClass":"invalid_request"}
+[next:out] {"event":"api_request","timestamp":"2026-09-09T10:45:52.943Z","requestId":"72ce1857-ba62-4317-95f7-56559f41b2f2","operation":"analyze","method":"POST","status":429,"durationMs":0,"responseBytes":108,"errorClass":"rate_limit"}
+✔ check rejects unversioned configuration (176.652708ms)
+✔ published check schema mirrors non-empty runtime rule requirements (179.067542ms)
+✔ check rejects phrases without analyzable tokens (387.624417ms)
+✔ check rejects a phrase that is both required and forbidden (221.992417ms)
+✔ check detects required and forbidden overlap after analysis tokenization (165.593583ms)
+✔ check keeps comma and semicolon inside configured phrases (174.908667ms)
+✔ check evaluates forbidden phrases after a full required-phrase list (176.876ms)
+✔ CLI exposes help and version (326.1695ms)
+✔ MCP exposes eight local read-only tools with structured results (365.612083ms)
+✔ focus phrases preserve stop-word adjacency when table stop words are hidden (213.623458ms)
+✔ invalid focus option values exit with CLI usage status (180.06625ms)
+✔ frequency reads stdin and returns deterministic local JSON (189.617625ms)
+✔ frequency supports Spanish detection and default stop words (172.334ms)
+✔ bounded single-source commands expose explicit truncation metadata (222.959917ms)
+✔ analyze, density, ngram, and bow commands expose their focused results (232.477917ms)
+✔ density preserves tracked phrases with zero occurrences (173.075459ms)
+✔ density rejects tracked phrase lists that would be silently truncated (324.09725ms)
+✔ TF-IDF, similarity, and comparison accept file pairs (234.202625ms)
+✔ similarity CSV includes the score even when documents have no shared terms (165.892083ms)
+✔ TF-IDF CLI bounds support vocabulary and reports truncation (163.441417ms)
+✔ comparison metadata counts disjoint vocabularies beyond one-source token limit (331.9395ms)
+✔ CSV output can be saved to a file (164.562708ms)
+✔ invalid options fail with a usage exit code (156.750792ms)
+✔ CLI handles a substantial stdin document without truncating metrics (180.160916ms)
+✔ localized copy-ready CLI examples match and execute against the built CLI (1271.818625ms)
+✔ every same-origin fragment link in rendered sitemap pages targets an existing id (154.613875ms)
+✔ workspace analysis produces revision-bound deterministic evidence (22.621167ms)
+✔ claim-aware review turns two commercial versions into a prioritized decision brief (7.520833ms)
+✔ claim extraction does not join a number to readers in a later sentence (1.066166ms)
+✔ a patch requires current evidence, a finding, and explicit human approval (2.56375ms)
+✔ ambiguous and stale patch anchors fail safely (1.094667ms)
+✔ a complete agent review plan requires substantive, diverse exact proposals (2.537583ms)
+✔ WebMCP exposes one complete-plan action and never exposes approval (1.067542ms)
+✔ MCP publishes typed results, structured errors, and conditional network metadata (529.953583ms)
+✔ agent integration page documents three operational recipes in English (1.83875ms)
+✔ classifies comprehensive private and reserved IP ranges (9.608083ms)
+✔ rejects private literal hosts before any network request (3.066459ms)
+✔ rejects a hostname when any resolved A or AAAA address is private (1.451416ms)
+✔ validates DNS again before following every redirect (9.413459ms)
+✔ maps DNS failures to the existing structured fetch error (0.547458ms)
+✔ applies one deadline to DNS resolution (27.021833ms)
+✔ passes the validated address to the remote transport (2.501209ms)
+✔ falls back across validated public addresses within one budget (0.413583ms)
+✔ a blackholed address cannot consume the whole multi-address deadline (42.454916ms)
+✔ the default pinned transport preserves the original Host header (14.639208ms)
+✔ streams a normal chunked text response (0.391083ms)
+✔ aborts a chunked response as soon as its byte cap is exceeded (0.92175ms)
+✔ rejects an oversized declared body without reading it (0.218041ms)
+✔ a shared remote budget bounds requests, bytes, and concurrency (3.407875ms)
+✔ fetchRemoteText shares the supplied concurrency and byte budget (0.777167ms)
+✔ a mixed remote corpus rejects an unsafe source without fetching it (0.302375ms)
+✔ mapWithConcurrency preserves order and enforces its bound (0.451459ms)
+✔ apiJson returns a stable non-recursive error when serialized output exceeds its cap (11.754167ms)
+✔ rate-limit cost scales with documents, remote sources, and input size (0.16575ms)
+✔ rate-limit identities are hashed before reaching any store (0.335542ms)
+✔ configured shared-store failures degrade with bounded backoff and safe diagnostics (0.375666ms)
+✔ a degraded shared store recovers after its backoff probe (0.113791ms)
+✔ relative shared-store paths are rejected and reported as degraded (0.238875ms)
+✔ an absolute but unwritable shared-store target fails its real health probe (30.4045ms)
+✔ shared health probes are bounded and never consume or reset user quota (131.21275ms)
+✔ file rate-limit store shares atomic counters across worker instances (1797.415292ms)
+✔ normalizeAnalyzeBody forwards an optional shared remote context (0.95775ms)
+✔ renders the English product homepage with live tools and production SEO metadata (137.831083ms)
+✔ redirects /en to the canonical public origin (7.464625ms)
+✔ renders the Bag of Words analyzer on its dedicated multilingual route (17.76825ms)
+✔ renders Russian product copy without Ukrainian text in the new tool cards (13.108125ms)
+✔ counts tracked phrases as exact token sequences and allows overlaps (6.429333ms)
+✔ preserves commas inside array-based focus phrases (5.062584ms)
+✔ counts focus phrases across stop words without synthesizing adjacency (3.597417ms)
+✔ decodes HTML entities without counting entity names as words (6.025709ms)
+✔ top changes display length but not full-distribution zone totals (9.816458ms)
+✔ comparison uses full term counts instead of false zeros outside top (9.086167ms)
+✔ returns a client error for text that is too short (2.38675ms)
+✔ runs pasted-text analysis locally and handles non-JSON URL errors (0.701584ms)
+✔ serves a valid XML sitemap (11.265625ms)
+✔ documents every tool page as a free WebApplication (48.176583ms)
+✔ renders the word frequency tool as a canonical English search page (5.195334ms)
+✔ limits shared-cache lifetime for every sitemap page (248.43025ms)
+✔ renders every sitemap page without periods in H1 headings (142.5785ms)
+✔ versioned word frequency endpoint handles short text and reports the complete returned vocabulary (2.418875ms)
+✔ Spanish analysis detects language, removes default stop words, and is documented in OpenAPI (5.674458ms)
+✔ versioned word frequency endpoint is self-describing and supports CORS (5.23525ms)
+✔ browser analytics remains opt-in and tracks core product actions (0.428333ms)
+✔ renders the keyword density checker with canonical metadata and useful content (2.16125ms)
+✔ renders the standalone text comparison with canonical metadata and two inputs (2.639959ms)
+✔ renders the n-gram analyzer page with canonical metadata and phrase methodology (2.576333ms)
+✔ renders the bag-of-words generator page with canonical metadata and export workflow (2.31875ms)
+✔ renders the TF-IDF calculator page with canonical metadata and weighting explanation (2.246833ms)
+✔ TF-IDF client supports a 2–10 document corpus and keeps pasted text local (0.619375ms)
+✔ renders the text similarity calculator page with canonical metadata and cosine sections (2.680208ms)
+✔ standalone comparison keeps pasted text local and reuses the public API for URLs (0.672209ms)
+✔ all browser tools share the cancellable Worker runner and client-side limits (3.204584ms)
+✔ browser result contracts cap large tables and disclose partial exports (2.168125ms)
+✔ keyword density uses total words and counts exact tracked phrases (2.52925ms)
+✔ keyword density stop-word filtering preserves real phrase adjacency (2.308541ms)
+✔ versioned keyword density endpoint is documented and supports CORS (12.2945ms)
+✔ versioned n-gram analyzer endpoint is documented and supports CORS (6.924125ms)
+✔ versioned bag-of-words endpoint is documented and returns vocabulary with normalized rates (2.680458ms)
+✔ versioned tf-idf endpoint supports a multi-document corpus and returns idf table (2.26625ms)
+✔ versioned similarity endpoint supports tf-idf and returns overlap diagnostics (2.450208ms)
+✔ tf-idf similarity uses weighted vectors instead of raw term frequency (3.035041ms)
+✔ rate limits the versioned analysis endpoint (29.212792ms)
+✔ renders both educational pages with unique canonical titles (2.864709ms)
+✔ renders the guide directory and four new method guides with canonical TechArticle markup (12.357291ms)
+✔ renders versioned npm CLI documentation and advertises it in llms.txt (4.428208ms)
+✔ renders localized AI-agent integration pages with MCP and OpenAPI discovery (4.450542ms)
+✔ renders every tool with complete Russian, Ukrainian, and Spanish UI localization (19.985166ms)
+✔ renders every informational route in Russian, Ukrainian, and Spanish with reciprocal hreflang (34.780583ms)
+✔ localized homepages link only to localized tools, guides, API, and CLI (4.965292ms)
+✔ SDK does not expose similarity helpers that accept truncated TF-IDF documents (0.756542ms)
+✔ importable ESM SDK exposes eight deterministic public analysis operations (11.002375ms)
+✔ analyzeText returns at most 100 normalized public rows (2.316916ms)
+✔ compareTexts bounds pages and returns stable non-overlapping metadata (2.507417ms)
+✔ SDK keeps Spanish stop-word and focus phrase behavior (0.268333ms)
+✔ keepNumbers preserves short numeric tokens before applying minimum token length (0.16175ms)
+ℹ tests 138
+ℹ suites 0
+ℹ pass 138
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4068.56275

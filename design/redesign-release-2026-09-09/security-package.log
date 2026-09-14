@@ -1,0 +1,26 @@
+
+> textanalysis-tools@0.2.0 test:package
+> npm run cli:build --silent && node scripts/test-package.mjs
+
+
+  packages/cli/dist/textanalysis.mjs  185.6kb
+
+⚡ Done in 18ms
+
+  packages/cli/dist/index.mjs  91.3kb
+
+⚡ Done in 4ms
+ok 1 - packed runtime dependency audit
+ok 2 - packed analyze
+ok 3 - packed frequency
+ok 4 - packed density
+ok 5 - packed compare
+ok 6 - packed ngram
+ok 7 - packed bow
+ok 8 - packed tfidf
+ok 9 - packed similarity
+ok 10 - packed check
+ok 11 - packed ESM SDK
+ok 12 - packed TypeScript declarations
+ok 13 - packed MCP discovery
+Verified textanalysis-tools@0.2.0 tarball (66943 bytes).

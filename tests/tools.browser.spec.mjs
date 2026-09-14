@@ -144,6 +144,18 @@ test("light and dark theme choices persist between the homepage and tool workspa
 
 test("large local analysis runs in a cancellable Worker and enforces the browser limit",async({page})=>{
   test.setTimeout(90_000);
+  await page.addInitScript(()=>{
+    const nativeAddEventListener=Worker.prototype.addEventListener;
+    Worker.prototype.addEventListener=function(type,listener,options){
+      if(type!=="message")return nativeAddEventListener.call(this,type,listener,options);
+      const messages=[];
+      window.__cancellationTestMessages=messages;
+      window.__deliverCanceledWorkerMessages=()=>{
+        for(const event of messages)listener.call(this,event);
+      };
+      return nativeAddEventListener.call(this,type,event=>messages.push(event),options);
+    };
+  });
   await page.goto("/tools/word-frequency-counter");
   const form=page.locator("form.frequency-workspace");
   const textarea=form.locator("textarea").first();
@@ -159,8 +171,16 @@ test("large local analysis runs in a cancellable Worker and enforces the browser
   expect(workerUrl.origin).toBe(new URL(page.url()).origin);
   expect(workerUrl.pathname).toMatch(/\.m?js$/);
   expect(await worker.evaluate(()=>typeof self.postMessage)).toBe("function");
+  // Run the real analysis, but hold its messages so the job stays active
+  // until the input edit, independent of the machine's processing speed.
+  await expect.poll(()=>page.evaluate(()=>window.__cancellationTestMessages.some(event=>event.data.type==="result"))).toBe(true);
+  await expect(form).toHaveAttribute("aria-busy","true");
 
+  const workerClosed=worker.waitForEvent("close");
   await textarea.fill("replacement text cancels the previous local analysis");
+  await workerClosed;
+  // Even a result already queued before termination must remain obsolete.
+  await page.evaluate(()=>window.__deliverCanceledWorkerMessages());
   await expect(form).toHaveAttribute("aria-busy","false");
   await expect(results.locator("tbody tr")).toHaveCount(0);
   await expect(results.locator(".frequency-waiting")).toBeVisible();
@@ -171,6 +191,7 @@ test("large local analysis runs in a cancellable Worker and enforces the browser
   await expect(form).toHaveAttribute("aria-busy","false");
   await expect(results.locator("tbody tr")).toHaveCount(0);
   await expect(results.locator(".frequency-waiting")).toBeVisible();
+  expect(page.workers()).toHaveLength(0);
 });
 
 test("local Worker caps vocabulary rows and exposes partial-result metadata",async({page,context})=>{
@@ -213,3 +234,61 @@ test("URL-mode surfaces API truncation instead of implying a complete export",as
   await form.locator(".analyze-button").click();
   await expect(page.getByTestId("partial-result-notice")).toContainText("table and its CSV or JSON export");
 });
+
+for(const locale of [
+  {code:"en",textTab:"Text",message:"The page could not be retrieved. Paste its text manually in the Text tab."},
+  {code:"ru",textTab:"Текст",message:"Не удалось загрузить страницу. Вставьте её текст вручную во вкладке «Текст»."},
+  {code:"uk",textTab:"Текст",message:"Не вдалося завантажити сторінку. Вставте її текст вручну у вкладці «Текст»."},
+  {code:"es",textTab:"Texto",message:"No se pudo obtener la página. Pega su texto manualmente en la pestaña «Texto»."},
+]){
+  test(`URL fetch errors: ${locale.code} shows recovery guidance and can analyze pasted text`,async({page})=>{
+    let errorCode="FETCH_FAILED";
+    const requests=[];
+    await page.route("**/api/v1/analyze",async intercepted=>{
+      const request=intercepted.request();
+      requests.push({method:request.method(),body:request.postDataJSON()});
+      await intercepted.fulfill({
+        status:422,
+        contentType:"application/json",
+        body:JSON.stringify({apiVersion:"2026-07-01",error:{code:errorCode,message:`Raw remote diagnostic: ${errorCode}`}}),
+      });
+    });
+    await page.goto(route(locale.code,"bag-of-words-analyzer"));
+    const form=page.locator("form.workspace");
+    const submit=form.locator(".analyze-button");
+    await form.getByRole("button",{name:"URL",exact:true}).click();
+
+    for(const code of [
+      "FETCH_FAILED",
+      "REMOTE_FETCH_TIMEOUT",
+      "REMOTE_DNS_LOOKUP_FAILED",
+      "REMOTE_REQUEST_FAILED",
+      "REMOTE_CONTENT_READ_FAILED",
+      "REMOTE_INVALID_REDIRECT",
+      "REMOTE_HTTP_ERROR",
+    ]){
+      await test.step(code,async()=>{
+        errorCode=code;
+        const url=`https://example.com/${code.toLowerCase()}`;
+        await form.locator('input[type="url"]').fill(url);
+        const previousRequests=requests.length;
+        await submit.click();
+        await expect.poll(()=>requests.length).toBe(previousRequests+1);
+        expect(requests.at(-1)).toMatchObject({method:"POST",body:{sourceType:"url",source:url}});
+        await expect(form.locator(".error")).toHaveText(locale.message);
+        await expect(form).toHaveAttribute("aria-busy","false");
+        await expect(submit).toBeEnabled();
+        await expect(form.locator('input[type="url"]')).toHaveValue(url);
+        await expect(page.locator("#result")).toHaveCount(0);
+      });
+    }
+
+    await form.getByRole("button",{name:locale.textTab,exact:true}).click();
+    await form.locator(".textarea-wrap textarea").fill("Transparent text analysis measures repeated terms and recurring phrases with deterministic counts. Text analysis helps editors review repeated phrases.");
+    const remoteRequestCount=requests.length;
+    await submit.click();
+    await expect(page.locator("#result")).toBeVisible();
+    await expect(form.locator(".error")).toHaveCount(0);
+    expect(requests).toHaveLength(remoteRequestCount);
+  });
+}

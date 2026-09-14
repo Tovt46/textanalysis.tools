@@ -1,0 +1,9 @@
+
+> textanalysis-tools@0.2.0 start
+> next start --hostname 127.0.0.1
+
+▲ Next.js 16.3.4
+- Local:         http://127.0.0.1:3000
+- Network:       http://127.0.0.1:3000
+✓ Ready in 79ms
+✓ Running next.config.ts took 23ms

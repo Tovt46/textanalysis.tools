@@ -1,0 +1,4 @@
+
+> textanalysis-tools@0.2.0 lint
+> eslint . --ignore-pattern dist --ignore-pattern .next
+

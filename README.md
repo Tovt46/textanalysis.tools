@@ -24,6 +24,7 @@ development roadmap.
 - OpenAPI schema, `llms.txt`, sitemap, and multilingual SEO metadata
 - local stdio MCP server with eight read-only tools and structured results
 - WebMCP evidence workspace with a required 3–5 item agent review plan and human-only patch approval
+- TextContract Agent with a human-approved rule contract, Nemotron self-check, bounded repair, and optional Tavily evidence
 - importable ESM TypeScript API with bundled declarations
 - deterministic `textanalysis check` rules for local and CI workflows
 
@@ -180,6 +181,67 @@ OpenAI call.
 Challenge materials: [implementation notes](WEBMCP-CHALLENGE.md) and the
 [Devpost copy plus under-three-minute demo script](WEBMCP-SUBMISSION.md).
 
+## TextContract Agent
+
+`/tools/text-contract` is an English-first guarded rewriting workflow. A user
+provides one source document or HTML fragment and one rewrite brief. The server
+extracts deterministic rules for values, links, CTA attributes, headings,
+quoted requirements, and structured data, then asks a reasoning Nemotron model
+for semantic invariants. The user can review the resulting contract before any
+text is generated.
+
+After approval, a fast Nemotron model creates Draft 1. Deterministic checks,
+semantic evaluation, and at most three explicitly live Tavily checks evaluate
+the result. Detected violations can trigger one Repair 1 and one final
+evaluation. There is no autonomous loop beyond that boundary and no CMS
+publishing. `READY` requires every enabled check to pass; failed model
+output, missing live evidence, and incomplete evaluations fail closed.
+
+Copy `.env.example` to `.env.local` and set server-side values:
+
+```dotenv
+NEBIUS_API_KEY=
+NEBIUS_MODEL_FAST=
+NEBIUS_MODEL_REASONING=
+TAVILY_API_KEY=
+TAVILY_PROJECT=
+```
+
+The Nebius model IDs must be copied from Token Factory and must support
+structured JSON. None of these variables may use a `NEXT_PUBLIC_` prefix.
+Source, brief, candidate, and evidence snippets are excluded from structured
+application logs. The current tab keeps its workspace in `sessionStorage`; the
+three `/api/text-contract/*` route handlers are stateless and same-origin.
+Hackathon architecture, disclosure, demo, evaluation, and limitations are in
+[`NEBIUS-HACKATHON.md`](./NEBIUS-HACKATHON.md).
+
+After configuring the keys, run one explicit live provider check (it consumes
+credits):
+
+```bash
+RUN_LIVE_TEXT_CONTRACT_SMOKE=1 npm run smoke:text-contract-providers
+```
+
+These opt-in scripts load `.env.local`. Once the provider smoke passes, measure
+the actual application evaluator (not a separate batch prompt):
+
+```bash
+RUN_LIVE_TEXT_CONTRACT_EVAL=1 npm run eval:text-contract
+# Optional: also attempt one repair on each annotated failing case (more credits).
+RUN_LIVE_TEXT_CONTRACT_EVAL=1 RUN_LIVE_TEXT_CONTRACT_REPAIR=1 npm run eval:text-contract
+```
+
+The fixed labeled contracts isolate evaluator quality; they do not measure
+compiler extraction quality. A smaller `TEXT_CONTRACT_EVAL_LIMIT` is a partial
+smoke only, not evidence that the full benchmark passed.
+
+Contract v2 locks the original source and approved revision, groups complete
+source safeguards without dropping values, and retains per-attempt checks and
+manual edits in tab storage. Stop cancels client work; already-started provider
+requests can still consume credits. Structural guards intentionally preserve
+HTML attributes and JSON-LD content, so structural changes require a new source
+contract. Unverified edits and non-READY results cannot be accepted.
+
 ## Main routes
 
 - `/`, `/uk`, `/ru`, `/es` — localized product homepages
@@ -199,6 +261,7 @@ Challenge materials: [implementation notes](WEBMCP-CHALLENGE.md) and the
 - `/tools/keyword-density-checker` — 1–3-word density tables and A/B comparison
 - `/tools/text-analysis-comparison` — normalized A/B word and bigram changes
 - `/tools/evidence-workspace` — WebMCP-assisted evidence, patch review, and before/after export
+- `/tools/text-contract` — one-source guarded rewriting with contract approval and one repair
 - `/tools/ngram-analyzer` — recurring phrase analysis for 1–10-word n-grams
 - `/tools/bag-of-words-generator` — bounded Bag-of-Words rows with counts and frequencies
 - `/tools/tf-idf-calculator` — corpus-aware TF-IDF scoring for 2–10 documents
@@ -251,7 +314,7 @@ After each deployment run:
 npm run smoke:production
 ```
 
-The smoke check verifies all 90 sitemap pages, a shared-cache lifetime of no
+The smoke check verifies all 91 sitemap pages, a shared-cache lifetime of no
 more than five minutes, the current navigation marker, every linked Next.js
 static asset (including JavaScript and CSS), the canonical `/en` redirect,
 versioned API operations, request IDs, health, and CORS preflight responses. Set `SMOKE_BASE_URL` to

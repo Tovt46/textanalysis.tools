@@ -8,6 +8,9 @@ export type ApiOperation=
   |"keyword-density"
   |"ngram-analyzer"
   |"similarity"
+  |"text-contract-compile"
+  |"text-contract-evaluate"
+  |"text-contract-generate"
   |"tf-idf"
   |"word-frequency";
 

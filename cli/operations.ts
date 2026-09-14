@@ -29,6 +29,7 @@ export type CliSettings={
   format:OutputFormat;
   output?:string;
   top:number;
+  offset:number;
   minCount:number;
   language:"auto"|TextLanguage;
   keepStopwords:boolean;
@@ -54,7 +55,7 @@ const COMMAND_OPTIONS:Record<CliAnalysisCommand,string[]>={
   analyze:["text","url","focus","tolerance"],
   frequency:["text","url","min-count"],
   density:["text","url","keywords","min-count"],
-  compare:["text-a","url-a","text-b","url-b","focus","tolerance","min-count"],
+  compare:["text-a","url-a","text-b","url-b","focus","tolerance","min-count","offset"],
   ngram:["text","url","size","min-count"],
   bow:["text","url","min-count"],
   tfidf:[],
@@ -94,6 +95,7 @@ async function parseSettings(command:CliAnalysisCommand,parsed:ParsedCliArgs):Pr
   const topMinimum=command==="analyze"||command==="compare"?5:1;
   const topMaximum=command==="frequency"||command==="density"||command==="ngram"||command==="bow"?1000:100;
   const top=numberOption(parsed,"top",defaultTop,topMinimum,topMaximum);
+  const offset=numberOption(parsed,"offset",0,0,250_000);
   const minCount=numberOption(parsed,"min-count",1,1,Number.MAX_SAFE_INTEGER);
   const tolerance=numberOption(parsed,"tolerance",2,1.2,4,false);
   const ngramSize=numberOption(parsed,"size",2,1,10);
@@ -135,6 +137,7 @@ async function parseSettings(command:CliAnalysisCommand,parsed:ParsedCliArgs):Pr
     format:formatValue as OutputFormat,
     output:stringOption(parsed,"output"),
     top,
+    offset,
     minCount,
     language:languageValue as CliSettings["language"],
     keepStopwords:booleanOption(parsed,"keep-stopwords"),
@@ -249,26 +252,31 @@ async function runCompare(parsed:ParsedCliArgs,stdin:StdinReader,settings:CliSet
   const comparison=compareResults(analysisA,analysisB,MAX_ANALYSIS_TOKENS*2);
   const eligibleWordChanges=comparison.wordChanges.filter(row=>Math.max(row.countA,row.countB)>=settings.minCount);
   const eligibleBigramChanges=comparison.bigramChanges.filter(row=>Math.max(row.countA,row.countB)>=settings.minCount);
-  const wordChanges=eligibleWordChanges.slice(0,settings.top)
+  const remainingWordRows=Math.max(0,eligibleWordChanges.length-settings.offset);
+  const remainingBigramRows=Math.max(0,eligibleBigramChanges.length-settings.offset);
+  const wordChanges=eligibleWordChanges.slice(settings.offset,settings.offset+settings.top)
     .map((row)=>({...row,count:Math.max(row.countA,row.countB)}))
     .map(({count,...row})=>{void count;return row;});
-  const bigramChanges=eligibleBigramChanges.slice(0,settings.top)
+  const bigramChanges=eligibleBigramChanges.slice(settings.offset,settings.offset+settings.top)
     .map((row)=>({...row,count:Math.max(row.countA,row.countB)}))
     .map(({count,...row})=>{void count;return row;});
-  const {offset:unusedOffset,nextOffset:unusedNextOffset,hasMore:unusedHasMore,...nonPaginatedComparison}=comparison;
-  void unusedOffset;void unusedNextOffset;void unusedHasMore;
+  const hasMore=remainingWordRows>settings.top||remainingBigramRows>settings.top;
+  const nextOffset=hasMore?settings.offset+settings.top:null;
   return {
     labels:[sourceA.label,sourceB.label],
     payload:{
       resultA:analysisA.result,
       resultB:analysisB.result,
       comparison:{
-        ...nonPaginatedComparison,
+        ...comparison,
         wordChanges,
         bigramChanges,
         returnedRows:{wordChanges:wordChanges.length,bigramChanges:bigramChanges.length},
         totalRows:{wordChanges:eligibleWordChanges.length,bigramChanges:eligibleBigramChanges.length},
-        truncated:wordChanges.length<eligibleWordChanges.length||bigramChanges.length<eligibleBigramChanges.length,
+        offset:settings.offset,
+        nextOffset,
+        hasMore,
+        truncated:wordChanges.length<remainingWordRows||bigramChanges.length<remainingBigramRows,
       },
     },
   };

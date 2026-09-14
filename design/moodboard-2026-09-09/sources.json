@@ -1,0 +1,116 @@
+{
+  "scope": "Reference moodboard only; not a product redesign implementation.",
+  "capture": "Actual rendered browser screenshots; source sites were not restyled. Linear navigation screenshot shows the official published comparison image in its lightbox.",
+  "samples": "WordCount and Diffchecker screenshots use synthetic, non-sensitive English text entered for reference capture.",
+  "theme": "Captured site appearance reflects this browser session. Final textanalysis.tools theme is undecided.",
+  "assets": [
+    {
+      "name": "Linear",
+      "url": "https://linear.app/",
+      "category": "style",
+      "file": "screenshots/linear-home.png",
+      "width": 65536,
+      "height": 4292542531,
+      "captured_on": "2026-09-09"
+    },
+    {
+      "name": "Linear UI refresh",
+      "url": "https://linear.app/now/behind-the-latest-design-refresh",
+      "category": "style",
+      "file": "screenshots/linear-navigation.png",
+      "width": 65536,
+      "height": 4292542531,
+      "captured_on": "2026-09-09"
+    },
+    {
+      "name": "Raycast",
+      "url": "https://www.raycast.com/",
+      "category": "style",
+      "file": "screenshots/raycast-home.png",
+      "width": 65536,
+      "height": 4292542531,
+      "captured_on": "2026-09-09"
+    },
+    {
+      "name": "Resend",
+      "url": "https://resend.com/",
+      "category": "style-and-integration",
+      "file": "screenshots/resend-home.png",
+      "width": 65536,
+      "height": 4292542531,
+      "captured_on": "2026-09-09"
+    },
+    {
+      "name": "Resend",
+      "url": "https://resend.com/",
+      "category": "style-and-integration",
+      "file": "screenshots/resend-interface.png",
+      "width": 65536,
+      "height": 4292542531,
+      "captured_on": "2026-09-09"
+    },
+    {
+      "name": "Ray.so",
+      "url": "https://ray.so/",
+      "category": "focused-interface",
+      "file": "screenshots/ray-so.png",
+      "width": 65536,
+      "height": 4292542531,
+      "captured_on": "2026-09-09"
+    },
+    {
+      "name": "Diffchecker",
+      "url": "https://www.diffchecker.com/",
+      "category": "text-comparison",
+      "file": "screenshots/diffchecker-comparison.png",
+      "width": 65536,
+      "height": 4292542531,
+      "captured_on": "2026-09-09"
+    },
+    {
+      "name": "Hemingway",
+      "url": "https://hemingwayapp.com/",
+      "category": "text-diagnostics",
+      "file": "screenshots/hemingway-editor.png",
+      "width": 65536,
+      "height": 4292542531,
+      "captured_on": "2026-09-09"
+    },
+    {
+      "name": "WordCount",
+      "url": "https://wordcount.com/",
+      "category": "text-analysis",
+      "file": "screenshots/wordcount-metrics.png",
+      "width": 65536,
+      "height": 4292542531,
+      "captured_on": "2026-09-09"
+    },
+    {
+      "name": "WordCount",
+      "url": "https://wordcount.com/",
+      "category": "text-analysis",
+      "file": "screenshots/wordcount-table.png",
+      "width": 65536,
+      "height": 4292542531,
+      "captured_on": "2026-09-09"
+    },
+    {
+      "name": "regex101",
+      "url": "https://regex101.com/",
+      "category": "technical-workspace",
+      "file": "screenshots/regex-workspace.png",
+      "width": 65536,
+      "height": 4292542531,
+      "captured_on": "2026-09-09"
+    },
+    {
+      "name": "textanalysis.tools baseline",
+      "url": "https://textanalysis.tools/",
+      "category": "current-site",
+      "file": "screenshots/current-home.png",
+      "width": 65536,
+      "height": 4292542531,
+      "captured_on": "2026-09-09"
+    }
+  ]
+}

@@ -45,6 +45,14 @@ The npm package exposes the same eight deterministic analysis operations as read
 
 The English workspace registers five tools through document.modelContext when WebMCP is available. analyze_workspace returns an exact block-change map, a commercial claim ledger, and a prioritized queue of changed or verification-sensitive claims. submit_review_plan then requires one complete set of 3–5 evidence-linked exact diffs, including substantive structure or clarity work and trust or verification work when claim risks exist; at most one item may be cleanup. These are review signals and proposals, not truth judgments. Human approval is intentionally not exposed as a tool: the reviewer must approve or reject each patch in the visible page before apply_approved_patch can succeed. The complete workflow also remains usable through normal page controls when WebMCP is unavailable.
 
+## TextContract Agent
+
+- Guarded rewriting workflow: ${SITE_URL}/tools/text-contract
+- Steps: compile visible rules, obtain human approval, generate one draft, evaluate it, optionally repair once, and re-evaluate
+- Server routes: POST ${SITE_URL}/api/text-contract/compile, POST ${SITE_URL}/api/text-contract/generate, POST ${SITE_URL}/api/text-contract/evaluate
+
+TextContract accepts one source document and one rewrite brief. It sends them to NVIDIA Nemotron through Nebius Token Factory only for the current stateless API step. Browser workspace state stays in sessionStorage; the application does not create a server-side document history. Tavily is used only for up to three rules explicitly marked as requiring current evidence. The model-backed routes are same-origin application endpoints, not part of the public no-key analysis API. READY requires every enabled check to pass; missing evidence or incomplete model output never becomes a pass.
+
 ## Main pages
 
 - Product homepage: ${SITE_URL}/
@@ -55,6 +63,7 @@ The English workspace registers five tools through document.modelContext when We
 - Keyword density checker: ${SITE_URL}/tools/keyword-density-checker
 - Text analysis comparison: ${SITE_URL}/tools/text-analysis-comparison
 - Text Analysis Evidence Workspace: ${SITE_URL}/tools/evidence-workspace
+- TextContract Agent: ${SITE_URL}/tools/text-contract
 - N-gram analyzer: ${SITE_URL}/tools/ngram-analyzer
 - Bag of Words generator: ${SITE_URL}/tools/bag-of-words-generator
 - TF-IDF calculator: ${SITE_URL}/tools/tf-idf-calculator

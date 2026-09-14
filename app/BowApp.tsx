@@ -55,7 +55,7 @@ function localizedApiError(payload:unknown,status:number,t:T){
   if(code==="INVALID_URL"||code==="UNSAFE_URL")return t("badUrl");
   if(code==="REQUEST_TOO_LARGE"||code==="TEXT_TOO_LARGE"||code==="REMOTE_CONTENT_TOO_LARGE")return t("tooLarge");
   if(code==="INSUFFICIENT_TEXT")return t("tooLittle");
-  if(code==="FETCH_FAILED"||code==="TOO_MANY_REDIRECTS"||code==="UNSUPPORTED_REMOTE_TYPE")return t("requestBlocked");
+  if(code==="FETCH_FAILED"||code==="REMOTE_FETCH_TIMEOUT"||code==="REMOTE_DNS_LOOKUP_FAILED"||code==="REMOTE_REQUEST_FAILED"||code==="REMOTE_CONTENT_READ_FAILED"||code==="REMOTE_INVALID_REDIRECT"||code==="REMOTE_HTTP_ERROR"||code==="TOO_MANY_REDIRECTS"||code==="UNSUPPORTED_REMOTE_TYPE")return t("requestBlocked");
   if(status===413)return t("tooLarge");
   return t("failed");
 }

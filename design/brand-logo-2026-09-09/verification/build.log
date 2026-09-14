@@ -1,0 +1,109 @@
+
+> textanalysis-tools@0.2.0 build
+> next build
+
+▲ Next.js 16.3.4 (Turbopack)
+✓ Running next.config.ts took 19ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 470ms
+  Running TypeScript ...
+  Finished TypeScript in 890ms ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/107) ...
+  Generating static pages using 7 workers (26/107) 
+  Generating static pages using 7 workers (53/107) 
+  Generating static pages using 7 workers (80/107) 
+✓ Generating static pages using 7 workers (107/107) in 466ms
+  Finalizing page optimization ...
+
+Route (app)                               Revalidate  Expire
+┌ ○ /                                             5m      5m
+├ ○ /_not-found
+├ ○ /agents                                       5m      5m
+├ ○ /api-docs                                     5m      5m
+├ ƒ /api/health
+├ ƒ /api/v1/analyze
+├ ƒ /api/v1/bag-of-words
+├ ƒ /api/v1/compare
+├ ƒ /api/v1/keyword-density
+├ ƒ /api/v1/ngram-analyzer
+├ ƒ /api/v1/similarity
+├ ƒ /api/v1/tf-idf
+├ ƒ /api/v1/word-frequency
+├ ○ /bag-of-words-model                           5m      5m
+├ ○ /bag-of-words-vs-word2vec                     5m      5m
+├ ○ /cli                                          5m      5m
+├ ○ /compare-texts-by-word-frequency              5m      5m
+├ ○ /cosine-similarity-for-text                   5m      5m
+├ ƒ /en
+├ ○ /es                                           5m      5m
+├   /es/[slug]
+│ ├ ● /es/guides                                  5m      5m
+│ ├ ● /es/api-docs                                5m      5m
+│ ├ ● /es/cli                                     5m      5m
+│ └ ● [+8 more paths]
+├ ○ /es/bag-of-words-model                        5m      5m
+├ ○ /es/tools                                     5m      5m
+├   /es/tools/[slug]
+│ ├ ● /es/tools/word-frequency-counter            5m      5m
+│ ├ ● /es/tools/keyword-density-checker           5m      5m
+│ ├ ● /es/tools/text-analysis-comparison          5m      5m
+│ └ ● [+4 more paths]
+├ ○ /es/tools/bag-of-words-analyzer               5m      5m
+├ ○ /guides                                       5m      5m
+├ ○ /how-to-calculate-word-frequency              5m      5m
+├ ○ /keyword-density-formula                      5m      5m
+├ ƒ /llms.txt
+├ ƒ /openapi.json
+├ ○ /privacy                                      5m      5m
+├ ○ /robots.txt
+├ ○ /ru                                           5m      5m
+├   /ru/[slug]
+│ ├ ● /ru/guides                                  5m      5m
+│ ├ ● /ru/api-docs                                5m      5m
+│ ├ ● /ru/cli                                     5m      5m
+│ └ ● [+8 more paths]
+├ ○ /ru/bag-of-words-model                        5m      5m
+├ ○ /ru/tools                                     5m      5m
+├   /ru/tools/[slug]
+│ ├ ● /ru/tools/word-frequency-counter            5m      5m
+│ ├ ● /ru/tools/keyword-density-checker           5m      5m
+│ ├ ● /ru/tools/text-analysis-comparison          5m      5m
+│ └ ● [+4 more paths]
+├ ○ /ru/tools/bag-of-words-analyzer               5m      5m
+├ ƒ /site.webmanifest
+├ ○ /sitemap.xml
+├ ƒ /textanalysis-config.schema.json
+├ ○ /tf-idf-formula                               5m      5m
+├ ○ /tools                                        5m      5m
+├ ○ /tools/bag-of-words-analyzer                  5m      5m
+├ ○ /tools/bag-of-words-generator                 5m      5m
+├ ○ /tools/evidence-workspace                     5m      5m
+├ ○ /tools/keyword-density-checker                5m      5m
+├ ○ /tools/ngram-analyzer                         5m      5m
+├ ○ /tools/text-analysis-comparison               5m      5m
+├ ○ /tools/text-similarity-calculator             5m      5m
+├ ○ /tools/tf-idf-calculator                      5m      5m
+├ ○ /tools/word-frequency-counter                 5m      5m
+├ ○ /uk                                           5m      5m
+├   /uk/[slug]
+│ ├ ● /uk/guides                                  5m      5m
+│ ├ ● /uk/api-docs                                5m      5m
+│ ├ ● /uk/cli                                     5m      5m
+│ └ ● [+8 more paths]
+├ ○ /uk/bag-of-words-model                        5m      5m
+├ ○ /uk/tools                                     5m      5m
+├   /uk/tools/[slug]
+│ ├ ● /uk/tools/word-frequency-counter            5m      5m
+│ ├ ● /uk/tools/keyword-density-checker           5m      5m
+│ ├ ● /uk/tools/text-analysis-comparison          5m      5m
+│ └ ● [+4 more paths]
+├ ○ /uk/tools/bag-of-words-analyzer               5m      5m
+└ ○ /what-are-n-grams                             5m      5m
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+

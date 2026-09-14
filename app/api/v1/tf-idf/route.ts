@@ -1,7 +1,7 @@
 import { API_VERSION,apiErrorResponse,apiJson,apiOptions,enforceBodyRateLimit,enforceRateLimit,normalizeAnalyzeBody,readJsonBody,PublicApiError } from "../../../lib/public-api";
 import { analyzeBagOfWords, calculateTfIdfCorpus } from "../../../lib/analyze";
 import {observeApiRequest} from "../../../lib/api-observability";
-import { limitIdfRows,parseResultRowLimit,parseResultRowOffset } from "../../../lib/api-result-limits";
+import {DEFAULT_TEXT_SIMILARITY_TOP,limitIdfRows,MAX_TEXT_SIMILARITY_TOP,parseResultRowLimit,parseResultRowOffset} from "../../../lib/api-result-limits";
 import { createCompoundFetchContext } from "../../../lib/api-request-budget";
 import { sendServerAnalyticsEvent } from "../../../lib/server-analytics";
 
@@ -19,9 +19,9 @@ export function GET(request:Request){
 }
 
 function parseTop(value:unknown){
-  if(value===undefined||value===null||value==="") return 100;
+  if(value===undefined||value===null||value==="") return DEFAULT_TEXT_SIMILARITY_TOP;
   const top=Number(value);
-  if(!Number.isInteger(top)||top<1||top>100) throw new PublicApiError(400,"INVALID_ARGUMENT","top must be an integer between 1 and 100.");
+  if(!Number.isInteger(top)||top<1||top>MAX_TEXT_SIMILARITY_TOP) throw new PublicApiError(400,"INVALID_ARGUMENT",`top must be an integer between 1 and ${MAX_TEXT_SIMILARITY_TOP}.`);
   return top;
 }
 

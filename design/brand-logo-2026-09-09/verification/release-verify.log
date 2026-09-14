@@ -1,0 +1,5 @@
+
+> textanalysis-tools@0.2.0 release:verify
+> node scripts/verify-release.mjs
+
+Release contract is synchronized for textanalysis-tools@0.2.0.

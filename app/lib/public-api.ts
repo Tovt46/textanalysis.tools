@@ -44,6 +44,7 @@ export class PublicApiError extends Error {
     message:string,
     public retryAfter?:number,
     public headers:Record<string,string>={},
+    public retryable?:boolean,
   ){
     super(message);
   }
@@ -188,7 +189,7 @@ export function apiErrorResponse(error:unknown,extraHeaders:Record<string,string
 
 function publicApiErrorClass(code:string){
   if(code==="RATE_LIMITED")return "rate_limit";
-  if(code==="FETCH_FAILED"||code==="TOO_MANY_REDIRECTS")return "remote_fetch_error";
+  if(code==="FETCH_FAILED"||code==="TOO_MANY_REDIRECTS"||code==="REMOTE_FETCH_TIMEOUT"||code==="REMOTE_DNS_LOOKUP_FAILED"||code==="REMOTE_REQUEST_FAILED"||code==="REMOTE_CONTENT_READ_FAILED"||code==="REMOTE_INVALID_REDIRECT"||code==="REMOTE_HTTP_ERROR")return "remote_fetch_error";
   if(code==="INVALID_URL"||code==="UNSAFE_URL")return "remote_safety";
   if(code==="REMOTE_CONTENT_TOO_LARGE"||code==="REMOTE_BUDGET_EXCEEDED")return "remote_resource_limit";
   if(code==="UNSUPPORTED_REMOTE_TYPE")return "remote_content_type";
@@ -347,8 +348,26 @@ const defaultRemoteLookup:RemoteAddressLookup=async hostname=>{
   return addresses.map(({address,family})=>({address,family:family as 4|6}));
 };
 
-function remoteTimeoutError(){
-  return new PublicApiError(422,"FETCH_FAILED","The remote page could not be fetched within 12 seconds.");
+function isAbortError(error:unknown){
+  return error instanceof Error && (error.name==="AbortError"||error.name==="TimeoutError");
+}
+
+function remoteTimeoutError(context?:string){
+  const suffix=context?` ${context}`:"";
+  return new PublicApiError(422,"REMOTE_FETCH_TIMEOUT",`The remote page request timed out${suffix}.`);
+}
+
+function remoteDnsFailure(error:unknown){
+  const retryable=error instanceof Error&&"code" in error&&error.code==="EAI_AGAIN";
+  return new PublicApiError(422,"REMOTE_DNS_LOOKUP_FAILED","The remote hostname could not be resolved.",undefined,{},retryable);
+}
+
+function remoteRequestFailure(){
+  return new PublicApiError(422,"REMOTE_REQUEST_FAILED","The connection to the remote page failed.");
+}
+
+function remoteReadFailure(){
+  return new PublicApiError(422,"REMOTE_CONTENT_READ_FAILED","The remote page content could not be read.");
 }
 
 async function withinRemoteDeadline<T>(deadlineAt:number,task:(remainingMs:number)=>Promise<T>){
@@ -363,7 +382,7 @@ async function withinRemoteDeadline<T>(deadlineAt:number,task:(remainingMs:numbe
   }finally{if(timeout)clearTimeout(timeout);}
 }
 
-async function resolvePublicAddresses(url:URL,lookupAddress:RemoteAddressLookup,deadlineAt:number){
+async function resolvePublicAddresses(url:URL,lookupAddress:RemoteAddressLookup,deadlineAt:number):Promise<readonly RemoteLookupAddress[]>{
   const hostname=normalizedHostname(url.hostname);
   if(isIP(hostname)!==0){
     if(isPrivateOrReservedIp(hostname)) throw new PublicApiError(400,"UNSAFE_URL","Local, private, and internal network addresses are not allowed.");
@@ -372,10 +391,11 @@ async function resolvePublicAddresses(url:URL,lookupAddress:RemoteAddressLookup,
   let addresses:readonly RemoteLookupAddress[];
   try{addresses=await withinRemoteDeadline(deadlineAt,()=>lookupAddress(hostname));}catch(error){
     if(error instanceof PublicApiError)throw error;
-    throw remoteTimeoutError();
+    if(isAbortError(error)) throw remoteTimeoutError("during DNS lookup");
+    throw remoteDnsFailure(error);
   }
   if(!addresses.length||addresses.some(({address,family})=>isIP(address)!==family)){
-    throw remoteTimeoutError();
+    throw remoteDnsFailure(new Error("Address metadata did not match resolved DNS family."));
   }
   if(addresses.some(({address})=>isPrivateOrReservedIp(address))){
     throw new PublicApiError(400,"UNSAFE_URL","Local, private, and internal network addresses are not allowed.");
@@ -428,20 +448,20 @@ export const fetchPinnedRemote:RemoteFetchImplementation=async(input,init,addres
   request.end();
 });
 
-async function cancelBody(response:Response){
-  try{await response.body?.cancel();}catch{}
+function cancelBody(response:Response){
+  try{void response.body?.cancel().catch(()=>{});}catch{}
 }
 
-async function readRemoteText(response:Response,budget:RemoteFetchBudget){
+async function readRemoteText(response:Response,budget:RemoteFetchBudget,deadlineAt:number){
   const declaredHeader=response.headers.get("content-length");
   if(declaredHeader){
     const declared=Number(declaredHeader);
     if(Number.isFinite(declared)&&declared>MAX_REMOTE_BYTES){
-      await cancelBody(response);
+      cancelBody(response);
       throw new PublicApiError(413,"REMOTE_CONTENT_TOO_LARGE","The remote page is too large.");
     }
     if(Number.isSafeInteger(declared)&&declared>=0){
-      try{budget.assertByteCapacity(declared);}catch(error){await cancelBody(response);throw error;}
+      try{budget.assertByteCapacity(declared);}catch(error){cancelBody(response);throw error;}
     }
   }
   if(!response.body)return"";
@@ -451,26 +471,25 @@ async function readRemoteText(response:Response,budget:RemoteFetchBudget){
   let text="";
   try{
     while(true){
-      const {done,value}=await reader.read();
+      const {done,value}=await withinRemoteDeadline(deadlineAt,()=>reader.read());
       if(done)break;
       received+=value.byteLength;
       if(received>MAX_REMOTE_BYTES){
-        await reader.cancel();
         throw new PublicApiError(413,"REMOTE_CONTENT_TOO_LARGE","The remote page is too large.");
       }
       budget.consumeBytes(value.byteLength);
       text+=decoder.decode(value,{stream:true});
       if(text.length>MAX_REMOTE_CHARS){
-        await reader.cancel();
         throw new PublicApiError(413,"REMOTE_CONTENT_TOO_LARGE","The remote page is too large.");
       }
     }
     text+=decoder.decode();
   }catch(error){
-    try{await reader.cancel();}catch{}
+    void reader.cancel().catch(()=>{});
     if(error instanceof PublicApiError)throw error;
-    throw new PublicApiError(422,"FETCH_FAILED","The remote page could not be fetched within 12 seconds.");
-  }
+    if(isAbortError(error)) throw remoteTimeoutError("while reading remote page content");
+    throw remoteReadFailure();
+  }finally{reader.releaseLock();}
   if(text.length>MAX_REMOTE_CHARS)throw new PublicApiError(413,"REMOTE_CONTENT_TOO_LARGE","The remote page is too large.");
   return text;
 }
@@ -490,6 +509,7 @@ export async function fetchRemoteText(value:string,context:RemoteFetchContext={}
         ...addresses.filter(address=>address.family===6),
       ].slice(0,MAX_REMOTE_ADDRESS_ATTEMPTS);
       let response:Response|undefined;
+      let lastFetchError:unknown;
       for(let index=0;index<candidates.length;index+=1){
         if(index>0)budget.consumeRequest();
         const remainingTotal=deadlineAt-Date.now();
@@ -507,31 +527,54 @@ export async function fetchRemoteText(value:string,context:RemoteFetchContext={}
           ));
           break;
         }catch(error){
-          if(error instanceof PublicApiError&&error.code!=="FETCH_FAILED")throw error;
+          if(error instanceof PublicApiError){
+            if(
+              error.code!=="FETCH_FAILED"&&
+              error.code!=="REMOTE_FETCH_TIMEOUT"&&
+              error.code!=="REMOTE_DNS_LOOKUP_FAILED"&&
+              error.code!=="REMOTE_REQUEST_FAILED"
+            )throw error;
+            lastFetchError=error;
+          }else if(isAbortError(error)){
+            lastFetchError=remoteTimeoutError();
+          }else{
+            lastFetchError=remoteRequestFailure();
+          }
           if(index===candidates.length-1||Date.now()>=deadlineAt){
-            if(error instanceof PublicApiError)throw error;
-            break;
+            if(lastFetchError instanceof PublicApiError)throw lastFetchError;
+            throw remoteTimeoutError();
           }
         }
       }
-      if(!response)throw remoteTimeoutError();
+      if(!response){
+        if(lastFetchError instanceof PublicApiError)throw lastFetchError;
+        throw remoteTimeoutError();
+      }
       if(response.status>=300&&response.status<400){
         const location=response.headers.get("location");
-        await cancelBody(response);
-        if(!location) throw new PublicApiError(422,"FETCH_FAILED","The remote server returned an invalid redirect.");
+        cancelBody(response);
+        if(!location) throw new PublicApiError(422,"REMOTE_INVALID_REDIRECT","The remote server returned a redirect without a location header.");
         if(redirect===MAX_REMOTE_REDIRECTS) throw new PublicApiError(422,"TOO_MANY_REDIRECTS","The remote URL redirected too many times.");
-        return {kind:"redirect" as const,url:validateRemoteUrl(new URL(location,url).toString())};
+        let redirectUrl:URL;
+        try{redirectUrl=new URL(location,url);}catch{
+          throw new PublicApiError(422,"REMOTE_INVALID_REDIRECT","The remote server returned an invalid redirect location.");
+        }
+        return {kind:"redirect" as const,url:validateRemoteUrl(redirectUrl.toString())};
       }
-      if(!response.ok){await cancelBody(response);throw new PublicApiError(422,"FETCH_FAILED",`The remote server returned HTTP ${response.status}.`);}
+      if(!response.ok){
+        cancelBody(response);
+        const retryable=response.status===408||response.status===425||response.status===429||response.status>=500;
+        throw new PublicApiError(422,"REMOTE_HTTP_ERROR",`The remote server returned HTTP ${response.status}.`,undefined,{},retryable);
+      }
       const type=(response.headers.get("content-type")||"").toLowerCase();
       if(type&&!type.includes("text/html")&&!type.includes("text/plain")&&!type.includes("application/xhtml+xml")){
-        await cancelBody(response);
+        cancelBody(response);
         throw new PublicApiError(415,"UNSUPPORTED_REMOTE_TYPE","The remote URL must return HTML or plain text.");
       }
       try{
-        return {kind:"text" as const,text:await withinRemoteDeadline(deadlineAt,()=>readRemoteText(response,budget))};
+        return {kind:"text" as const,text:await readRemoteText(response,budget,deadlineAt)};
       }catch(error){
-        await cancelBody(response);
+        cancelBody(response);
         throw error;
       }
     });

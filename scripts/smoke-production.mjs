@@ -11,7 +11,7 @@ const expectedRateLimitBackend=process.env.EXPECT_RATE_LIMIT_BACKEND?.trim();
 const expectedDeploymentRevision=process.env.EXPECT_DEPLOYMENT_REVISION?.trim().toLowerCase();
 const checkNpmRelease=process.env.CHECK_NPM_RELEASE==="1";
 const pageConcurrency=Number(process.env.SMOKE_PAGE_CONCURRENCY||8);
-const expectedSitemapPages=90;
+const expectedSitemapPages=91;
 const toolPages=[
   "/tools/bag-of-words-analyzer",
   "/tools/word-frequency-counter",
@@ -31,6 +31,11 @@ const apiPaths=[
   "/api/v1/bag-of-words",
   "/api/v1/tf-idf",
   "/api/v1/similarity",
+];
+const textContractApiPaths=[
+  "/api/text-contract/compile",
+  "/api/text-contract/generate",
+  "/api/text-contract/evaluate",
 ];
 
 async function request(path,init={}){
@@ -142,6 +147,21 @@ async function checkEvidenceWorkspace(){
   assert.match(html,/WEBMCP/i,"Evidence Workspace is missing its WebMCP explanation.");
   assert.match(html,/data-testid="evidence-workspace"/i,"Evidence Workspace did not render its client workflow shell.");
   assertDeploySafeCache(response,"Evidence Workspace");
+}
+
+async function checkTextContract(){
+  const response=await request("/tools/text-contract");
+  assert.equal(response.status,200,"TextContract Agent must return HTTP 200.");
+  const html=await response.text();
+  assert.match(html,/TextContract Agent/i,"TextContract has the wrong product identity.");
+  assert.match(html,/data-testid="text-contract-workspace"/i,"TextContract did not render its client workflow shell.");
+  assert.match(html,/one document and one rewrite brief/i,"TextContract is missing its one-source workflow boundary.");
+  assertDeploySafeCache(response,"TextContract Agent");
+  for(const path of textContractApiPaths){
+    const endpoint=await request(path);
+    assert.equal(endpoint.status,200,`${path} metadata must return HTTP 200.`);
+    assert.equal(endpoint.headers.get("access-control-allow-origin"),null,`${path} must remain same-origin.`);
+  }
 }
 
 async function checkAgentPage(){
@@ -313,16 +333,22 @@ async function checkApis(){
   assert.equal(noOverlapBody.result.overlapTerms,0);
 
   await Promise.all(apiPaths.map(checkCors));
+  for(const path of textContractApiPaths){
+    const response=await request(path,{method:"OPTIONS",headers:{Origin:"https://example.com","Access-Control-Request-Method":"POST"}});
+    assert.equal(response.status,204,`${path} preflight metadata failed.`);
+    assert.equal(response.headers.get("access-control-allow-origin"),null,`${path} exposed paid model calls cross-origin.`);
+  }
 }
 
 await checkHomepage();
 await checkRedirect();
 await checkToolPages();
 await checkEvidenceWorkspace();
+await checkTextContract();
 await checkAgentPage();
 await checkSitemapPagesAndAssets();
 await checkHealth();
 await checkPublishedNpmPackage();
 await checkApis();
 
-console.log(`Production smoke check passed for ${baseUrl.origin}: ${expectedSitemapPages} pages, linked assets, 8 tools, 8 APIs, and health.`);
+console.log(`Production smoke check passed for ${baseUrl.origin}: ${expectedSitemapPages} pages, linked assets, 8 deterministic tools, 8 public analysis APIs, TextContract metadata, and health.`);

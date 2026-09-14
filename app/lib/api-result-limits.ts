@@ -4,6 +4,8 @@ export const DEFAULT_RESULT_ROW_LIMIT=5_000;
 export const MAX_RESULT_ROW_LIMIT=5_000;
 export const MAX_RESULT_ROW_OFFSET=250_000;
 export const DEFAULT_DENSITY_ROW_LIMIT=2_000;
+export const DEFAULT_TEXT_SIMILARITY_TOP=100;
+export const MAX_TEXT_SIMILARITY_TOP=100;
 
 type RowsResult<Row>=Record<string,unknown>&{
   rows:Row[];
