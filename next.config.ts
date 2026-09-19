@@ -12,6 +12,14 @@ function deploymentRevision(){
 
 const nextConfig: NextConfig = {
   expireTime: 300,
+  redirects(){
+    return [{
+      source:"/:path*",
+      has:[{type:"host",value:"www\\.textanalysis\\.tools"}],
+      destination:"https://textanalysis.tools/:path*",
+      permanent:true,
+    }];
+  },
   env:{
     TEXTANALYSIS_BUILD_REVISION:deploymentRevision(),
   },

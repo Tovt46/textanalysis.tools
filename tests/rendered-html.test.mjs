@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { request as httpRequest } from "node:http";
 import test from "node:test";
 
 const TEST_BASE_URL = process.env.TEST_BASE_URL?.trim();
@@ -73,6 +74,34 @@ test("redirects /en to the canonical public origin", async () => {
   const response=await request("/en",{redirect:"manual"});
   assert.equal(response.status,308);
   assert.equal(response.headers.get("location"),"https://textanalysis.tools/");
+});
+
+test("redirects only the www host permanently while preserving paths and queries",{skip:!TEST_BASE_URL},async()=>{
+  // Native HTTP preserves Host; Node's fetch replaces it with the connection host.
+  const withHost=(path,host)=>new Promise((resolve,reject)=>{
+    const req=httpRequest(new URL(path,TEST_BASE_URL),{headers:{host}},response=>{
+      response.resume();
+      response.on("end",()=>resolve({status:response.statusCode,location:response.headers.location}));
+      response.on("error",reject);
+    });
+    req.on("error",reject);
+    req.setTimeout(5000,()=>req.destroy(new Error("Host redirect request timed out")));
+    req.end();
+  });
+  for(const path of ["/","/tools/word-frequency-counter?source=seo&phrase=two%20words","/uk/tools/tf-idf-calculator","/sitemap.xml"]){
+    const response=await withHost(path,"www.textanalysis.tools");
+    assert.equal(response.status,308,path);
+    const actual=new URL(response.location);
+    const expected=new URL(path,"https://textanalysis.tools");
+    assert.equal(actual.origin,expected.origin,path);
+    assert.equal(actual.pathname,expected.pathname,path);
+    assert.deepEqual([...actual.searchParams],[...expected.searchParams],path);
+  }
+  for(const host of ["textanalysis.tools","localhost","wwwXtextanalysisXtools"]){
+    const response=await withHost("/",host);
+    assert.equal(response.status,200,host);
+    assert.equal(response.location,undefined,host);
+  }
 });
 
 test("renders the Bag of Words analyzer on its dedicated multilingual route", async () => {
@@ -200,6 +229,7 @@ test("serves a valid XML sitemap", async () => {
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^application\/xml/i);
   const xml = await response.text();
+  assert.doesNotMatch(xml, /<lastmod\b/i);
   assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
   assert.match(xml, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9" xmlns:xhtml="http:\/\/www\.w3\.org\/1999\/xhtml">/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk<\/loc>/);

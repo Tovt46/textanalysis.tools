@@ -2,7 +2,6 @@ import type { UiLang } from "../i18n";
 import { languagePaths,localizedPath } from "../localization";
 import { SITE_URL } from "../seo-metadata";
 
-const LAST_MODIFIED="2026-07-31";
 const LANGUAGES=["en","ru","uk","es"] as const satisfies readonly UiLang[];
 const PATHS=[
   "/",
@@ -44,22 +43,18 @@ function entry(path:string,locale:UiLang){
   ].join("\n    ");
   return `  <url>
     <loc>${absolute(localizedPath(locale,path))}</loc>
-    <lastmod>${LAST_MODIFIED}</lastmod>
     ${alternates}
   </url>`;
 }
 
 const privacyEntry=`  <url>
     <loc>${absolute("/privacy")}</loc>
-    <lastmod>2026-08-02</lastmod>
   </url>`;
 const evidenceWorkspaceEntry=`  <url>
     <loc>${absolute("/tools/evidence-workspace")}</loc>
-    <lastmod>2026-08-27</lastmod>
   </url>`;
 const textContractEntry=`  <url>
     <loc>${absolute("/tools/text-contract")}</loc>
-    <lastmod>2026-09-03</lastmod>
   </url>`;
 const entries=[...PATHS.flatMap(path=>LANGUAGES.map(locale=>entry(path,locale))),textContractEntry,evidenceWorkspaceEntry,privacyEntry].join("\n");
 const xml=`<?xml version="1.0" encoding="UTF-8"?>
