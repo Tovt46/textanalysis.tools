@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SITE_MANIFEST,SITE_SOCIAL_IMAGE,SITE_ICONS,SITE_NAME,SITE_URL } from "../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../SiteChrome";
 import { languageAlternates,languagePaths } from "../../localization";
+import { EditorialRevisionExample,WebpageExtractionExample } from "../../EditorialWorkflowExamples";
 
 const path="/compare-texts-by-word-frequency";
 const title="How to Compare Texts by Word Frequency";
@@ -41,9 +42,10 @@ export default function CompareTextsByWordFrequencyPage(){
         <aside className="article-toc" aria-label="On this page">
           <b>On this page</b>
           <a href="#difference">Frequency comparison versus diff</a>
-          <a href="#workflow">Five-step workflow</a>
+          <a href="#workflow">Six-step workflow</a>
+          <a href="#webpage-extraction-example">Choose the webpage text</a>
           <a href="#normalization">Normalize different lengths</a>
-          <a href="#example">Worked example</a>
+          <a href="#example">Reproduce a revision review</a>
           <a href="#phrases">Compare words and bigrams</a>
           <a href="#interpretation">Interpret changes</a>
           <a href="#limitations">Limits</a>
@@ -52,7 +54,7 @@ export default function CompareTextsByWordFrequencyPage(){
           <section id="difference">
             <p className="section-number">01</p>
             <h2>Frequency Comparison Is Not a Character Diff</h2>
-            <p>A line or character diff preserves position and shows exact insertions and deletions. It is ideal for code, contracts, and sentence-level editing. Word-frequency comparison discards position, groups matching terms, and measures how their shares changed.</p>
+            <p>A line or character diff preserves position and shows exact insertions and deletions. It is ideal for code, contracts, and sentence-level editing. A frequency table groups matching terms and measures how their shares changed; source context lets you return from that summary to the passages worth reviewing.</p>
             <div className="comparison-grid">
               <div className="comparison-head"><span>Method</span><b>Preserves</b><b>Best for</b></div>
               <div><span>Character diff</span><p>Exact position and sequence</p><p>Finding literal edits</p></div>
@@ -66,13 +68,14 @@ export default function CompareTextsByWordFrequencyPage(){
             <h2>A Six-Step Text Comparison Workflow</h2>
             <div className="step-grid">
               <div><span>1</span><h3>Define A and B</h3><p>Use the original as A and the revision as B. Keep the direction consistent across reports.</p></div>
-              <div><span>2</span><h3>Match preprocessing</h3><p>Apply the same language, stop words, tokenization, and source extraction rules to both inputs.</p></div>
+              <div><span>2</span><h3>Review the sources</h3><p>For URLs, preview the fetched text and choose a comparable main-content or whole-page scope. Apply the same language and stop-word settings to both inputs.</p></div>
               <div><span>3</span><h3>Compare document metrics</h3><p>Review token count and vocabulary size before interpreting individual term changes.</p></div>
               <div><span>4</span><h3>Sort normalized changes</h3><p>Start with the largest absolute percentage-point changes, not only raw count changes.</p></div>
-              <div><span>5</span><h3>Inspect context manually</h3><p>Search the source for changed terms and decide whether the shift was intentional and useful.</p></div>
+              <div><span>5</span><h3>Inspect each occurrence</h3><p>Open changed words or bigrams in source context. Read both versions and decide whether the shift was intentional and useful.</p></div>
               <div><span>6</span><h3>Export the evidence</h3><p>Save the returned rows, or follow API pagination when editorial QA needs the complete ordered tables.</p></div>
             </div>
           </section>
+          <WebpageExtractionExample/>
           <section id="normalization">
             <p className="section-number">03</p>
             <h2>Normalize When the Texts Have Different Lengths</h2>
@@ -82,17 +85,7 @@ export default function CompareTextsByWordFrequencyPage(){
             <code className="vector-code">share change = (share in B − share in A) × 100 percentage points</code>
             <p>A positive result means the term occupies a larger share in B. A negative result means it occupies a smaller share. This does not declare the change good or bad.</p>
           </section>
-          <section id="example">
-            <p className="section-number">04</p>
-            <h2>A Worked Frequency-Change Example</h2>
-            <p>Suppose “conversion” appears 6 times in a 600-word original and 8 times in a 1,200-word revision.</p>
-            <div className="vector-table">
-              <div className="vector-row vector-head"><span>Version</span><span>Count</span><span>Words</span><span>Share</span><span>Per 1,000</span><span>Direction</span></div>
-              <div className="vector-row"><b>A</b><span>6</span><span>600</span><span>1.00%</span><span>10.0</span><span>Baseline</span></div>
-              <div className="vector-row"><b>B</b><span>8</span><span>1,200</span><span>0.67%</span><span>6.7</span><span>−0.33 pp</span></div>
-            </div>
-            <p>The raw count rose by two, but the normalized share fell by 0.33 percentage points. B contains more occurrences because it is longer, not because the term became more prominent.</p>
-          </section>
+          <EditorialRevisionExample id="example"/>
           <section id="phrases">
             <p className="section-number">05</p>
             <h2>Compare Individual Words and Consecutive Phrases</h2>
@@ -108,12 +101,12 @@ export default function CompareTextsByWordFrequencyPage(){
               <div><h3>Vocabulary size</h3><p>A larger vocabulary is not automatically better. Genre, length, names, and technical notation all affect it.</p></div>
               <div><h3>Zipf diagnostics</h3><p>Distribution changes can flag unusual repetition, but they need a second signal such as relevance or contextual review.</p></div>
             </div>
-            <p>For automated workflows, the public <Link href="/api-docs#compare">comparison API</Link> returns both analyses and paginated normalized word and bigram change tables.</p>
+            <p>For automated workflows, the public <Link href="/api-docs#compare">comparison API</Link> returns both analyses and paginated normalized word and bigram change tables. Its URL analysis retains the existing whole-source behavior. To reproduce a web preview selection through an API or CLI workflow, supply the reviewed text explicitly.</p>
           </section>
           <section id="limitations">
             <p className="section-number">07</p>
             <h2>Vocabulary Change Does Not Measure Quality or Meaning</h2>
-            <p>Frequency comparison does not judge factual accuracy, readability, semantic equivalence, tone, or search performance. Template extraction can also add navigation, footer, or cookie text when public URLs are compared.</p>
+            <p>Frequency comparison does not judge factual accuracy, readability, semantic equivalence, tone, or search performance. Main-content extraction is a starting point, so inspect the preview: page structure can still omit useful sections or include template text. If the server cannot fetch the article or its content requires JavaScript, paste the relevant text instead.</p>
             <p>Use the output to locate changes worth reviewing. Do not automatically restore every removed term, delete every repeated phrase, or select a “winner” based on one numeric direction.</p>
             <div className="article-callout"><b>No automatic winner</b><p>The comparison tool intentionally reports evidence instead of assigning a quality score to A or B.</p></div>
           </section>

@@ -213,24 +213,20 @@ test("local Worker caps vocabulary rows and exposes partial-result metadata",asy
   expect(payload.truncated).toBe(true);
 });
 
-test("URL-mode surfaces API truncation instead of implying a complete export",async({page})=>{
-  await page.route("**/api/v1/word-frequency",route=>route.fulfill({
-    status:200,
-    contentType:"application/json",
-    body:JSON.stringify({
-      apiVersion:"2026-07-01",
-      storage:"none",
-      result:{
-        language:"en",tokenCount:2,vocabularySize:2,stopwordCount:0,
-        rows:[{term:"alpha",count:1,percentage:50,per1000:500}],
-        totalRows:2,returnedRows:1,offset:0,nextOffset:1,hasMore:true,truncated:true,
-      },
-    }),
+test("reviewed URL text retains partial-result disclosure in browser calculation",async({page})=>{
+  const text=Array.from({length:5_001},(_,index)=>`term${index}`).join(" ");
+  await page.route("**/api/source-preview",route=>route.fulfill({
+    status:200, contentType:"application/json",
+    body:JSON.stringify({apiVersion:"2026-07-01",storage:"none",source:{
+      text,requestedScope:"main",usedScope:"main",fallback:false,
+    }}),
   }));
   await page.goto("/tools/word-frequency-counter");
   const form=page.locator("form.frequency-workspace");
   await form.getByRole("button",{name:"URL",exact:true}).click();
   await form.locator('input[type="url"]').fill("https://example.com/article");
+  await form.locator(".analyze-button").click();
+  await expect(form.getByRole("textbox",{name:"Extracted page text",exact:true})).toHaveValue(text);
   await form.locator(".analyze-button").click();
   await expect(page.getByTestId("partial-result-notice")).toContainText("table and its CSV or JSON export");
 });

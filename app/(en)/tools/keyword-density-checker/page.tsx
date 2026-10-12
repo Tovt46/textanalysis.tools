@@ -4,6 +4,7 @@ import KeywordDensityTool from "../../../KeywordDensityTool";
 import { SITE_MANIFEST,SITE_SOCIAL_IMAGE,SITE_ICONS,SITE_NAME,SITE_URL,toolWebApplicationSchema } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
 import { languageAlternates,languagePaths } from "../../../localization";
+import { EditorialRevisionExample } from "../../../EditorialWorkflowExamples";
 
 const path="/tools/keyword-density-checker";
 const title="Free Keyword Density Checker for Text & URLs";
@@ -30,6 +31,7 @@ export default function KeywordDensityCheckerPage(){
     <SiteHeader locale="en" active="tools" languagePaths={languagePaths(path)}/>
     <KeywordDensityTool/>
     <article className="tool-explainer">
+      <EditorialRevisionExample mode="density"/>
       <section>
         <p className="section-number">CALCULATION</p>
         <h2>How this keyword density checker calculates percentages</h2>
@@ -41,7 +43,7 @@ export default function KeywordDensityCheckerPage(){
         <p className="section-number">PHRASE ANALYSIS</p>
         <h2>Review one-word keywords, bigrams, and trigrams separately</h2>
         <p>Unigrams show individual vocabulary. Bigrams preserve two-word sequences such as “keyword density,” while trigrams expose more specific patterns such as “free SEO tool.” The analyzer builds phrases from consecutive words before applying the table filter, so removing stop-word noise never creates a phrase that did not exist in the source.</p>
-        <div className="feature-list"><div><h3>Tracked keywords</h3><p>Check exact phrases you care about even when they are not among the most frequent rows.</p></div><div><h3>Minimum frequency</h3><p>Hide one-off terms while retaining the returned result for export.</p></div><div><h3>Draft vs page</h3><p>Save result A, analyze result B with identical settings, and review the largest percentage-point changes.</p></div><div><h3>URL or pasted text</h3><p>Fetch a public page or analyze a draft locally before it is published.</p></div></div>
+        <div className="feature-list"><div><h3>Tracked keywords</h3><p>Check exact phrases you care about even when they are not among the most frequent rows. Inspect their source context to understand a repeat or absence.</p></div><div><h3>Minimum frequency</h3><p>Hide one-off terms while retaining the returned result for export.</p></div><div><h3>Draft vs page</h3><p>Save result A, analyze result B with identical settings, and review the largest percentage-point changes.</p></div><div><h3>URL or pasted text</h3><p>Pasted text is calculated locally. For URLs, preview the text fetched by the stateless server and choose the extraction scope before the browser calculates the result.</p></div></div>
       </section>
       <section>
         <p className="section-number">LIMITATIONS</p>

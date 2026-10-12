@@ -7,9 +7,13 @@ import { trackEvent } from "./lib/analytics";
 import { AnalysisProgress,hasPartialBrowserResult,isAnalysisAbort,PartialResultNotice,useBrowserAnalysis,validateBrowserInputs } from "./lib/browser-analysis";
 import { DEFAULT_STOPWORD_TEXT,parseStopwordText,type TextLanguage } from "./lib/stopwords";
 import type { UiLang } from "./i18n";
-import { BREADCRUMB_LABELS,formatNumber,localizedPath,localizeApiError } from "./localization";
+import { BREADCRUMB_LABELS,formatNumber,localizedPath } from "./localization";
 import { DENSITY_UI } from "./tool-ui-copy";
 import { CopyResultAction,ExampleAction,type ToolExample } from "./ToolWorkflowActions";
+import {EditorialSourceControls,SOURCE_WORKFLOW_COPY} from "./EditorialSourceControls";
+import {ContextTermButton,TermContextPanel} from "./TermContextPanel";
+import {buildContextIndex,type ContextIndexOptions} from "./lib/term-contexts";
+import {sourcePreviewAnalysisText,useSourcePreview} from "./lib/source-preview-client";
 
 type SourceType="text"|"url";
 type Analysis=ReturnType<typeof analyzeKeywordDensity>;
@@ -17,7 +21,8 @@ type NgramSize=1|2|3;
 type SortKey="term"|"count"|"percentage"|"per1000";
 type SortDirection="asc"|"desc";
 type LockedSettings={language:"auto"|TextLanguage;keepStopwords:boolean;trackedKeywords:string;stopwordLists:Record<TextLanguage,string[]>};
-type Baseline={result:Analysis;label:string;settings:LockedSettings};
+type AnalyzedSource={text:string;options:ContextIndexOptions};
+type Baseline={result:Analysis;label:string;settings:LockedSettings;source:AnalyzedSource};
 
 const STOPWORDS_KEY="bow-zipf-stopwords-v1";
 const DISPLAY_LIMIT=500;
@@ -54,7 +59,20 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
   const [sortKey,setSortKey]=useState<SortKey>("count");
   const [sortDirection,setSortDirection]=useState<SortDirection>("desc");
   const [error,setError]=useState("");
+  const [previewing,setPreviewing]=useState(false);
+  const [selectedTerm,setSelectedTerm]=useState<string|null>(null);
+  const [analyzedSource,setAnalyzedSource]=useState<AnalyzedSource|null>(null);
   const {busy:loading,progress,runWorker,runRemote,cancel}=useBrowserAnalysis();
+  const pageSource=useSourcePreview(source,sourceType,uiLang);
+  const sourceCopy=SOURCE_WORKFLOW_COPY[uiLang];
+  const contextsOpen=selectedTerm!==null;
+  const contextSources=useMemo(()=>analyzedSource&&contextsOpen?[
+    ...(baseline?[{label:"A",index:buildContextIndex(baseline.source.text,baseline.source.options)}]:[]),
+    {label:baseline?"B":copy.source,index:buildContextIndex(analyzedSource.text,analyzedSource.options)},
+  ]:[],[analyzedSource,baseline,copy.source,contextsOpen]);
+
+  function invalidateResult(){cancel();setResult(null);setSelectedTerm(null);setAnalyzedSource(null);setError("");setPreviewing(false);}
+  function openContexts(term:string){setSelectedTerm(term);trackEvent("context_opened",{tool:"keyword_density_checker",source_type:sourceType,ngram_size:term.split(" ").length});}
 
   useEffect(()=>{
     const timer=window.setTimeout(()=>{try{
@@ -101,32 +119,25 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
   async function runAnalysis(event:FormEvent){
     event.preventDefault();
     if(!source.trim())return;
-    setError("");setResult(null);
+    setError("");setResult(null);setSelectedTerm(null);setAnalyzedSource(null);
     const settings=baseline?.settings||{language,keepStopwords,trackedKeywords,stopwordLists:parsedStopwords};
-    trackEvent("analysis_started",{tool:"keyword_density_checker",source_type:sourceType,text_language:settings.language});
-    if(sourceType==="url")trackEvent("url_analysis_started",{tool:"keyword_density_checker",text_language:settings.language});
     try{
-      let next:Analysis;
-      if(sourceType==="text"){
-        validateBrowserInputs([source],uiLang);
-        next=await runWorker<Analysis>("keyword-density",{
-          input:{text:source,language:settings.language,keepStopwords:settings.keepStopwords,stopwordLists:settings.stopwordLists,uiLanguage:uiLang},
-          trackedKeywords:settings.trackedKeywords,
-        });
-      }else{
-        next=await runRemote(async signal=>{
-          const response=await fetch("/api/v1/keyword-density",{
-            method:"POST",signal,
-            headers:{"Content-Type":"application/json","Accept":"application/json"},
-            body:JSON.stringify({sourceType,source,language:settings.language,keepStopwords:settings.keepStopwords,stopwordLists:settings.stopwordLists,trackedKeywords:settings.trackedKeywords}),
-          });
-          const raw=await response.text();
-          let payload:unknown;
-          try{payload=JSON.parse(raw);}catch{throw new Error(copy.invalid);}
-          if(!response.ok)throw new Error(localizeApiError(payload,copy.urlFailed,uiLang));
-          return (payload as {result:Analysis}).result;
-        });
+      if(sourceType==="url"&&!pageSource.preview){
+        setPreviewing(true);
+        const preview=await runRemote(pageSource.prepare);
+        trackEvent("source_preview_completed",{tool:"keyword_density_checker",content_scope:preview.usedScope,fallback:preview.fallback});
+        return;
       }
+      const visibleText=sourceType==="url"?pageSource.preview!.text:source;
+      validateBrowserInputs([visibleText],uiLang);
+      const text=sourceType==="url"?sourcePreviewAnalysisText(visibleText):visibleText;
+      trackEvent("analysis_started",{tool:"keyword_density_checker",source_type:sourceType,text_language:settings.language});
+      if(sourceType==="url")trackEvent("url_analysis_started",{tool:"keyword_density_checker",text_language:settings.language});
+      const next=await runWorker<Analysis>("keyword-density",{
+        input:{text,language:settings.language,keepStopwords:settings.keepStopwords,stopwordLists:settings.stopwordLists,uiLanguage:uiLang},
+        trackedKeywords:settings.trackedKeywords,
+      });
+      setAnalyzedSource({text,options:{language:next.language,keepStopwords:true}});
       setResult(next);setQuery("");
       if(settings.language==="auto")setEditorLanguage(next.language);
       trackEvent("analysis_completed",{tool:"keyword_density_checker",source_type:sourceType,text_language:next.language,word_count:next.wordCount,tracked_keywords:next.trackedKeywords.length});
@@ -137,33 +148,32 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
       const message=caught instanceof Error?caught.message:copy.failed;
       setError(message);
       trackEvent("analysis_error",{tool:"keyword_density_checker",source_type:sourceType,error_message:message.slice(0,100)});
-    }
+    }finally{setPreviewing(false);}
   }
 
-  function selectSourceType(value:SourceType){cancel();setSourceType(value);setSource("");setResult(null);setError("");}
+  function selectSourceType(value:SourceType){invalidateResult();pageSource.clear();setSourceType(value);setSource("");}
   function loadExample(example:ToolExample){
-    cancel();setSourceType("text");setSource(example.sources[0]);setResult(null);setError("");
+    invalidateResult();pageSource.clear();setSourceType("text");setSource(example.sources[0]);
     if(!baseline){setTrackedKeywords(example.tracked);setLanguage(uiLang);setEditorLanguage(uiLang);}
   }
-  function changeLanguage(value:"auto"|TextLanguage){cancel();setLanguage(value);if(value!=="auto")setEditorLanguage(value);trackEvent("language_changed",{tool:"keyword_density_checker",text_language:value});}
-  function changeEditorLanguage(value:TextLanguage){cancel();setEditorLanguage(value);setLanguage(value);trackEvent("language_changed",{tool:"keyword_density_checker",text_language:value,control:"stopword_editor"});}
+  function changeLanguage(value:"auto"|TextLanguage){invalidateResult();setLanguage(value);if(value!=="auto")setEditorLanguage(value);trackEvent("language_changed",{tool:"keyword_density_checker",text_language:value});}
+  function changeEditorLanguage(value:TextLanguage){invalidateResult();setEditorLanguage(value);setLanguage(value);trackEvent("language_changed",{tool:"keyword_density_checker",text_language:value,control:"stopword_editor"});}
   function updateStopwords(value:string){
-    cancel();
+    invalidateResult();
     const next={...stopwordLists,[editorLanguage]:value};
     setStopwordLists(next);
     try{localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}catch{}
   }
   function resetStopwords(){updateStopwords(DEFAULT_STOPWORD_TEXT[editorLanguage]);}
   function saveAsA(){
-    if(!result)return;
-    cancel();
+    if(!result||!analyzedSource)return;
     const settings={language,keepStopwords,trackedKeywords,stopwordLists:parsedStopwords};
-    setBaseline({result,label:`${copy.labelA} · ${formatNumber(result.wordCount,uiLang)} ${copy.labelWords}`,settings});
-    setResult(null);setSource("");setError("");
+    setBaseline({result,label:`${copy.labelA} · ${formatNumber(result.wordCount,uiLang)} ${copy.labelWords}`,settings,source:analyzedSource});
+    invalidateResult();pageSource.clear();setSource("");
     trackEvent("comparison_result_saved",{tool:"keyword_density_checker",word_count:result.wordCount});
     window.scrollTo({top:0,behavior:"smooth"});
   }
-  function clearBaseline(){cancel();setBaseline(null);setResult(null);setError("");}
+  function clearBaseline(){invalidateResult();setBaseline(null);}
   function changeSort(value:SortKey){
     if(value===sortKey)setSortDirection(current=>current==="asc"?"desc":"asc");
     else{setSortKey(value);setSortDirection(value==="term"?"asc":"desc");}
@@ -198,9 +208,9 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
       <section className="frequency-input-card">
         <div className="section-head"><div><span>01</span><h2>{baseline?copy.sourceB:copy.source}</h2></div><div className="tabs"><button type="button" className={sourceType==="text"?"active":""} onClick={()=>selectSourceType("text")}>{copy.text}</button><button type="button" className={sourceType==="url"?"active":""} onClick={()=>selectSourceType("url")}>{copy.url}</button></div></div>
         {sourceType==="text"
-          ?<div className="textarea-wrap"><textarea value={source} onChange={event=>{cancel();setSource(event.target.value);setResult(null);setError("");}} placeholder={copy.paste} aria-label={copy.textAria}/><span>{formatNumber(source.length,uiLang)} {copy.characters}</span></div>
-          :<><input className="url-input" type="url" value={source} onChange={event=>{cancel();setSource(event.target.value);setResult(null);setError("");}} placeholder="https://example.com/page" aria-label={copy.urlAria} required/><p className="url-help">{copy.urlHelp}</p></>}
-        <label className="field wide tracked-keywords"><span>{copy.tracked}</span><textarea value={trackedKeywords} disabled={locked} onChange={event=>{cancel();setTrackedKeywords(event.target.value);}} placeholder={copy.trackedPlaceholder}/><small>{locked?copy.trackedLocked:copy.trackedHelp}</small></label>
+          ?<div className="textarea-wrap"><textarea value={source} onChange={event=>{invalidateResult();pageSource.clear();setSource(event.target.value);}} placeholder={copy.paste} aria-label={copy.textAria}/><span>{formatNumber(source.length,uiLang)} {copy.characters}</span></div>
+          :<><input className="url-input" type="url" value={source} onChange={event=>{invalidateResult();pageSource.clear();setSource(event.target.value);}} placeholder="https://example.com/page" aria-label={copy.urlAria} required/><p className="url-help">{copy.urlHelp}</p><EditorialSourceControls scope={pageSource.scope} preview={pageSource.preview} locale={uiLang} onScopeChange={value=>{invalidateResult();pageSource.clear();pageSource.setScope(value);}}/></>}
+        <label className="field wide tracked-keywords"><span>{copy.tracked}</span><textarea value={trackedKeywords} disabled={locked} onChange={event=>{invalidateResult();setTrackedKeywords(event.target.value);}} placeholder={copy.trackedPlaceholder}/><small>{locked?copy.trackedLocked:copy.trackedHelp}</small></label>
         <ExampleAction tool="keyword-density" locale={uiLang} onLoad={loadExample}/>
       </section>
 
@@ -208,10 +218,10 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
         <div className="section-head simple"><div><span>02</span><h2>{copy.settings}</h2></div></div>
         {baseline&&<div className="density-baseline-pill"><span>A</span><p><b>{baseline.label}</b><small>{copy.baselineHelp}</small></p><button type="button" onClick={clearBaseline} aria-label={copy.removeA}>×</button></div>}
         <label className="field"><span>{copy.language}</span><select value={language} disabled={locked} onChange={event=>changeLanguage(event.target.value as "auto"|TextLanguage)}><option value="auto">{copy.detect}</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option></select><small>{copy.languageHelp}</small></label>
-        <label className="check"><input type="checkbox" checked={keepStopwords} disabled={locked} onChange={event=>{cancel();setKeepStopwords(event.target.checked);}}/><span><b>{copy.includeStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
+        <label className="check"><input type="checkbox" checked={keepStopwords} disabled={locked} onChange={event=>{invalidateResult();setKeepStopwords(event.target.checked);}}/><span><b>{copy.includeStops}</b><small>{keepStopwords?copy.stopsOn:copy.stopsOff}</small></span></label>
         <details className="stopword-editor"><summary>{copy.editStops} <span>{parsedStopwords[editorLanguage].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru","es"] as TextLanguage[]).map(item=><button type="button" key={item} disabled={locked} className={editorLanguage===item?"active":""} onClick={()=>changeEditorLanguage(item)}>{item.toUpperCase()}</button>)}</div><p>{copy.editorHelp}</p><textarea value={stopwordLists[editorLanguage]} disabled={locked} onChange={event=>updateStopwords(event.target.value)} aria-label={`${copy.editAria}: ${editorLanguage.toUpperCase()}`}/><div className="stopword-actions"><small>{parsedStopwords[editorLanguage].length} {copy.saved}</small><button type="button" disabled={locked} onClick={resetStopwords}>{copy.restore}</button></div></div></details>
-        <button className="analyze-button" disabled={loading||!source.trim()}><span>{loading?copy.loading:baseline?copy.submitB:copy.submit}</span><b>→</b></button>
-        <AnalysisProgress active={loading} progress={progress} label={copy.loading}/>
+        <button className="analyze-button" disabled={loading||!source.trim()}><span>{loading?(previewing?sourceCopy.loading:copy.loading):sourceType==="url"&&!pageSource.preview?sourceCopy.preview:baseline?copy.submitB:copy.submit}</span><b aria-hidden="true">→</b></button>
+        <AnalysisProgress active={loading} progress={progress} label={previewing?sourceCopy.loading:copy.loading}/>
         {error&&<p className="error" role="alert">{error}</p>}
       </aside>
     </form>
@@ -222,17 +232,18 @@ export default function KeywordDensityTool({uiLang="en"}:{uiLang?:UiLang}){
       <div className="density-warning"><b>{copy.warning}</b><p>{copy.warningText}</p></div>
       <div className="frequency-metrics"><div><span>{copy.totalWords}</span><strong>{formatNumber(result.wordCount,uiLang)}</strong><small>{copy.totalWordsNote}</small></div><div><span>{copy.visible}</span><strong>{formatNumber(result.vocabularySize,uiLang)}</strong><small>{copy.visibleNote}</small></div><div><span>{copy.trackedCount}</span><strong>{formatNumber(result.trackedKeywords.length,uiLang)}</strong><small>{copy.trackedNote}</small></div></div>
 
-      {activeTracked.length>0&&<div className="tracked-density-card"><div><p className="section-number">{copy.trackedEye}</p><h3>{copy.trackedTitle}</h3></div><div className="table-scroll"><table><thead><tr><th>{copy.keyword}</th><th>{copy.wordCount}</th><th>{copy.count}</th><th>{copy.percentage}</th><th>{copy.per1000}</th></tr></thead><tbody>{activeTracked.map(row=><tr key={row.term}><td><b>{row.term}</b></td><td>{row.n}</td><td>{row.count}</td><td>{row.percentage.toFixed(row.percentage<.1?3:2)}%</td><td>{row.per1000.toFixed(row.per1000<1?2:1)}</td></tr>)}</tbody></table></div></div>}
+      {activeTracked.length>0&&<div className="tracked-density-card"><div><p className="section-number">{copy.trackedEye}</p><h3>{copy.trackedTitle}</h3></div><div className="table-scroll"><table><thead><tr><th>{copy.keyword}</th><th>{copy.wordCount}</th><th>{copy.count}</th><th>{copy.percentage}</th><th>{copy.per1000}</th></tr></thead><tbody>{activeTracked.map(row=><tr key={row.term}><td><ContextTermButton term={row.term} selected={selectedTerm===row.term} panelId="density-contexts" locale={uiLang} onSelect={()=>openContexts(row.term)}/></td><td>{row.n}</td><td>{row.count}</td><td>{row.percentage.toFixed(row.percentage<.1?3:2)}%</td><td>{row.per1000.toFixed(row.per1000<1?2:1)}</td></tr>)}</tbody></table></div></div>}
 
-      {baseline&&<div className="density-comparison"><div className="density-comparison-head"><div><p className="section-number">{copy.compareEye}</p><h3>{copy.compareTitle}</h3></div><p>{copy.compareHelp}</p></div><div className="table-scroll"><table><thead><tr><th>{copy.term}</th><th>A</th><th>B</th><th>{copy.difference}</th></tr></thead><tbody>{comparisonRows.slice(0,30).map(row=><tr key={row.term}><td><b>{row.term}</b></td><td>{row.countA} · {row.percentageA.toFixed(2)}%</td><td>{row.countB} · {row.percentageB.toFixed(2)}%</td><td><span className={row.delta>0?"delta-up":row.delta<0?"delta-down":"delta-flat"}>{row.delta>0?"+":""}{row.delta.toFixed(2)} p.p.</span></td></tr>)}</tbody></table></div></div>}
+      {baseline&&<div className="density-comparison"><div className="density-comparison-head"><div><p className="section-number">{copy.compareEye}</p><h3>{copy.compareTitle}</h3></div><p>{copy.compareHelp}</p></div><div className="table-scroll"><table><thead><tr><th>{copy.term}</th><th>A</th><th>B</th><th>{copy.difference}</th></tr></thead><tbody>{comparisonRows.slice(0,30).map(row=><tr key={row.term}><td><ContextTermButton term={row.term} selected={selectedTerm===row.term} panelId="density-contexts" locale={uiLang} onSelect={()=>openContexts(row.term)}/></td><td>{row.countA} · {row.percentageA.toFixed(2)}%</td><td>{row.countB} · {row.percentageB.toFixed(2)}%</td><td><span className={row.delta>0?"delta-up":row.delta<0?"delta-down":"delta-flat"}>{row.delta>0?"+":""}{row.delta.toFixed(2)} p.p.</span></td></tr>)}</tbody></table></div></div>}
 
       <div className="frequency-table-card density-table-card">
-        <div className="ngram-tabs" role="group" aria-label={copy.phraseLength}>{([1,2,3] as NgramSize[]).map(size=><button type="button" key={size} className={ngramSize===size?"active":""} onClick={()=>setNgramSize(size)}>{size===1?copy.one:size===2?copy.two:copy.three}<span>{formatNumber(rowsFor(result,size).length,uiLang)}</span></button>)}</div>
+        <div className="ngram-tabs" role="group" aria-label={copy.phraseLength}>{([1,2,3] as NgramSize[]).map(size=><button type="button" key={size} className={ngramSize===size?"active":""} onClick={()=>{setNgramSize(size);setSelectedTerm(null);}}>{size===1?copy.one:size===2?copy.two:copy.three}<span>{formatNumber(rowsFor(result,size).length,uiLang)}</span></button>)}</div>
         <div className="frequency-toolbar density-toolbar"><label><span>{copy.search}</span><input type="search" value={query} onChange={event=>setQuery(event.target.value.toLocaleLowerCase())} placeholder={copy.filter}/></label><label className="minimum-count"><span>{copy.minimum}</span><input type="number" min="1" max="9999" value={minimumCount} onChange={event=>setMinimumCount(Math.max(1,Number(event.target.value)||1))}/></label><div className="export-actions"><button type="button" onClick={exportCsv} disabled={!activeRows.length}>{copy.exportCsv}</button><button type="button" onClick={exportJson}>{copy.exportJson}</button></div></div>
         <div className="frequency-table-meta"><span>{formatNumber(filteredRows.length,uiLang)} {copy.matching}</span>{filteredRows.length>DISPLAY_LIMIT&&<span>{copy.showing}</span>}</div>
-        <div className="table-scroll"><table className="frequency-table"><thead><tr><th>#</th><th><button type="button" onClick={()=>changeSort("term")}>{copy.term}{sortArrow("term")}</button></th><th><button type="button" onClick={()=>changeSort("count")}>{copy.count}{sortArrow("count")}</button></th><th><button type="button" onClick={()=>changeSort("percentage")}>{copy.percentage}{sortArrow("percentage")}</button></th><th><button type="button" onClick={()=>changeSort("per1000")}>{copy.per1000}{sortArrow("per1000")}</button></th></tr></thead><tbody>{shownRows.map((row,index)=><tr key={row.term}><td>{index+1}</td><td><b>{row.term}</b></td><td>{formatNumber(row.count,uiLang)}</td><td>{row.percentage.toFixed(row.percentage<.1?3:2)}%</td><td>{row.per1000.toFixed(row.per1000<1?2:1)}</td></tr>)}</tbody></table></div>
+        <div className="table-scroll"><table className="frequency-table"><thead><tr><th>#</th><th><button type="button" onClick={()=>changeSort("term")}>{copy.term}{sortArrow("term")}</button></th><th><button type="button" onClick={()=>changeSort("count")}>{copy.count}{sortArrow("count")}</button></th><th><button type="button" onClick={()=>changeSort("percentage")}>{copy.percentage}{sortArrow("percentage")}</button></th><th><button type="button" onClick={()=>changeSort("per1000")}>{copy.per1000}{sortArrow("per1000")}</button></th></tr></thead><tbody>{shownRows.map((row,index)=><tr key={row.term}><td>{index+1}</td><td><ContextTermButton term={row.term} selected={selectedTerm===row.term} panelId="density-contexts" locale={uiLang} onSelect={()=>openContexts(row.term)}/></td><td>{formatNumber(row.count,uiLang)}</td><td>{row.percentage.toFixed(row.percentage<.1?3:2)}%</td><td>{row.per1000.toFixed(row.per1000<1?2:1)}</td></tr>)}</tbody></table></div>
         {!filteredRows.length&&<p className="empty-filter">{copy.noMatch}</p>}
       </div>
+      {selectedTerm&&contextSources.length?<TermContextPanel key={selectedTerm} id="density-contexts" term={selectedTerm} sources={contextSources} locale={uiLang} onClose={()=>setSelectedTerm(null)}/>:null}
     </section>}
   </>;
 }

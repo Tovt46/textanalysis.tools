@@ -503,12 +503,15 @@ test("renders the text similarity calculator page with canonical metadata and co
   assert.match(html,/Top contribution terms/i);
 });
 
-test("standalone comparison keeps pasted text local and reuses the public API for URLs", async () => {
-  const source=await readFile(new URL("../app/TextComparisonTool.tsx",import.meta.url),"utf8");
-  assert.match(source,/if\(sourceTypeA==="text"&&sourceTypeB==="text"\)\{/);
-  assert.match(source,/runWorker<ComparisonPayload>\("comparison"/);
-  assert.match(source,/fetch\("\/api\/v1\/compare"/);
-  assert.doesNotMatch(source,/trackEvent/);
+test("standalone comparison renders reproducible source-review examples", async () => {
+  const response=await request("/tools/text-analysis-comparison",{headers:{accept:"text/html"}});
+  assert.equal(response.status,200);
+  const html=await response.text();
+  assert.match(html,/<h2>A revision adds repetition and removes a useful phrase<\/h2>/);
+  assert.match(html,/<h2>Same article, different menu: why the extracted text matters<\/h2>/);
+  assert.match(html,/href="\/examples\/editorial-revision.json"/);
+  assert.match(html,/href="\/examples\/article-basic-navigation.html"/);
+  assert.match(html,/Pasted text and reviewed URL text are compared in your browser/);
 });
 
 test("all browser tools share the cancellable Worker runner and client-side limits",async()=>{

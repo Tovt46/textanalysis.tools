@@ -8,6 +8,7 @@ export type ApiOperation=
   |"keyword-density"
   |"ngram-analyzer"
   |"similarity"
+  |"source-preview"
   |"text-contract-compile"
   |"text-contract-evaluate"
   |"text-contract-generate"

@@ -4,6 +4,7 @@ import WordFrequencyTool from "../../../WordFrequencyTool";
 import { SITE_MANIFEST,SITE_SOCIAL_IMAGE,SITE_ICONS,SITE_NAME,SITE_URL,toolWebApplicationSchema } from "../../../seo-metadata";
 import { SiteFooter,SiteHeader } from "../../../SiteChrome";
 import { languageAlternates,languagePaths } from "../../../localization";
+import { WebpageExtractionExample } from "../../../EditorialWorkflowExamples";
 
 const path="/tools/word-frequency-counter";
 const title="Free Word Frequency Counter for Text & URLs";
@@ -30,6 +31,7 @@ export default function WordFrequencyCounterPage(){
     <SiteHeader locale="en" active="tools" languagePaths={languagePaths(path)}/>
     <WordFrequencyTool/>
     <article className="tool-explainer">
+      <WebpageExtractionExample/>
       <section>
         <p className="section-number">HOW IT WORKS</p>
         <h2>How the word frequency counter calculates results</h2>
@@ -44,14 +46,14 @@ export default function WordFrequencyCounterPage(){
         <div className="feature-list">
           <div><h3>Search and sort</h3><p>Find a specific term or rank the table by word, count, percentage, or normalized frequency.</p></div>
           <div><h3>Editable stop words</h3><p>Use the defaults for EN, UKR, and RU, or adapt the list to your project and keep it locally.</p></div>
-          <div><h3>Text and URL analysis</h3><p>Analyze pasted content locally or fetch the readable text of a public webpage.</p></div>
+          <div><h3>Text and URL analysis</h3><p>Pasted content is analyzed in your browser. For a public URL, fetch and preview the source, choose the main content or whole page, then calculate from that reviewed text locally.</p></div>
           <div><h3>CSV and JSON export</h3><p>Download the returned vocabulary page for a spreadsheet, script, or repeatable editorial workflow. A notice appears when the result is partial.</p></div>
         </div>
       </section>
       <section className="tool-next-links">
         <p className="section-number">NEXT STEPS</p>
         <h2>Go beyond a single frequency table</h2>
-        <p>Use the main analyzer when you need bigrams, tracked phrases, Zipf distribution, or an A/B comparison. Read the Bag of Words guide to understand how word counts become document features.</p>
+        <p>Inspect a frequent word in its source context before editing it. For a draft and revision, use normalized A/B changes to see whether a repeat grew; for a specific phrase, use tracked keyword counts.</p>
         <div><Link href="/how-to-calculate-word-frequency">Read the frequency guide <span>→</span></Link><Link href="/tools/keyword-density-checker">Check keyword density <span>→</span></Link><Link href="/tools/bag-of-words-analyzer">Open the Bag of Words analyzer <span>→</span></Link></div>
       </section>
     </article>

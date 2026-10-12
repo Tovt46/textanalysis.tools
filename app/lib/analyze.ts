@@ -39,7 +39,7 @@ function detectLanguage(text: string): Lang {
   return "en";
 }
 
-function cleanHtml(raw: string) {
+export function cleanAnalysisText(raw: string) {
   const namedEntities: Record<string, string> = {
     amp: "&", apos: "'", bull: " • ", copy: " © ", gt: ">", hellip: "…",
     laquo: "«", ldquo: "“", lsquo: "‘", lt: "<", mdash: "—", middot: " · ",
@@ -91,7 +91,7 @@ function tokenize(text: string, lang: Lang, keepStopwords: boolean, stopwords = 
 export function countAnalysisTokens(text:string,stopAfter=Number.MAX_SAFE_INTEGER,{keepNumbers=false,minimumTokenLength=1}:TokenizationOptions={}){
   let count=0;
   const minimumLength=normalizedMinimumTokenLength(minimumTokenLength);
-  const normalized=cleanHtml(text).normalize("NFKC").toLowerCase().replaceAll("’", "'");
+  const normalized=cleanAnalysisText(text).normalize("NFKC").toLowerCase().replaceAll("’", "'");
   for(const match of normalized.matchAll(/[a-záéíóúüñа-яёіїєґ0-9']+/gi)){
     const token=match[0].replace(/^'+|'+$/g,"");
     if(!token)continue;
@@ -114,7 +114,7 @@ function countTerms(tokens: string[], n = 1) {
 }
 
 function prepareRawTokens(input: AnalyzeInput) {
-  const plain = cleanHtml(input.text);
+  const plain = cleanAnalysisText(input.text);
   const language = input.language === "auto" || !input.language ? detectLanguage(plain) : input.language;
   const suppliedStopwords = input.stopwordLists?.[language];
   const activeStopwords = suppliedStopwords ? new Set(suppliedStopwords.map((word) => word.trim().toLowerCase()).filter(Boolean)) : STOPWORDS[language];

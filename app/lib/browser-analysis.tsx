@@ -120,6 +120,7 @@ export function useBrowserAnalysis(){
     task(controller.signal).then(value=>{
       if(finish(id))resolve(value);
     },error=>{
+      controller.abort(error);
       if(finish(id))reject(error);
     });
   }),[finish,start]);
