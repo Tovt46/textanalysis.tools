@@ -31,30 +31,41 @@ export default function WordFrequencyCounterPage(){
     <SiteHeader locale="en" active="tools" languagePaths={languagePaths(path)}/>
     <WordFrequencyTool/>
     <article className="tool-explainer">
-      <WebpageExtractionExample/>
+      <section>
+        <p className="section-number">READ YOUR FREQUENCY TABLE</p>
+        <h2>Find repeated words in a draft or webpage</h2>
+        <p>Paste a passage, or fetch text from a public URL and check what comes back. The word frequency counter gives each word a row with three values: its count, its percentage of the analyzed text, and its occurrences per 1,000 words. Read the count for the number of appearances. Use the percentage and rate when comparing texts of different lengths.</p>
+        <p>A word near the top of the table can look overused until you read it in context. Select it to see the surrounding sentences before making an edit. Repeating a product name may be necessary; repeating a vague word across several sentences may mean those sentences need a clearer subject.</p>
+      </section>
       <section>
         <p className="section-number">HOW IT WORKS</p>
         <h2>How the word frequency counter calculates results</h2>
-        <p>The counter converts text to lowercase, removes HTML markup and punctuation, and groups identical tokens. Numeric-only tokens are excluded. By default, common English, Ukrainian, or Russian stop words are removed using the list you can inspect and edit above.</p>
+        <p>The counter treats uppercase and lowercase letters alike and strips out HTML markup. Identical tokens share a row. Punctuation marks a word boundary, except that an apostrophe inside a word stays in place. There is no reduction to a shared root: “Book” and “books” have separate counts, as do synonyms.</p>
         <div className="formula-grid"><div><span>Percentage</span><code>(word count ÷ analyzed words) × 100</code></div><div><span>Per 1,000 words</span><code>(word count ÷ analyzed words) × 1,000</code></div></div>
-        <p>Both normalized values use the number of words left after your stop-word setting. This makes the table internally consistent. To count every function word, enable <strong>Keep stop words</strong> before running the analysis.</p>
+        <p>Both normalized values use the words left after your counting settings are applied. Try pasting “Books, books and booking.” with <strong>Keep stop words</strong> enabled. “books” accounts for two of the four words: 50%, or 500 per 1,000. Now exclude stop words using the default English stop-word list. This removes “and” and leaves three words. “books” still appears twice, which now makes its share 66.67%.</p>
+        <h3>Choose which words belong in the count</h3>
+        <p>The language setting supplies the stop-word list. You can select English, Spanish, Ukrainian, or Russian yourself, or use language detection. Edit the list if needed; the browser saves your changes to the lists. For counts that include common words such as “and,” turn on <strong>Keep stop words</strong>.</p>
+        <p>A token made entirely of numbers is left out by default. Turn on <strong>Keep numbers</strong> to count it, even if it falls below the minimum token length. For non-numeric tokens, <strong>Minimum token length</strong> removes those below the limit. Either setting changes the analyzed total. Keep both settings the same across the results you compare.</p>
       </section>
+      <WebpageExtractionExample copy={{
+        introduction:<>The article in these two downloadable pages is identical. Page B has extra repeated navigation and footer labels. Analyze the whole page with <strong>English</strong> selected and <strong>Keep stop words</strong> enabled, and you will get different word counts despite that unchanged article.</>,
+        results:<>The extra template words change the denominator. Although “revision” occurs twice in each whole page, its share falls from 4.44% to 4.08%. The “contact” count goes the other way, from two occurrences to five. Select main content instead and both pages give you the same 40-word input: “revision” has a share of 5.00%, with no “contact” occurrences.</>,
+        reproduction:<>You can check these results in <Link href="/tools/word-frequency-counter">Word Frequency Counter</Link>. Enter the example URLs below and preview the extracted text. Switch between whole-page and main-content selection to compare them, then run the calculation. In main-content mode, check that the preview contains the heading and article paragraph and leaves out the navigation and footer.</>,
+        decision:<>Choose one extraction scope and use it for both sources when comparing article vocabulary. If the full page is what you are reviewing, keep its template text deliberately. A cleaner extraction does not establish that the article is better, or that it is more likely to rank.</>,
+        next:<>For work involving two pages, <Link href="/tools/text-analysis-comparison">compare the extracted texts side by side</Link>. URL content reaches the web tools through the stateless server; the reviewed text is then used for calculations in your browser. The public analysis API continues to use the whole source. Choosing a scope in the web preview does not change that API behavior.</>,
+      }}/>
       <section>
-        <p className="section-number">USE THE DATA</p>
-        <h2>Compare frequency without treating it as an SEO score</h2>
-        <p>Raw counts answer “how often?” Percentage and occurrences per 1,000 words make texts of different lengths easier to compare. These measurements can reveal dominant vocabulary or accidental repetition, but no single percentage proves that a page is relevant, useful, or likely to rank.</p>
-        <div className="feature-list">
-          <div><h3>Search and sort</h3><p>Find a specific term or rank the table by word, count, percentage, or normalized frequency.</p></div>
-          <div><h3>Editable stop words</h3><p>Use the defaults for EN, UKR, and RU, or adapt the list to your project and keep it locally.</p></div>
-          <div><h3>Text and URL analysis</h3><p>Pasted content is analyzed in your browser. For a public URL, fetch and preview the source, choose the main content or whole page, then calculate from that reviewed text locally.</p></div>
-          <div><h3>CSV and JSON export</h3><p>Download the returned vocabulary page for a spreadsheet, script, or repeatable editorial workflow. A notice appears when the result is partial.</p></div>
-        </div>
+        <p className="section-number">WORK WITH THE RESULTS</p>
+        <h2>Search, sort, and export the vocabulary</h2>
+        <p>Find a term with search, then sort the table by word, count, percentage, or frequency per 1,000. The screen shows up to 500 matching rows. A CSV or JSON export contains every row the calculation returned, including rows hidden by your search. The browser returns no more than 5,000 vocabulary rows; if there are more, a notice tells you the result is partial.</p>
+        <p>Pasting text keeps the analysis in your browser. For a URL, the server fetches the page without retaining its content. Review the extracted text before the browser calculates the result. Read that preview carefully. Main-content extraction can miss material or pick up text that does not belong.</p>
+        <p>The table gives you word frequencies. It cannot score readability, check facts, or predict whether a page will rank. When a word dominates the supplied text, go back to the passages where it appears. Repetition that helps the reader can stay.</p>
       </section>
       <section className="tool-next-links">
         <p className="section-number">NEXT STEPS</p>
-        <h2>Go beyond a single frequency table</h2>
-        <p>Inspect a frequent word in its source context before editing it. For a draft and revision, use normalized A/B changes to see whether a repeat grew; for a specific phrase, use tracked keyword counts.</p>
-        <div><Link href="/how-to-calculate-word-frequency">Read the frequency guide <span>→</span></Link><Link href="/tools/keyword-density-checker">Check keyword density <span>→</span></Link><Link href="/tools/bag-of-words-analyzer">Open the Bag of Words analyzer <span>→</span></Link></div>
+        <h2>Count phrases or compare two versions</h2>
+        <p>Individual words are the unit of this table. For exact phrases, use keyword density. To check what changed from an original to a revision, use the comparison tool. You can also get a broader view of the vocabulary in the Bag of Words analyzer.</p>
+        <div><Link href="/how-to-calculate-word-frequency">Read the frequency guide <span>→</span></Link><Link href="/tools/keyword-density-checker">Check keyword density <span>→</span></Link><Link href="/tools/text-analysis-comparison">Compare two texts <span>→</span></Link><Link href="/tools/bag-of-words-analyzer">Open the Bag of Words analyzer <span>→</span></Link></div>
       </section>
     </article>
     <SiteFooter locale="en"/>

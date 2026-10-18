@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import fixture from "../public/examples/editorial-revision.json";
 
@@ -10,11 +11,19 @@ function percentagePointChange(countA:number,totalA:number,countB:number,totalB:
   return `${change>0?"+":""}${change.toFixed(2)} pp`;
 }
 
-export function WebpageExtractionExample({id="webpage-extraction-example"}:{id?:string}){
+type WebpageExtractionCopy={
+  introduction:ReactNode;
+  results:ReactNode;
+  reproduction:ReactNode;
+  decision:ReactNode;
+  next:ReactNode;
+};
+
+export function WebpageExtractionExample({id="webpage-extraction-example",copy}:{id?:string;copy?:WebpageExtractionCopy}){
   return <section id={id} className="editorial-workflow-example">
     <p className="section-number">WORKED EXAMPLE · WEBPAGE EXTRACTION</p>
     <h2>Same article, different menu: why the extracted text matters</h2>
-    <p>The two downloadable pages contain the same article. Page B adds repeated navigation and footer labels. With <strong>English</strong> selected and <strong>Keep stop words</strong> enabled, analyzing the whole page produces different word counts even though the article has not changed.</p>
+    <p>{copy?.introduction??<>The two downloadable pages contain the same article. Page B adds repeated navigation and footer labels. With <strong>English</strong> selected and <strong>Keep stop words</strong> enabled, analyzing the whole page produces different word counts even though the article has not changed.</>}</p>
     <div className="article-callout subtle"><b>The unchanged article</b><p>{fixture.webpageExample.articleText}</p></div>
     <div className="table-scroll">
       <table aria-label="Word frequency changes caused by navigation and footer text">
@@ -22,14 +31,14 @@ export function WebpageExtractionExample({id="webpage-extraction-example"}:{id?:
         <tbody>{fixture.webpageExample.expected.map(row=><tr key={row.label}><th scope="row">{row.label}</th><td>{row.words}</td><td>{row.revision}</td><td>{percentage(row.revision,row.words)}</td><td>{row.contact}</td><td>{percentage(row.contact,row.words)}</td></tr>)}</tbody>
       </table>
     </div>
-    <p>“revision” still appears twice, but its share drops from 4.44% to 4.08% when the extra template words enter the denominator. “contact” rises from two to five occurrences. Selecting the main content gives the same 40-word input on both pages: “revision” is 5.00%, and “contact” is absent.</p>
-    <p>To reproduce this, use <Link href="/tools/word-frequency-counter">Word Frequency Counter</Link> with the example URLs below. Preview the extracted text, compare whole-page and main-content selection, then run the calculation. The preview should include the heading and article paragraph in main-content mode, without the navigation or footer.</p>
+    <p>{copy?.results??<>“revision” still appears twice, but its share drops from 4.44% to 4.08% when the extra template words enter the denominator. “contact” rises from two to five occurrences. Selecting the main content gives the same 40-word input on both pages: “revision” is 5.00%, and “contact” is absent.</>}</p>
+    <p>{copy?.reproduction??<>To reproduce this, use <Link href="/tools/word-frequency-counter">Word Frequency Counter</Link> with the example URLs below. Preview the extracted text, compare whole-page and main-content selection, then run the calculation. The preview should include the heading and article paragraph in main-content mode, without the navigation or footer.</>}</p>
     <ul>
       <li><a href="/examples/article-basic-navigation.html" download>Download page A HTML</a> · <a href="/examples/article-basic-navigation.html">Open page A</a></li>
       <li><a href="/examples/article-expanded-navigation.html" download>Download page B HTML</a> · <a href="/examples/article-expanded-navigation.html">Open page B</a></li>
     </ul>
-    <div className="article-callout"><b>Editorial decision</b><p>When comparing article vocabulary, use the same extraction scope on both sources. When reviewing the full page, retain the template text deliberately. A cleaner extraction does not prove that the article is better or more likely to rank.</p></div>
-    <p>For two-page work, <Link href="/tools/text-analysis-comparison">compare the extracted texts side by side</Link>. The web tools fetch URL content through the stateless server, then calculate from the reviewed text in your browser. The public analysis API keeps its existing whole-source behavior; it does not inherit your web preview selection.</p>
+    <div className="article-callout"><b>Editorial decision</b><p>{copy?.decision??<>When comparing article vocabulary, use the same extraction scope on both sources. When reviewing the full page, retain the template text deliberately. A cleaner extraction does not prove that the article is better or more likely to rank.</>}</p></div>
+    <p>{copy?.next??<>For two-page work, <Link href="/tools/text-analysis-comparison">compare the extracted texts side by side</Link>. The web tools fetch URL content through the stateless server, then calculate from the reviewed text in your browser. The public analysis API keeps its existing whole-source behavior; it does not inherit your web preview selection.</>}</p>
   </section>;
 }
 

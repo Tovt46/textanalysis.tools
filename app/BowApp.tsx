@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
+import { FormEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from "react";
 import { LOCALES, translate, type UiLang } from "./i18n";
 import { SiteFooter,SiteHeader } from "./SiteChrome";
 import { AnalysisProgress,isAnalysisAbort,useBrowserAnalysis,validateBrowserInputs } from "./lib/browser-analysis";
@@ -163,7 +163,7 @@ function Comparison({ baseline, current, onClear, t, uiLang }: { baseline:SavedR
   </section>;
 }
 
-export default function BowApp({ uiLang }: { uiLang:UiLang }) {
+export default function BowApp({ uiLang,children }: { uiLang:UiLang;children?:ReactNode }) {
   const [sourceType,setSourceType]=useState<"text"|"url">("text"); const [source,setSource]=useState("");
   const [language,setLanguage]=useState("en"); const [focus,setFocus]=useState("");
   const [top,setTop]=useState(20); const [tolerance,setTolerance]=useState(2); const [keepStopwords,setKeepStopwords]=useState(false);
@@ -263,6 +263,7 @@ export default function BowApp({ uiLang }: { uiLang:UiLang }) {
 
     {baseline&&result&&<Comparison baseline={baseline} current={result} onClear={clearA} t={t} uiLang={uiLang}/>} 
     {!result&&<section className="empty-state"><span>03</span><p>{baseline?t("emptyB"):t("empty")}</p></section>}
+    {children}
     <SiteFooter locale={uiLang}/>
   </main>;
 }

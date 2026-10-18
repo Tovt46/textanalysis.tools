@@ -432,8 +432,8 @@ test("renders the keyword density checker with canonical metadata and useful con
   assert.match(html,/<title>Free Keyword Density Checker for Text &amp; URLs<\/title>/i);
   assert.match(html,/rel="canonical" href="https:\/\/textanalysis\.tools\/tools\/keyword-density-checker"/i);
   assert.match(html,/<h1>Keyword Density Checker<\/h1>/i);
-  assert.match(html,/Density is a measurement, not a ranking score/i);
-  assert.match(html,/one-word keywords, bigrams, and trigrams/i);
+  assert.match(html,/<h2>Is there an ideal keyword density\?<\/h2>/i);
+  assert.match(html,/A unigram is a single word\. For a bigram/i);
 });
 
 test("renders the standalone text comparison with canonical metadata and two inputs", async () => {
@@ -445,7 +445,7 @@ test("renders the standalone text comparison with canonical metadata and two inp
   assert.match(html,/<h1>Compare two texts word by word<\/h1>/i);
   assert.match(html,/aria-label="Original text"/i);
   assert.match(html,/aria-label="Updated text"/i);
-  assert.match(html,/Frequency change is not semantic similarity or content quality/i);
+  assert.match(html,/<h2>Does this comparison check similarity or plagiarism\?<\/h2>/i);
   assert.match(html,/hrefLang="ru" href="https:\/\/textanalysis\.tools\/ru\/tools\/text-analysis-comparison/i);
 });
 
@@ -466,7 +466,7 @@ test("renders the bag-of-words generator page with canonical metadata and export
   assert.match(html,/<title>Free Bag of Words Generator for Text &amp; URLs<\/title>/i);
   assert.match(html,/rel="canonical" href="https:\/\/textanalysis\.tools\/tools\/bag-of-words-generator"/i);
   assert.match(html,/<h1>Bag of Words Generator<\/h1>/i);
-  assert.match(html,/Build term vectors/i);
+  assert.match(html,/<h2>Generate a bag of words with counts and normalized frequencies<\/h2>/i);
   assert.match(html,/CSV and JSON export/i);
 });
 
@@ -479,7 +479,7 @@ test("renders the TF-IDF calculator page with canonical metadata and weighting e
   assert.match(html,/<h1>TF-IDF Calculator<\/h1>/i);
   assert.match(html,/across 2–10 documents/i);
   assert.match(html,/Add another document/i);
-  assert.match(html,/Term frequency and rarity are combined/i);
+  assert.match(html,/<h2>Calculate TF-IDF for a corpus of 2–10 documents<\/h2>/i);
   assert.match(html,/Global IDF table/i);
 });
 
