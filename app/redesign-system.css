@@ -103,6 +103,8 @@ select,input[type="checkbox"],input[type="range"]{accent-color:var(--action)}
 .tool-shell .frequency-table-card,.tool-shell .table-scroll{min-width:0}.tool-shell .frequency-view-tabs button{border-radius:5px}
 .evidence-error{background:var(--danger-wash);color:var(--danger);border:1px solid var(--danger)}
 .apply-button{background:var(--action);color:var(--action-ink);border-color:var(--action)}
+/* Shared settings must adapt even when a tool is opened directly. */
+@media(min-width:851px) and (max-width:1360px){.tool-shell .comparison-settings-card{grid-template-columns:repeat(2,minmax(0,1fr))}.tool-shell .comparison-settings-copy,.tool-shell .comparison-submit{grid-column:1/-1}}
 @media(max-width:1150px){
  .site-header{gap:18px}.site-header .site-nav{gap:16px}.site-header .brand{font-size:17px}.header-tools{gap:8px}
  .workspace-sidebar{width:202px;flex-basis:202px;padding-inline:9px}.workspace-sidebar>.brand{font-size:14px}.workspace-tool-nav>a{font-size:11px}
