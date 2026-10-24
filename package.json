@@ -37,14 +37,14 @@
     "@tavily/core": "^0.7.9",
     "diff": "^9.0.0",
     "drizzle-orm": "0.45.2",
-    "next": "16.3.8",
+    "next": "16.4.3",
     "openai": "^7.9.0",
     "parse5": "^8.0.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "1.31.0",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
@@ -55,14 +55,14 @@
     "drizzle-kit": "0.31.10",
     "esbuild": "0.28.1",
     "eslint": "9.39.4",
-    "eslint-config-next": "16.3.8",
+    "eslint-config-next": "16.4.3",
     "fast-glob": "file:packages/next-lint-glob",
     "postcss": "8.5.26",
     "react-server-dom-webpack": "19.2.8",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
-    "vite": "8.1.5",
-    "zod": "4.4.3"
+    "vite": "8.3.5",
+    "zod": "4.6.7"
   },
   "overrides": {
     "esbuild": "0.28.1",

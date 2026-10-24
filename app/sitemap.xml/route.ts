@@ -53,10 +53,13 @@ const privacyEntry=`  <url>
 const evidenceWorkspaceEntry=`  <url>
     <loc>${absolute("/tools/evidence-workspace")}</loc>
   </url>`;
+const rewriteReviewEntry=`  <url>
+    <loc>${absolute("/tools/rewrite-review")}</loc>
+  </url>`;
 const textContractEntry=`  <url>
     <loc>${absolute("/tools/text-contract")}</loc>
   </url>`;
-const entries=[...PATHS.flatMap(path=>LANGUAGES.map(locale=>entry(path,locale))),textContractEntry,evidenceWorkspaceEntry,privacyEntry].join("\n");
+const entries=[...PATHS.flatMap(path=>LANGUAGES.map(locale=>entry(path,locale))),textContractEntry,evidenceWorkspaceEntry,rewriteReviewEntry,privacyEntry].join("\n");
 const xml=`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${entries}

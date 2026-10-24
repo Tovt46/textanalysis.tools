@@ -56,6 +56,8 @@ export type WorkspaceReviewItem={
   title:string;
   detail:string;
   evidenceRefs:string[];
+  baselineExcerpts?:string[];
+  currentExcerpts?:string[];
   patchCandidate?:{expectedText:string;replacementText:string;rationale:string};
 };
 
@@ -206,7 +208,7 @@ function splitBlocks(text:string){
 }
 function multiset(values:string[]){const counts=new Map<string,number>();for(const value of values)counts.set(value,(counts.get(value)||0)+1);return counts;}
 
-function buildChangeMap(originalText:string,currentText:string,wordDelta:number,baselineWords:number):WorkspaceChangeMap{
+function compareBlocks(originalText:string,currentText:string){
   const baseline=splitBlocks(originalText);
   const current=splitBlocks(currentText);
   const baselineNormalized=baseline.map(normalizeComparable);
@@ -228,6 +230,11 @@ function buildChangeMap(originalText:string,currentText:string,wordDelta:number,
     if(count>0)availableCurrent.set(key,count-1);
     else removed.push(baseline[index]);
   }
+  return{baseline,current,retainedBlocks,added,removed};
+}
+
+function buildChangeMap(originalText:string,currentText:string,wordDelta:number,baselineWords:number):WorkspaceChangeMap{
+  const {baseline,current,retainedBlocks,added,removed}=compareBlocks(originalText,currentText);
   return{
     baselineBlocks:baseline.length,currentBlocks:current.length,retainedBlocks,addedBlocks:added.length,removedBlocks:removed.length,
     wordDelta,wordDeltaPercent:baselineWords?Number(((wordDelta/baselineWords)*100).toFixed(1)):0,
@@ -324,8 +331,36 @@ function duplicateCandidates(text:string){
   return candidates;
 }
 
-function buildReviewQueue(analysisId:string,currentText:string,claims:WorkspaceClaim[],summary:WorkspaceClaimSummary[],changeMap:WorkspaceChangeMap){
-  const drafts:Array<Omit<WorkspaceReviewItem,"id"|"evidenceRefs">&{claimIds?:string[]}>=[];
+// English wording checks only: a missing exact qualifier can also have been rephrased.
+// Keep the complete source sentence so a reviewer can assess that possibility.
+function missingConditions(originalText:string,currentText:string){
+  const current=normalizeComparable(currentText);
+  return [...new Set(claimSegments(originalText))].filter(segment=>{
+    const qualifiers=[
+      ...segment.matchAll(/\b(?:for|to)\s+[^.!?;\n]{1,120}?\bonly\b/gi),
+      ...segment.matchAll(/\b(?:only\s+(?:if|when|for|with|after|before|within|on)|unless|except(?:\s+for)?|subject\s+to|provided\s+that|excluding|excludes|within\s+\d+)\b[^.!?\n]*/gi),
+    ].map(match=>normalizeComparable(match[0]));
+    return qualifiers.some(qualifier=>!current.includes(qualifier));
+  }).slice(0,3);
+}
+
+function buildReviewQueue(analysisId:string,originalText:string,currentText:string,claims:WorkspaceClaim[],summary:WorkspaceClaimSummary[],changeMap:WorkspaceChangeMap,baselineFocus:Array<{term:string;count:number}>,currentFocus:Array<{term:string;count:number}>){
+  const drafts:Array<Omit<WorkspaceReviewItem,"id"|"evidenceRefs">&{claimIds?:string[];extraEvidenceRefs?:string[]}>=[];
+  for(const condition of missingConditions(originalText,currentText))drafts.push({
+    priority:"high",category:"coverage",title:`Review missing condition: “${excerpt(condition,80)}”`,
+    detail:`Baseline wording: “${excerpt(condition,600)}” A condition or caveat is no longer present in the same wording. Check whether it was omitted or rephrased, and whether the rewrite still communicates the restriction.`,
+    baselineExcerpts:[condition],currentExcerpts:[],
+  });
+  currentFocus.forEach((row,index)=>{
+    const baseline=baselineFocus.find(item=>item.term===row.term)?.count||0;
+    if(baseline>0&&row.count===0)drafts.push({
+      priority:"medium",category:"coverage",title:`Review missing tracked term: “${row.term}”`,
+      detail:`“${row.term}” appears ${baseline} ${baseline===1?"time":"times"} in the baseline and 0 times in the rewrite. Check whether the wording was intentionally changed or essential coverage was lost. Exact term matching does not establish whether the meaning is preserved.`,
+      baselineExcerpts:claimSegments(originalText).filter(segment=>normalizeComparable(segment).includes(normalizeComparable(row.term))).slice(0,3),
+      currentExcerpts:[],
+      extraEvidenceRefs:[`${analysisId}:focus:${index}`],
+    });
+  });
   for(const duplicate of duplicateCandidates(currentText))drafts.push({
     priority:"low",category:"duplicate",title:`Remove adjacent duplicate: “${excerpt(duplicate.excerpt,72)}”`,
     detail:"The same visible line appears twice in succession. Removing one copy reduces noise without inventing or changing a commercial fact.",
@@ -338,8 +373,10 @@ function buildReviewQueue(analysisId:string,currentText:string,claims:WorkspaceC
   });
   for(const row of summary.filter(item=>item.currentOnly>0&&item.baselineOnly>0&&["offer","price","rating","advisor_count"].includes(item.category)))drafts.push({
     priority:["offer","price","rating"].includes(row.category)?"high":"medium",category:"claim_drift",title:`Verify changed ${row.label.toLowerCase()}`,
-    detail:`Exact comparison found ${row.currentOnly} current-only and ${row.baselineOnly} baseline-only ${row.label.toLowerCase()} claims. Check the live source before publishing or patching values.`,
+    detail:`Exact comparison found ${row.currentOnly} current-only and ${row.baselineOnly} baseline-only claims in the “${row.label}” category. Check the live source before publishing or patching values.`,
     claimIds:claims.filter(item=>item.category===row.category&&item.status!=="retained").slice(0,8).map(item=>item.id),
+    baselineExcerpts:claims.filter(item=>item.source==="baseline"&&item.category===row.category&&item.status!=="retained").slice(0,4).map(item=>item.excerpt),
+    currentExcerpts:claims.filter(item=>item.source==="current"&&item.category===row.category&&item.status!=="retained").slice(0,4).map(item=>item.excerpt),
   });
   for(const category of ["accuracy","social_proof"] as WorkspaceClaimCategory[]){
     const current=claims.filter(item=>item.source==="current"&&item.category===category);
@@ -353,11 +390,14 @@ function buildReviewQueue(analysisId:string,currentText:string,claims:WorkspaceC
   const categoryOrder={coverage:0,claim_drift:1,verification:2,balance:3,duplicate:4};
   return drafts.sort((a,b)=>priorityOrder[a.priority]-priorityOrder[b.priority]||categoryOrder[a.category]-categoryOrder[b.category]).slice(0,MAX_REVIEW_ITEMS).map((item,index)=>{
     const ownId=`${analysisId}:review:${index}`;
-    return{id:ownId,priority:item.priority,category:item.category,title:item.title,detail:item.detail,evidenceRefs:[ownId,...(item.claimIds||[]).map(claimId=>claimId.replace(":claim:",":evidence:claim:"))],...(item.patchCandidate?{patchCandidate:item.patchCandidate}:{})};
+    return{id:ownId,priority:item.priority,category:item.category,title:item.title,detail:item.detail,evidenceRefs:[ownId,...(item.claimIds||[]).map(claimId=>claimId.replace(":claim:",":evidence:claim:")),...(item.extraEvidenceRefs||[])],...(item.baselineExcerpts?{baselineExcerpts:item.baselineExcerpts}:{}),...(item.currentExcerpts?{currentExcerpts:item.currentExcerpts}:{}),...(item.patchCandidate?{patchCandidate:item.patchCandidate}:{})};
   });
 }
 
 export function analyzeWorkspace(state:EvidenceWorkspaceState,context:OperationContext={}):EvidenceWorkspaceState{
+  // Measurements are deterministic for a revision. Reusing them preserves the
+  // evidence IDs already cited by findings and human-approved proposals.
+  if(state.analysis?.revision===state.revision)return state;
   let baselineInternal:ReturnType<typeof analyzeText>;
   let currentInternal:ReturnType<typeof analyzeText>;
   try{
@@ -378,7 +418,7 @@ export function analyzeWorkspace(state:EvidenceWorkspaceState,context:OperationC
   const analysisId=id("analysis",context);
   const changeMap=buildChangeMap(state.originalText,state.currentText,comparison.metrics.tokenCount.delta,baselineInternal.tokenCount);
   const {claims,claimSummary}=buildClaims(analysisId,state.originalText,state.currentText);
-  const reviewQueue=buildReviewQueue(analysisId,state.currentText,claims,claimSummary,changeMap);
+  const reviewQueue=buildReviewQueue(analysisId,state.originalText,state.currentText,claims,claimSummary,changeMap,baselineInternal.focusCoverage,currentInternal.focusCoverage);
   const claimEvidence:WorkspaceEvidence[]=claims.map(claim=>({
     id:claim.id.replace(":claim:",":evidence:claim:"),kind:"claim",label:`${claim.source==="current"?"Current":"Baseline"} ${CLAIM_LABELS[claim.category]}`,
     value:claim.value,detail:`${claim.status.replaceAll("_"," ")}: ${claim.excerpt}`,
@@ -388,7 +428,7 @@ export function analyzeWorkspace(state:EvidenceWorkspaceState,context:OperationC
     {id:`${analysisId}:metric:word_count`,kind:"metric",label:"Current word count",value:currentInternal.tokenCount,detail:`Baseline ${baselineInternal.tokenCount}; delta ${comparison.metrics.tokenCount.delta}.`},
     {id:`${analysisId}:metric:vocabulary`,kind:"metric",label:"Current vocabulary",value:currentInternal.vocabularySize,detail:`Baseline ${baselineInternal.vocabularySize}; delta ${comparison.metrics.vocabularySize.delta}.`},
     {id:`${analysisId}:change:overview`,kind:"change",label:"Exact block change map",value:`${changeMap.addedBlocks} added · ${changeMap.removedBlocks} removed`,detail:`${changeMap.retainedBlocks} exact blocks retained; analyzed word-count delta ${changeMap.wordDeltaPercent}%.`},
-    ...currentInternal.focusCoverage.map((row,index)=>({id:`${analysisId}:focus:${index}`,kind:"focus" as const,label:`Focus: ${row.term}`,value:row.count,detail:`${row.per1000.toFixed(2)} occurrences per 1,000 analyzed words.`})),
+    ...currentInternal.focusCoverage.map((row,index)=>({id:`${analysisId}:focus:${index}`,kind:"focus" as const,label:`Focus: ${row.term}`,value:row.count,detail:`Baseline ${baselineInternal.focusCoverage.find(item=>item.term===row.term)?.count||0}; current ${row.count}. ${row.per1000.toFixed(2)} occurrences per 1,000 analyzed words in the current revision.`})),
     ...repeatedPhrases.map((row,index)=>({id:`${analysisId}:phrase:${index}`,kind:"phrase" as const,label:`Repeated ${row.n}-gram`,value:row.term,detail:`${row.count} exact occurrences in the current revision.`})),
     {id:`${analysisId}:comparison:word_count`,kind:"comparison",label:"Word-count delta",value:comparison.metrics.tokenCount.delta,detail:"Current revision compared with the immutable baseline."},
     ...claimEvidence,...reviewEvidence,
@@ -510,16 +550,25 @@ export function workspaceSummary(state:EvidenceWorkspaceState){
   };
 }
 
+function markdownExcerpt(value:string){
+  const longestFence=Math.max(0,...Array.from(value.matchAll(/`+/g),match=>match[0].length));
+  const fence="`".repeat(Math.max(3,longestFence+1));
+  return `${fence}text\n${value}\n${fence}`;
+}
+
 export function exportWorkspaceReport(state:EvidenceWorkspaceState,format:"markdown"|"json"){
   const analysis=currentAnalysis(state);
   if(format==="json")return{format,filename:`text-analysis-evidence-${state.id}.json`,content:JSON.stringify(state,null,2)};
-  const focus=analysis.current.focusCoverage.length?analysis.current.focusCoverage.map(row=>`- ${row.term}: ${row.count} (${row.per1000.toFixed(2)} per 1,000 words)`).join("\n"):"- No focus terms supplied.";
-  const findings=state.findings.length?state.findings.map(item=>`### ${item.title}\n\n${item.explanation}\n\nEvidence: ${item.evidenceRefs.join(", ")}`).join("\n\n"):"No findings recorded.";
+  const focus=analysis.current.focusCoverage.length?analysis.current.focusCoverage.map(row=>`- ${row.term}: baseline ${analysis.baseline.focusCoverage.find(item=>item.term===row.term)?.count||0}; current ${row.count} (${row.per1000.toFixed(2)} per 1,000 current words)`).join("\n"):"- No focus terms supplied.";
+  const findings=state.findings.length?state.findings.map(item=>`### ${item.title}\n\n${item.explanation}\n\nRevision: ${item.revision}${item.revision===state.revision?" (current)":" (historical; not evidence for the current revision)"}\nAnalysis: ${item.analysisId}\nEvidence: ${item.evidenceRefs.join(", ")}`).join("\n\n"):"No findings recorded.";
   const patches=state.patches.length?state.patches.map(item=>`- **${item.recommendationKind?`${item.recommendationKind} · `:""}${item.status}** — \`${item.expectedText}\` → \`${item.replacementText}\` (${item.rationale})`).join("\n"):"- No patches recorded.";
   const claimRows=analysis.claimSummary.length?analysis.claimSummary.map(item=>`| ${item.label} | ${item.baseline} | ${item.current} | ${item.retained} | ${item.currentOnly} | ${item.baselineOnly} |`).join("\n"):"| No commercial claims detected | 0 | 0 | 0 | 0 | 0 |";
-  const reviewRows=analysis.reviewQueue.length?analysis.reviewQueue.map(item=>`- **${item.priority.toUpperCase()} · ${item.title}** — ${item.detail}`).join("\n"):"- No deterministic review items detected.";
+  const reviewRows=analysis.reviewQueue.length?analysis.reviewQueue.map(item=>`### ${item.priority.toUpperCase()} · ${item.title}\n\n${item.detail}${item.baselineExcerpts?.length?`\n\nBaseline:\n\n${item.baselineExcerpts.map(markdownExcerpt).join("\n\n")}`:""}${item.currentExcerpts?.length?`\n\nCurrent:\n\n${item.currentExcerpts.map(markdownExcerpt).join("\n\n")}`:""}\n\nEvidence: ${item.evidenceRefs.join(", ")}`).join("\n\n"):"- No deterministic review items detected.";
+  const blocks=compareBlocks(state.originalText,state.currentText);
+  const removed=blocks.removed.length?blocks.removed.map(markdownExcerpt).join("\n\n"):"No unmatched baseline blocks.";
+  const added=blocks.added.length?blocks.added.map(markdownExcerpt).join("\n\n"):"No unmatched current blocks.";
   const changeMap=analysis.changeMap;
-  const content=`# Claim-Aware Version Review\n\nWorkspace: ${state.id}\nRevision: ${state.revision}\nGoal: ${state.goal}\n\n## Decision brief\n\n- Analyzed word change: ${changeMap.wordDelta} (${changeMap.wordDeltaPercent}%).\n- Exact blocks: ${changeMap.retainedBlocks} retained, ${changeMap.addedBlocks} added, ${changeMap.removedBlocks} removed.\n- Review queue: ${analysis.reviewQueue.filter(item=>item.priority==="high").length} high, ${analysis.reviewQueue.filter(item=>item.priority==="medium").length} medium, ${analysis.reviewQueue.filter(item=>item.priority==="low").length} low priority.\n\n## Before / after metrics\n\n| Metric | Baseline | Current | Delta |\n| --- | ---: | ---: | ---: |\n| Words | ${analysis.baseline.tokenCount} | ${analysis.current.tokenCount} | ${analysis.comparison.metrics.tokenCount.delta} |\n| Vocabulary | ${analysis.baseline.vocabularySize} | ${analysis.current.vocabularySize} | ${analysis.comparison.metrics.vocabularySize.delta} |\n\n## Commercial claim ledger\n\n| Claim type | Baseline | Current | Exact retained | Current only | Baseline only |\n| --- | ---: | ---: | ---: | ---: | ---: |\n${claimRows}\n\n## Prioritized review queue\n\n${reviewRows}\n\n## Focus coverage\n\n${focus}\n\n## Findings\n\n${findings}\n\n## Patch decisions\n\n${patches}\n`;
+  const content=`# Claim-Aware Version Review\n\nWorkspace: ${state.id}\nRevision: ${state.revision}\nGoal: ${state.goal}\n\nThis report flags changes and possible omissions for human review. It does not verify facts or establish that meaning is preserved. Claim and condition detection uses supported English wording patterns; exact term matching can miss paraphrases. No text is changed without an approved patch.\n\n## Decision brief\n\n- Analyzed word change: ${changeMap.wordDelta} (${changeMap.wordDeltaPercent}%).\n- Exact blocks: ${changeMap.retainedBlocks} retained, ${changeMap.addedBlocks} added, ${changeMap.removedBlocks} removed.\n- Review queue: ${analysis.reviewQueue.filter(item=>item.priority==="high").length} high, ${analysis.reviewQueue.filter(item=>item.priority==="medium").length} medium, ${analysis.reviewQueue.filter(item=>item.priority==="low").length} low priority.\n\n## Before / after metrics\n\n| Metric | Baseline | Current | Delta |\n| --- | ---: | ---: | ---: |\n| Words | ${analysis.baseline.tokenCount} | ${analysis.current.tokenCount} | ${analysis.comparison.metrics.tokenCount.delta} |\n| Vocabulary | ${analysis.baseline.vocabularySize} | ${analysis.current.vocabularySize} | ${analysis.comparison.metrics.vocabularySize.delta} |\n\n## Commercial claim ledger\n\n| Claim type | Baseline | Current | Exact retained | Current only | Baseline only |\n| --- | ---: | ---: | ---: | ---: | ---: |\n${claimRows}\n\n## Prioritized review queue\n\n${reviewRows}\n\n## Removed or rewritten text\n\n${removed}\n\n## Added or rewritten text\n\n${added}\n\n## Focus coverage\n\n${focus}\n\n## Findings\n\n${findings}\n\n## Patch decisions\n\n${patches}\n`;
   return{format,filename:`text-analysis-evidence-${state.id}.md`,content};
 }
 

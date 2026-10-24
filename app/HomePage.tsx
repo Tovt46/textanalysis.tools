@@ -339,9 +339,37 @@ const TOOL_ICONS = ["▥", "⌗", "▦", "⇄", "≋", "[ ]", "ƒ", "◉"];
 const TOOL_ORDER = [0, 1, 4, 3, 2, 5, 6, 7];
 const SAMPLE_ROWS = [{ term: "clear", count: 2 }, { term: "good", count: 2 }, { term: "thinking", count: 2 }, { term: "writing", count: 2 }, { term: "makes", count: 1 }];
 
+type RewriteEntryCopy = {
+  eyebrow: string; title: string; intro: string; heroLink: string;
+  tryExample: string; ownTexts: string; language: string;
+};
+const REWRITE_ENTRY: Record<UiLang, RewriteEntryCopy> = {
+  en: {
+    eyebrow: "CHECK A REWRITE", title: "What got lost in the rewrite?",
+    intro: "Compare an original with its rewrite. Review changed prices, missing conditions, and important terms, then save a report.",
+    heroLink: "Review a rewrite", tryExample: "Try the example", ownTexts: "Compare my texts", language: "Runs in your browser",
+  },
+  ru: {
+    eyebrow: "ПРОВЕРКА РЕРАЙТА", title: "Что потерялось после рерайта?",
+    intro: "Сравните исходный текст с рерайтом. Проверьте изменённые цены, пропавшие условия и важные термины, затем сохраните отчёт.",
+    heroLink: "Проверить рерайт", tryExample: "Попробовать пример", ownTexts: "Сравнить свои тексты", language: "Инструмент на английском",
+  },
+  uk: {
+    eyebrow: "ПЕРЕВІРКА РЕРАЙТУ", title: "Що загубилося після рерайту?",
+    intro: "Порівняйте початковий текст із рерайтом. Перевірте змінені ціни, зниклі умови та важливі терміни, а потім збережіть звіт.",
+    heroLink: "Перевірити рерайт", tryExample: "Спробувати приклад", ownTexts: "Порівняти свої тексти", language: "Інструмент англійською",
+  },
+  es: {
+    eyebrow: "REVISA UNA REESCRITURA", title: "¿Qué se perdió al reescribir?",
+    intro: "Compara el original con la reescritura. Revisa precios cambiados, condiciones omitidas y términos importantes, y guarda un informe.",
+    heroLink: "Revisar una reescritura", tryExample: "Probar el ejemplo", ownTexts: "Comparar mis textos", language: "Herramienta en inglés",
+  },
+};
+
 export default function HomePage({ locale }: { locale: UiLang }) {
   const copy = COPY[locale];
   const design = REDESIGN[locale];
+  const rewrite = REWRITE_ENTRY[locale];
   const toolPaths = TOOL_PATHS.map((path, index) => index === 2 ? BOW_LANGUAGE_PATHS[locale] : localizedPath(locale, path));
   const guidePaths = GUIDE_PATHS.map(path => localizedPath(locale, path));
   return <div className="redesign-home">
@@ -353,6 +381,7 @@ export default function HomePage({ locale }: { locale: UiLang }) {
           <h1>{design.title}{" "}<br/><span>{design.accent}</span></h1>
           <p className="rh-hero-description">{design.intro}</p>
           <div className="rh-hero-actions"><Link className="rh-button rh-primary" data-audience="people" href={toolPaths[0]}>{design.start}<span aria-hidden="true">↗</span></Link><a className="rh-quiet-link" href="#agents">{design.bringAgent}<span aria-hidden="true">→</span></a></div>
+          <a className="rh-rewrite-jump" href="#rewrite-check">{rewrite.heroLink}<span aria-hidden="true">↓</span></a>
           <p className="home-hero-tagline">{copy.accent}</p>
         </div>
         <div className="rh-hero-art" aria-hidden="true">
@@ -362,6 +391,18 @@ export default function HomePage({ locale }: { locale: UiLang }) {
           <div className="rh-art-baseline">{Array.from({ length: 12 }, (_, i) => <i key={i}/>)}</div>
           <div className="rh-art-label"><span/>COUNTS → CONTEXT → CLARITY</div>
           <span className="rh-art-coordinate rh-art-bottom">WEB · API · CLI · MCP</span>
+        </div>
+      </section>
+
+      <section className="rh-rewrite rh-container" id="rewrite-check" aria-labelledby="home-rewrite-title" data-testid="home-rewrite-entry">
+        <div className="rh-rewrite-copy">
+          <p className="rh-eyebrow">{rewrite.eyebrow}</p>
+          <h2 id="home-rewrite-title">{rewrite.title}</h2>
+          <p className="rh-rewrite-intro">{rewrite.intro}</p>
+        </div>
+        <div className="rh-rewrite-start">
+          <div className="rh-rewrite-actions"><Link className="rh-button rh-primary" href="/tools/rewrite-review?example=rewrite" data-testid="rewrite-example-link">{rewrite.tryExample}<span aria-hidden="true">→</span></Link><Link className="rh-quiet-link" href="/tools/rewrite-review?mode=own">{rewrite.ownTexts}<span aria-hidden="true">↗</span></Link></div>
+          <p className="rh-rewrite-language">{rewrite.language}</p>
         </div>
       </section>
 

@@ -79,6 +79,77 @@ test("claim extraction does not join a number to readers in a later sentence",()
   assert.equal(state.analysis.claims.some(item=>item.category==="advisor_count"),false);
 });
 
+test("rewrite review exposes the changed price, missing restriction, and missing tracked term",()=>{
+  const originalText="Fieldnote Pro costs $29 per month.\nFor annual billing only.\nThe plan includes unlimited projects and data export.\nCancel your subscription from account settings.";
+  const currentText="Fieldnote Pro costs $19 per month.\nThe plan includes unlimited projects.\nCancel your subscription from account settings.";
+  const state=domain.analyzeWorkspace(domain.createAnalysisWorkspace({originalText,currentText,goal:"Check what was lost after rewriting.",focusTerms:["data export"]}),{id:"rewrite-analysis"});
+  const queue=state.analysis.reviewQueue;
+  const price=queue.find(item=>item.title==="Verify changed prices");
+  assert.deepEqual(price.baselineExcerpts,["Fieldnote Pro costs $29 per month."]);
+  assert.deepEqual(price.currentExcerpts,["Fieldnote Pro costs $19 per month."]);
+  const condition=queue.find(item=>item.title.startsWith("Review missing condition"));
+  assert.deepEqual(condition.baselineExcerpts,["For annual billing only."]);
+  assert.deepEqual(condition.currentExcerpts,[]);
+  assert.match(condition.detail,/omitted or rephrased/);
+  const term=queue.find(item=>item.title.includes("missing tracked term"));
+  assert.match(term.detail,/baseline and 0 times/);
+  assert.deepEqual(term.baselineExcerpts,["The plan includes unlimited projects and data export."]);
+  assert.deepEqual(term.currentExcerpts,[]);
+  assert.ok(term.evidenceRefs.includes("rewrite-analysis:focus:0"));
+  const evidenceIds=new Set(state.analysis.evidence.map(item=>item.id));
+  assert.ok(queue.every(item=>item.evidenceRefs.every(ref=>evidenceIds.has(ref))));
+  const report=domain.exportWorkspaceReport(state,"markdown").content;
+  assert.match(report,/\$29 per month/);
+  assert.match(report,/\$19 per month/);
+  assert.match(report,/For annual billing only\./);
+  assert.match(report,/data export: baseline 1; current 0/);
+  assert.match(report,/does not verify facts/);
+  assert.match(report,/Removed or rewritten text/);
+  assert.match(report,/Added or rewritten text/);
+});
+
+test("a retained restriction and a term absent from both versions are not reported as losses",()=>{
+  const originalText="The starter plan costs $20 per month for annual billing only. Refunds are available only within 14 days of purchase.";
+  const currentText="The starter plan costs $29 per month for annual billing only. Refunds are offered only within 14 days of purchase.";
+  const state=domain.analyzeWorkspace(domain.createAnalysisWorkspace({originalText,currentText,goal:"Check restrictions.",focusTerms:["data export"]}));
+  assert.equal(state.analysis.reviewQueue.some(item=>item.title.startsWith("Review missing condition")),false);
+  assert.equal(state.analysis.reviewQueue.some(item=>item.title.includes("missing tracked term")),false);
+});
+
+test("refreshing the same analyzed revision preserves findings and approvals without stranding evidence",()=>{
+  let state=analyzedWorkspace();
+  const evidenceRef=state.analysis.evidence[0].id;
+  state=domain.addFinding(state,{title:"Clarify the workflow",explanation:"Review the measured wording.",evidenceRefs:[evidenceRef]},{id:"refresh-finding"});
+  for(const [patchId,expectedText,replacementText] of [["refresh-patch","easy to verify","easy to verify against the result"],["sibling-patch","accurate, concise","accurate and concise"]]){
+    state=domain.proposeTextPatch(state,{baseRevision:1,findingIds:["refresh-finding"],expectedText,replacementText,rationale:"Clarify the text."},{id:patchId});
+    state=domain.decidePatch(state,patchId,"approved");
+  }
+  const refreshed=domain.analyzeWorkspace(state,{id:"replacement-analysis"});
+  assert.equal(refreshed,state);
+  assert.equal(refreshed.analysis.id,"analysis-test");
+  assert.ok(refreshed.analysis.evidence.some(item=>item.id===refreshed.findings[0].evidenceRefs[0]));
+  assert.equal(refreshed.patches[0].status,"approved");
+
+  state=domain.applyApprovedPatch(refreshed,{patchId:"refresh-patch",expectedRevision:1});
+  assert.equal(state.analysis,null);
+  assert.equal(state.patches.find(item=>item.id==="sibling-patch").status,"stale");
+  assert.throws(()=>domain.applyApprovedPatch(state,{patchId:"sibling-patch",expectedRevision:2}),error=>error.code==="HUMAN_APPROVAL_REQUIRED");
+  state=domain.analyzeWorkspace(state,{id:"new-revision-analysis"});
+  assert.equal(state.analysis.id,"new-revision-analysis");
+  assert.match(domain.exportWorkspaceReport(state,"markdown").content,/Revision: 1 \(historical; not evidence for the current revision\)/);
+});
+
+test("Markdown keeps full changed blocks even when summaries truncate them and source contains fences",()=>{
+  const originalText=`A long source block ${"with specific guidance ".repeat(20)}and literal \`\`\` markers.`;
+  const currentText="A shorter replacement with clear guidance.";
+  const state=domain.analyzeWorkspace(domain.createAnalysisWorkspace({originalText,currentText,goal:"Review the complete removed wording."}));
+  assert.equal(state.analysis.changeMap.removedSamples[0].includes("literal"),false);
+  const report=domain.exportWorkspaceReport(state,"markdown").content;
+  assert.ok(report.includes(originalText));
+  assert.ok(report.includes(`\`\`\`\`text\n${originalText}\n\`\`\`\``));
+  assert.ok(report.includes(currentText));
+});
+
 test("a patch requires current evidence, a finding, and explicit human approval",()=>{
   let state=analyzedWorkspace();
   const evidenceRef=state.analysis.evidence.find(item=>item.label==="Focus: verify").id;

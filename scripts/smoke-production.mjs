@@ -11,7 +11,7 @@ const expectedRateLimitBackend=process.env.EXPECT_RATE_LIMIT_BACKEND?.trim();
 const expectedDeploymentRevision=process.env.EXPECT_DEPLOYMENT_REVISION?.trim().toLowerCase();
 const checkNpmRelease=process.env.CHECK_NPM_RELEASE==="1";
 const pageConcurrency=Number(process.env.SMOKE_PAGE_CONCURRENCY||8);
-const expectedSitemapPages=91;
+const expectedSitemapPages=92;
 const toolPages=[
   "/tools/bag-of-words-analyzer",
   "/tools/word-frequency-counter",
@@ -115,6 +115,8 @@ async function checkHomepage(){
   assert.equal(homepageHeading.replaceAll(/<[^>]+>/g," ").replaceAll(/\s+/g," ").trim(),"Every word in focus","The bare homepage is not the current product homepage.");
   assert.doesNotMatch(html,/Free Bag of Words SEO analyzer\./i,"The bare homepage still contains the retired analyzer hero.");
   assertDeploySafeCache(response,"Homepage");
+  assert.match(html,/href="\/tools\/rewrite-review\?example=rewrite"/i,"Homepage is missing the Rewrite Review example entry.");
+  assert.match(html,/href="\/tools\/rewrite-review\?mode=own"/i,"Homepage is missing the own-text review entry.");
 
   if(expectedGaId){
     assert.match(html,new RegExp(`googletagmanager\\.com/gtag/js\\?id=${expectedGaId.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}`),"Expected GA4 script is missing from the homepage.");
@@ -147,6 +149,19 @@ async function checkEvidenceWorkspace(){
   assert.match(html,/WEBMCP/i,"Evidence Workspace is missing its WebMCP explanation.");
   assert.match(html,/data-testid="evidence-workspace"/i,"Evidence Workspace did not render its client workflow shell.");
   assertDeploySafeCache(response,"Evidence Workspace");
+}
+
+async function checkRewriteReview(){
+  const response=await request("/tools/rewrite-review");
+  assert.equal(response.status,200,"Rewrite Review must return HTTP 200.");
+  const html=await response.text();
+  assert.match(html,/<h1>What got lost in the rewrite\?<\/h1>/i,"Rewrite Review has the wrong heading.");
+  assert.match(html,/data-experience="rewrite"/i,"Rewrite Review is missing its dedicated workflow.");
+  assert.match(html,/How to use this review/i,"Rewrite Review is missing its quickstart instructions.");
+  assert.match(html,/data-testid="original-text"/i,"Rewrite Review is missing the original text field.");
+  assert.match(html,/data-testid="current-version-input"/i,"Rewrite Review is missing the rewritten text field.");
+  assert.match(html,/href="\/tools\/evidence-workspace"/i,"Rewrite Review is missing its advanced workspace link.");
+  assertDeploySafeCache(response,"Rewrite Review");
 }
 
 async function checkTextContract(){
@@ -344,6 +359,7 @@ await checkHomepage();
 await checkRedirect();
 await checkToolPages();
 await checkEvidenceWorkspace();
+await checkRewriteReview();
 await checkTextContract();
 await checkAgentPage();
 await checkSitemapPagesAndAssets();
@@ -351,4 +367,4 @@ await checkHealth();
 await checkPublishedNpmPackage();
 await checkApis();
 
-console.log(`Production smoke check passed for ${baseUrl.origin}: ${expectedSitemapPages} pages, linked assets, 8 deterministic tools, 8 public analysis APIs, TextContract metadata, and health.`);
+console.log(`Production smoke check passed for ${baseUrl.origin}: ${expectedSitemapPages} pages, linked assets, 8 deterministic tools, Rewrite Review, 8 public analysis APIs, TextContract metadata, and health.`);

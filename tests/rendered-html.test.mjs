@@ -247,6 +247,7 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/tf-idf-calculator<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/text-similarity-calculator<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/evidence-workspace<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/rewrite-review<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/tools\/text-contract<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/how-to-calculate-word-frequency<\/loc>/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/keyword-density-formula<\/loc>/);
@@ -264,7 +265,7 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/es\/tf-idf-formula<\/loc>/);
   assert.match(xml, /hreflang="es" href="https:\/\/textanalysis\.tools\/es\/tools\/tf-idf-calculator"/);
   assert.match(xml, /hreflang="x-default" href="https:\/\/textanalysis\.tools\/tools\/tf-idf-calculator"/);
-  assert.equal((xml.match(/<url>/g)||[]).length,91);
+  assert.equal((xml.match(/<url>/g)||[]).length,92);
 });
 
 test("documents every tool page as a free WebApplication", async () => {
@@ -278,6 +279,7 @@ test("documents every tool page as a free WebApplication", async () => {
     "/tools/tf-idf-calculator",
     "/tools/text-similarity-calculator",
     "/tools/evidence-workspace",
+    "/tools/rewrite-review",
     "/tools/text-contract",
   ];
   const responses=await Promise.all(paths.map(path=>request(path,{headers:{accept:"text/html"}})));
@@ -287,6 +289,21 @@ test("documents every tool page as a free WebApplication", async () => {
     assert.match(html,/"@type":"WebApplication"/i,paths[index]);
     assert.match(html,/"isAccessibleForFree":true/i,paths[index]);
   }
+});
+
+test("rewrite review has its own canonical editorial page and keeps the advanced workspace available",async()=>{
+  const response=await request("/tools/rewrite-review",{headers:{accept:"text/html"}});
+  assert.equal(response.status,200);
+  const html=await response.text();
+  assert.match(html,/rel="canonical" href="https:\/\/textanalysis\.tools\/tools\/rewrite-review"/i);
+  assert.match(html,/<h1>What got lost in the rewrite\?<\/h1>/i);
+  assert.match(html,/data-experience="rewrite"/);
+  assert.doesNotMatch(html,/Review goal and single-text workspace/);
+  assert.match(html,/href="\/tools\/evidence-workspace"/);
+  const legacy=await (await request("/tools/evidence-workspace")).text();
+  assert.match(legacy,/human-approved edits/i);
+  assert.match(legacy,/data-experience="workspace"/);
+  assert.match(legacy,/Review goal and single-text workspace/);
 });
 
 test("renders TextContract as a one-source approval workflow and keeps paid routes same-origin",async()=>{
@@ -328,7 +345,7 @@ test("limits shared-cache lifetime for every sitemap page",async()=>{
   const sitemapResponse=await request("/sitemap.xml");
   const sitemap=await sitemapResponse.text();
   const paths=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]).pathname);
-  assert.equal(paths.length,91);
+  assert.equal(paths.length,92);
   for(let offset=0;offset<paths.length;offset+=12){
     await Promise.all(paths.slice(offset,offset+12).map(async path=>{
       const response=await request(path,{headers:{accept:"text/html"}});

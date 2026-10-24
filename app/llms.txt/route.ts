@@ -38,6 +38,12 @@ The CLI accepts UTF-8 files, public HTTP(S) URLs, inline text, and piped stdin. 
 
 The npm package exposes the same eight deterministic analysis operations as read-only MCP tools over stdio. Start it with \`npx --yes textanalysis-tools mcp\`. Text arguments stay in the local process; explicit URL inputs require a request to that public page.
 
+## Rewrite Review
+
+- Editorial comparison: ${SITE_URL}/tools/rewrite-review
+- Compare an original with its rewrite, inspect changed prices, possible missing conditions, and lost tracked terms, then export Markdown or JSON.
+- Runs locally with its own browser-tab review state; shares the deterministic Evidence Workspace engine and human-approved edit controls. English wording patterns are review signals, not fact or semantic verification.
+
 ## WebMCP Evidence Workspace
 
 - Human-agent workspace: ${SITE_URL}/tools/evidence-workspace
@@ -62,6 +68,7 @@ TextContract accepts one source document and one rewrite brief. It sends them to
 - Word frequency counter: ${SITE_URL}/tools/word-frequency-counter
 - Keyword density checker: ${SITE_URL}/tools/keyword-density-checker
 - Text analysis comparison: ${SITE_URL}/tools/text-analysis-comparison
+- Rewrite review: ${SITE_URL}/tools/rewrite-review
 - Text Analysis Evidence Workspace: ${SITE_URL}/tools/evidence-workspace
 - TextContract Agent: ${SITE_URL}/tools/text-contract
 - N-gram analyzer: ${SITE_URL}/tools/ngram-analyzer

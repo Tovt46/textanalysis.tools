@@ -16,7 +16,7 @@ test("WebMCP workflow preserves human approval between proposal and apply",async
     Object.defineProperty(document,"modelContext",{configurable:true,value:{registerTool(tool){window.__registeredEvidenceTools.push(tool);}}});
   });
   await page.goto("/tools/evidence-workspace");
-  await expect(page.locator(".evidence-capability")).toHaveAttribute("data-status","ready");
+  await expect(page.getByTestId("webmcp-status")).toHaveAttribute("data-status","ready");
   await expect.poll(()=>page.evaluate(()=>window.__registeredEvidenceTools.map(tool=>tool.name))).toEqual([
     "create_analysis_workspace","analyze_workspace","submit_review_plan","apply_approved_patch","export_analysis_report",
   ]);
@@ -31,7 +31,7 @@ test("WebMCP workflow preserves human approval between proposal and apply",async
   expect(result.changeMap).toBeTruthy();
   expect(Array.isArray(result.claimSummary)).toBe(true);
   expect(Array.isArray(result.reviewQueue)).toBe(true);
-  await expect(page.getByTestId("analysis-metrics")).toBeVisible();
+  await expect(page.getByTestId("analysis-metrics")).toHaveCount(1);
 
   const evidenceRef=result.evidence.find(item=>item.label==="Focus: verify").id;
   result=await callTool(page,"submit_review_plan",{baseRevision:1,recommendations:[
@@ -71,9 +71,52 @@ test("WebMCP workflow preserves human approval between proposal and apply",async
 
 test("ordinary browser keeps the full manual fallback visible",async({page})=>{
   await page.goto("/tools/evidence-workspace");
-  await expect(page.locator(".evidence-capability")).toHaveAttribute("data-status","fallback");
+  await expect(page.getByTestId("webmcp-status")).toHaveAttribute("data-status","fallback");
   await expect(page.getByTestId("original-text")).toBeVisible();
-  await expect(page.getByRole("button",{name:/Create workspace/})).toBeEnabled();
+  await expect(page.getByTestId("original-text")).toHaveValue("");
+  await expect(page.getByRole("button",{name:/Compare texts/})).toBeEnabled();
+});
+
+test("the expert workspace preserves its original single-text workflow",async({page})=>{
+  await page.goto("/tools/evidence-workspace");
+  await page.getByTestId("original-text").fill(baseline);
+  await page.getByText("Review goal and single-text workspace",{exact:true}).click();
+  await page.getByRole("button",{name:"Create workspace",exact:true}).click();
+  await expect(page.getByTestId("workspace-revision")).toHaveText("1");
+  await expect(page.getByTestId("current-text")).toHaveValue(baseline);
+  await expect(page.getByRole("button",{name:"Download JSON",exact:true})).toBeDisabled();
+  await page.getByRole("button",{name:"Build review",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Download JSON",exact:true})).toBeEnabled();
+  await expect(page.getByTestId("webmcp-status")).toHaveAttribute("data-status","fallback");
+});
+
+test("registered agent tools follow the active workspace and become inactive after leaving by client navigation",async({page})=>{
+  await page.addInitScript(()=>{
+    window.__registeredEvidenceTools=[];
+    Object.defineProperty(document,"modelContext",{configurable:true,value:{registerTool(tool){window.__registeredEvidenceTools.push(tool);}}});
+  });
+  await page.goto("/tools/evidence-workspace");
+  await expect.poll(()=>page.evaluate(()=>window.__registeredEvidenceTools.length)).toBe(5);
+  const legacy=await callTool(page,"create_analysis_workspace",{originalText:baseline,goal:"Keep the expert review isolated."});
+  expect(legacy.ok).toBe(true);
+  expect((await callTool(page,"analyze_workspace")).ok).toBe(true);
+  const legacySaved=await page.evaluate(()=>sessionStorage.getItem("textanalysis-evidence-workspace-v2"));
+  await page.getByRole("link",{name:"Open the dedicated rewrite review →",exact:true}).click();
+  await expect(page).toHaveURL(/\/tools\/rewrite-review$/);
+  await page.getByRole("button",{name:"Load example",exact:true}).click();
+  const rewrite=await callTool(page,"analyze_workspace");
+  expect(rewrite.ok).toBe(true);
+  const rewriteSaved=await page.evaluate(()=>sessionStorage.getItem("textanalysis-rewrite-review-v1"));
+  expect(rewrite.workspaceId).toBe(JSON.parse(rewriteSaved).id);
+  expect(rewrite.workspaceId).not.toBe(legacy.workspaceId);
+  expect(await page.evaluate(()=>sessionStorage.getItem("textanalysis-evidence-workspace-v2"))).toBe(legacySaved);
+  await page.getByRole("navigation",{name:"Breadcrumb",exact:true}).getByRole("link",{name:"Home",exact:true}).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByTestId("home-rewrite-entry")).toBeVisible();
+  const inactive=await callTool(page,"analyze_workspace");
+  expect(inactive).toMatchObject({ok:false,error:{code:"WORKSPACE_INACTIVE"}});
+  expect(await page.evaluate(()=>sessionStorage.getItem("textanalysis-evidence-workspace-v2"))).toBe(legacySaved);
+  expect(await page.evaluate(()=>sessionStorage.getItem("textanalysis-rewrite-review-v1"))).toBe(rewriteSaved);
 });
 
 test("claim-aware UI converts a safe duplicate into a reviewable patch without applying it",async({page})=>{
@@ -89,10 +132,9 @@ Price: $1.00/min
   await page.goto("/tools/evidence-workspace");
   await page.getByTestId("original-text").fill(originalText);
   await page.getByTestId("current-version-input").fill(currentText);
-  await page.getByTestId("workspace-goal").fill("Find claim drift and safe duplicate cleanup.");
-  await page.getByRole("button",{name:/Create workspace/}).click();
-  await page.getByRole("button",{name:"Build review"}).click();
+  await page.getByRole("button",{name:/Compare texts/}).click();
 
+  await page.getByText("Inspect measurements and commercial claims",{exact:true}).click();
   await expect(page.getByTestId("claim-ledger")).toBeVisible();
   await expect(page.getByTestId("review-queue")).toContainText("Verify changed prices");
   await page.getByText(/Quick cleanup/).click();
