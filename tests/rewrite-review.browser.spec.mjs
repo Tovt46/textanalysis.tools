@@ -11,7 +11,12 @@ function browserFailures(page){
     if(message.type()==="error")failures.push(`Console error: ${message.text()}`);
   });
   page.on("requestfailed",request=>{
-    if(new URL(request.url()).hostname==="127.0.0.1")failures.push(`Request failed: ${request.url()} ${request.failure()?.errorText}`);
+    const url=new URL(request.url());
+    const error=request.failure()?.errorText;
+    // Next cancels in-flight RSC fetches when a hard navigation replaces a page.
+    // Destination UI assertions still verify navigation; other failures remain errors.
+    const cancelledRsc=error==="net::ERR_ABORTED"&&request.method()==="GET"&&request.resourceType()==="fetch"&&!request.isNavigationRequest()&&url.searchParams.has("_rsc")&&request.headers().rsc==="1";
+    if(url.hostname==="127.0.0.1"&&!cancelledRsc)failures.push(`Request failed: ${request.url()} ${error}`);
   });
   return failures;
 }
