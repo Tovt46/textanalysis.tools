@@ -49,6 +49,37 @@ async function propose(page,{expected,replacement,rationale}){
   return page.getByTestId("patch-card").filter({hasText:rationale});
 }
 
+test("privacy traits do not trigger claim loss and Words includes stopwords in the UI and downloads",async({page})=>{
+  const failures=browserFailures(page);
+  await page.goto("/tools/rewrite-review?mode=own");
+  await page.getByTestId("original-text").fill("Life Path 7 | Analysis & privacy.\nThe guide explains the calculation.");
+  await page.getByTestId("current-version-input").fill("The guide explains the calculation and gives a clear example.");
+  await page.getByRole("button",{name:/Compare texts/}).click();
+  await expect(page.getByTestId("review-item").filter({hasText:"Review missing privacy"})).toHaveCount(0);
+  await page.getByText("Inspect measurements and commercial claims",{exact:true}).click();
+  await expect(page.getByTestId("word-count").locator("strong")).toHaveText("10");
+  await expect(page.getByTestId("word-count")).toContainText("+1");
+  await expect(page.getByTestId("word-count")).toContainText("+11.1%");
+  await expect(page.getByText(/Words includes stopwords and excludes standalone numbers/)).toBeVisible();
+  const report=JSON.parse(await downloadReport(page,"JSON"));
+  expect(report.analysis.wordCounts).toEqual({baseline:9,current:10,delta:1});
+  expect(report.analysis.current.tokenCount).toBeLessThan(10);
+  expect(report.analysis.claims.filter(item=>item.category==="privacy")).toEqual([]);
+  const markdown=await downloadReport(page,"Markdown");
+  expect(markdown).toContain("| Words (including stopwords) | 9 | 10 | 1 |");
+  expect(markdown).toContain("| Words excluding stopwords |");
+  expect(markdown).not.toContain("Review missing privacy");
+  await page.reload();
+  await expect(page.getByTestId("analysis-metrics")).toHaveCount(1);
+  await expect(page.getByTestId("review-item").filter({hasText:"Review missing privacy"})).toHaveCount(0);
+
+  await page.getByRole("button",{name:"Edit these texts",exact:true}).click();
+  await page.getByTestId("original-text").fill("We protect your privacy.\nThe guide explains the calculation.");
+  await page.getByRole("button",{name:/Compare texts/}).click();
+  await expect(page.getByTestId("review-item").filter({hasText:"Review missing privacy"})).toBeVisible();
+  expect(failures).toEqual([]);
+});
+
 test("home example works by keyboard and exports the three changes before starting a clean review",async({page})=>{
   const failures=browserFailures(page);
   await page.goto("/");

@@ -206,12 +206,12 @@ export default function EvidenceWorkspace({experience="workspace"}:{experience?:
   };
 
   const analysis=workspace?.analysis&&workspace.analysis.revision===workspace.revision?workspace.analysis:null;
-  const currentFindings=workspace?.findings.filter(item=>item.revision===workspace.revision)||[];
+  const currentFindings=workspace?.findings.filter(item=>item.revision===workspace.revision&&item.analysisId===analysis?.id)||[];
   const queuedFindingTitles=new Set(currentFindings.map(item=>item.title));
   const highPriorityCount=analysis?.reviewQueue.filter(item=>item.priority==="high").length||0;
   const substantiveReviewItems=analysis?.reviewQueue.filter(item=>item.category!=="duplicate")||[];
   const cleanupReviewItems=analysis?.reviewQueue.filter(item=>item.category==="duplicate")||[];
-  const agentPlanPatches=workspace?.patches.filter(item=>item.baseRevision===workspace.revision&&item.recommendationKind)||[];
+  const agentPlanPatches=workspace?.patches.filter(item=>item.baseRevision===workspace.revision&&item.recommendationKind&&(item.status==="proposed"||item.status==="approved"))||[];
   const agentPlanReady=agentPlanPatches.length>=3;
   const isExample=workspace?.originalText===REWRITE_EXAMPLE.originalText&&workspace?.goal===REWRITE_EXAMPLE.goal;
 
@@ -273,11 +273,13 @@ export default function EvidenceWorkspace({experience="workspace"}:{experience?:
 
           <details className="evidence-advanced evidence-measurements"><summary>Inspect measurements and commercial claims</summary>
           <div className="evidence-metrics" data-testid="analysis-metrics">
-            <div><span>WORDS</span><strong>{analysis.current.tokenCount}</strong><small>{formatDelta(analysis.changeMap.wordDelta)} · {formatDelta(analysis.changeMap.wordDeltaPercent,1)}%</small></div>
+            <div data-testid="word-count"><span>WORDS</span><strong>{analysis.wordCounts.current}</strong><small>{formatDelta(analysis.wordCounts.delta)} · {formatDelta(analysis.changeMap.wordDeltaPercent,1)}%</small></div>
             <div><span>EXACT BLOCKS</span><strong>{analysis.changeMap.retainedBlocks}</strong><small>{analysis.changeMap.addedBlocks} added · {analysis.changeMap.removedBlocks} removed</small></div>
             <div><span>REVIEW NOTES</span><strong>{currentFindings.length}</strong><small>recorded for this revision</small></div>
             <div><span>HIGH PRIORITY</span><strong>{highPriorityCount}</strong><small>{analysis.reviewQueue.length} total review items</small></div>
           </div>
+
+          <p>Words includes stopwords and excludes standalone numbers. Vocabulary and word-frequency statistics exclude stopwords; tracked-term rates use all counted words.</p>
 
           <div className="evidence-subsection-head"><div><span>COMMERCIAL CLAIM LEDGER</span><h3>What changed and what needs verification</h3></div><small>Exact text matching; unmatched does not mean false</small></div>
           {!analysis.claimSummary.length?<p className="evidence-empty">No supported commercial claim patterns were detected.</p>:<div className="evidence-table-wrap" tabIndex={0} role="region" aria-label="Scrollable evidence table"><table className="evidence-table evidence-claim-table" data-testid="claim-ledger"><thead><tr><th>Claim type</th><th>Baseline</th><th>Current</th><th>Exact retained</th><th>Current only</th><th>Baseline only</th></tr></thead><tbody>{analysis.claimSummary.map(item=><tr key={item.category}><td>{item.label}</td><td>{item.baseline}</td><td>{item.current}</td><td>{item.retained}</td><td>{item.currentOnly}</td><td>{item.baselineOnly}</td></tr>)}</tbody></table></div>}

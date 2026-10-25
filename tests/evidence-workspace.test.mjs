@@ -28,6 +28,64 @@ test("workspace analysis produces revision-bound deterministic evidence",()=>{
   assert.ok(state.analysis.evidence.every(item=>item.id.startsWith("analysis-test:")));
 });
 
+test("word volume includes stopwords while lexical statistics retain their filtered denominator",()=>{
+  const state=domain.analyzeWorkspace(domain.createAnalysisWorkspace({
+    originalText:"The clear guide shows the next step.",
+    currentText:"The clear guide shows the next step and the expected result. 2026.",
+    goal:"Check the length and tracked term.",focusTerms:["next step"],
+  }));
+  assert.deepEqual(state.analysis.wordCounts,{baseline:7,current:11,delta:4});
+  assert.equal(state.analysis.changeMap.wordDelta,4);
+  assert.equal(state.analysis.changeMap.wordDeltaPercent,57.1);
+  assert.ok(state.analysis.current.tokenCount<11);
+  assert.equal(state.analysis.current.focusCoverage[0].per1000,1000/11);
+  assert.deepEqual(domain.workspaceSummary(state).metrics,{
+    baselineWords:7,currentWords:11,wordDelta:4,vocabularyDelta:state.analysis.comparison.metrics.vocabularySize.delta,
+  });
+  assert.equal(state.analysis.evidence.find(item=>item.label==="Current word count").value,11);
+  const markdown=domain.exportWorkspaceReport(state,"markdown").content;
+  assert.match(markdown,/\| Words \(including stopwords\) \| 7 \| 11 \| 4 \|/);
+  assert.match(markdown,/standalone numbers/);
+  assert.deepEqual(JSON.parse(domain.exportWorkspaceReport(state,"json").content).analysis.wordCounts,state.analysis.wordCounts);
+});
+
+test("personality privacy is ignored while a missing data-protection promise is still flagged",()=>{
+  const currentText="The guide explains the calculation and gives a clear example.";
+  const check=originalText=>domain.analyzeWorkspace(domain.createAnalysisWorkspace({originalText,currentText,goal:"Review omissions."}));
+  const personality=check("Life Path 7 | Analysis & privacy.\nThe guide explains the calculation.");
+  assert.equal(personality.analysis.claims.filter(item=>item.category==="privacy").length,0);
+  assert.equal(personality.analysis.reviewQueue.filter(item=>item.title.includes("privacy")).length,0);
+  const promise=check("We protect your privacy.\nThe guide explains the calculation.");
+  assert.equal(promise.analysis.claimSummary.find(item=>item.category==="privacy").baseline,1);
+  assert.ok(promise.analysis.reviewQueue.some(item=>item.title==="Review missing privacy"));
+});
+
+test("legacy saved analysis requires current checks without discarding texts or review history",()=>{
+  let state=analyzedWorkspace();
+  state=domain.addFinding(state,{title:"Review the wording",explanation:"Based on the original measurements.",evidenceRefs:[state.analysis.evidence[0].id]},{id:"legacy-finding"});
+  state=domain.proposeTextPatch(state,{baseRevision:1,findingIds:["legacy-finding"],expectedText:"easy to verify",replacementText:"easy to check",rationale:"Clarify the wording.",recommendationKind:"clarity"},{id:"legacy-patch"});
+  state=domain.decidePatch(state,"legacy-patch","approved");
+  assert.equal(domain.restoreWorkspace(state),state);
+  const legacy=structuredClone(state);
+  delete legacy.analysis.engineVersion;
+  delete legacy.analysis.wordCounts;
+  const restored=domain.restoreWorkspace(legacy);
+  assert.equal(restored.analysis,null);
+  assert.equal(restored.originalText,state.originalText);
+  assert.equal(restored.currentText,state.currentText);
+  assert.deepEqual(restored.history,state.history);
+  assert.deepEqual(restored.findings,state.findings);
+  assert.equal(restored.patches[0].status,"stale");
+  assert.throws(()=>domain.exportWorkspaceReport(restored,"json"),error=>error.code==="ANALYSIS_REQUIRED");
+  const refreshed=domain.analyzeWorkspace(restored,{id:"current-engine-analysis"});
+  assert.notEqual(refreshed.analysis.id,state.analysis.id);
+  assert.equal(domain.workspaceSummary(refreshed).findings[0].analysisId,state.analysis.id);
+  assert.equal(domain.workspaceSummary(refreshed).findings[0].isCurrent,false);
+  assert.equal(domain.workspaceSummary(refreshed).reviewPlan.currentRecommendations,0);
+  assert.match(domain.exportWorkspaceReport(refreshed,"markdown").content,/Revision: 1 \(historical; not evidence for the current revision\)/);
+  assert.throws(()=>domain.proposeTextPatch(refreshed,{baseRevision:1,findingIds:["legacy-finding"],expectedText:"easy to verify",replacementText:"easy to check",rationale:"Clarify the wording."}),error=>error.code==="INVALID_FINDING");
+});
+
 test("claim-aware review turns two commercial versions into a prioritized decision brief",()=>{
   const originalText=`Provider A
 Welcome offer: 50% off first reading

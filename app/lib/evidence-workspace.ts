@@ -1,7 +1,9 @@
-import {analyzeNgram,analyzeText,toPublicAnalysisResult} from "./analyze";
+import {analyzeNgram,analyzeText,countAnalysisTokens,toPublicAnalysisResult} from "./analyze";
 import {compareAnalysisResults} from "./comparison";
+import {isPrivacyClaim} from "./privacy-claims";
 
 export const EVIDENCE_WORKSPACE_VERSION=2 as const;
+export const WORKSPACE_ANALYSIS_VERSION=2 as const;
 export const MAX_WORKSPACE_TEXT_CHARS=100_000;
 export const MAX_FOCUS_TERMS=20;
 export const MAX_FINDINGS=50;
@@ -62,12 +64,14 @@ export type WorkspaceReviewItem={
 };
 
 export type WorkspaceAnalysis={
+  engineVersion:typeof WORKSPACE_ANALYSIS_VERSION;
   id:string;
   revision:number;
   createdAt:string;
   baseline:PublicAnalysis;
   current:PublicAnalysis;
   comparison:AnalysisComparison;
+  wordCounts:{baseline:number;current:number;delta:number};
   repeatedPhrases:Array<{term:string;count:number;n:number}>;
   changeMap:WorkspaceChangeMap;
   claims:WorkspaceClaim[];
@@ -165,7 +169,7 @@ function normalizeFocusTerms(value:unknown){
   return terms;
 }
 function currentAnalysis(state:EvidenceWorkspaceState){
-  if(!state.analysis||state.analysis.revision!==state.revision)throw new WorkspaceError("ANALYSIS_REQUIRED","Analyze the current revision before continuing.");
+  if(!state.analysis||state.analysis.revision!==state.revision||state.analysis.engineVersion!==WORKSPACE_ANALYSIS_VERSION)throw new WorkspaceError("ANALYSIS_REQUIRED","Analyze the current revision before continuing.");
   return state.analysis;
 }
 function uniqueExactIndex(text:string,expected:string){
@@ -259,7 +263,7 @@ function claimCategories(value:string):WorkspaceClaimCategory[]{
   if(/reading methods?|(?:via|by) (?:live )?(?:chat|phone|voice|video)|\bchat\s*,\s*phone|phone\s*,\s*video/i.test(value))categories.push("channel");
   if(/guarantee|guaranteed|satisfaction guaranteed|money[- ]back/i.test(value))categories.push("guarantee");
   if(/accurac|prediction accuracy|accurate reading/i.test(value))categories.push("accuracy");
-  if(/privacy|confidential|secure sessions?|personal details/i.test(value))categories.push("privacy");
+  if(isPrivacyClaim(value))categories.push("privacy");
   if(/refund|money[- ]back/i.test(value))categories.push("refund");
   if(/\b\d[\d,.]*\+?\s+(?:users?|people|clients?|customers?)\b|people visited|users got/i.test(value))categories.push("social_proof");
   return[...new Set(categories)];
@@ -397,7 +401,7 @@ function buildReviewQueue(analysisId:string,originalText:string,currentText:stri
 export function analyzeWorkspace(state:EvidenceWorkspaceState,context:OperationContext={}):EvidenceWorkspaceState{
   // Measurements are deterministic for a revision. Reusing them preserves the
   // evidence IDs already cited by findings and human-approved proposals.
-  if(state.analysis?.revision===state.revision)return state;
+  if(state.analysis?.revision===state.revision&&state.analysis.engineVersion===WORKSPACE_ANALYSIS_VERSION)return state;
   let baselineInternal:ReturnType<typeof analyzeText>;
   let currentInternal:ReturnType<typeof analyzeText>;
   try{
@@ -416,7 +420,11 @@ export function analyzeWorkspace(state:EvidenceWorkspaceState,context:OperationC
     ...analyzeNgram(analysisInput(state.currentText,state.focusTerms),3).rows.filter(row=>row.count>1).slice(0,6).map(row=>({...row,n:3})),
   ].map(({term,count,n})=>({term,count,n}));
   const analysisId=id("analysis",context);
-  const changeMap=buildChangeMap(state.originalText,state.currentText,comparison.metrics.tokenCount.delta,baselineInternal.tokenCount);
+  // Volume includes stopwords; lexical frequency statistics retain their own filtered denominator.
+  const baselineWords=countAnalysisTokens(state.originalText);
+  const currentWords=countAnalysisTokens(state.currentText);
+  const wordCounts={baseline:baselineWords,current:currentWords,delta:currentWords-baselineWords};
+  const changeMap=buildChangeMap(state.originalText,state.currentText,wordCounts.delta,baselineWords);
   const {claims,claimSummary}=buildClaims(analysisId,state.originalText,state.currentText);
   const reviewQueue=buildReviewQueue(analysisId,state.originalText,state.currentText,claims,claimSummary,changeMap,baselineInternal.focusCoverage,currentInternal.focusCoverage);
   const claimEvidence:WorkspaceEvidence[]=claims.map(claim=>({
@@ -425,16 +433,16 @@ export function analyzeWorkspace(state:EvidenceWorkspaceState,context:OperationC
   }));
   const reviewEvidence:WorkspaceEvidence[]=reviewQueue.map(item=>({id:item.id,kind:"risk",label:item.title,value:item.priority,detail:item.detail}));
   const evidence:WorkspaceEvidence[]=[
-    {id:`${analysisId}:metric:word_count`,kind:"metric",label:"Current word count",value:currentInternal.tokenCount,detail:`Baseline ${baselineInternal.tokenCount}; delta ${comparison.metrics.tokenCount.delta}.`},
+    {id:`${analysisId}:metric:word_count`,kind:"metric",label:"Current word count",value:wordCounts.current,detail:`Baseline ${wordCounts.baseline}; delta ${wordCounts.delta}. Includes stopwords; standalone numbers excluded.`},
     {id:`${analysisId}:metric:vocabulary`,kind:"metric",label:"Current vocabulary",value:currentInternal.vocabularySize,detail:`Baseline ${baselineInternal.vocabularySize}; delta ${comparison.metrics.vocabularySize.delta}.`},
     {id:`${analysisId}:change:overview`,kind:"change",label:"Exact block change map",value:`${changeMap.addedBlocks} added · ${changeMap.removedBlocks} removed`,detail:`${changeMap.retainedBlocks} exact blocks retained; analyzed word-count delta ${changeMap.wordDeltaPercent}%.`},
     ...currentInternal.focusCoverage.map((row,index)=>({id:`${analysisId}:focus:${index}`,kind:"focus" as const,label:`Focus: ${row.term}`,value:row.count,detail:`Baseline ${baselineInternal.focusCoverage.find(item=>item.term===row.term)?.count||0}; current ${row.count}. ${row.per1000.toFixed(2)} occurrences per 1,000 analyzed words in the current revision.`})),
     ...repeatedPhrases.map((row,index)=>({id:`${analysisId}:phrase:${index}`,kind:"phrase" as const,label:`Repeated ${row.n}-gram`,value:row.term,detail:`${row.count} exact occurrences in the current revision.`})),
-    {id:`${analysisId}:comparison:word_count`,kind:"comparison",label:"Word-count delta",value:comparison.metrics.tokenCount.delta,detail:"Current revision compared with the immutable baseline."},
+    {id:`${analysisId}:comparison:word_count`,kind:"comparison",label:"Word-count delta",value:wordCounts.delta,detail:"Current revision compared with the immutable baseline, including stopwords; standalone numbers excluded."},
     ...claimEvidence,...reviewEvidence,
   ];
   const createdAt=now(context);
-  const analysis:WorkspaceAnalysis={id:analysisId,revision:state.revision,createdAt,baseline:toPublicAnalysisResult(baselineInternal),current:toPublicAnalysisResult(currentInternal),comparison,repeatedPhrases,changeMap,claims,claimSummary,reviewQueue,evidence};
+  const analysis:WorkspaceAnalysis={engineVersion:WORKSPACE_ANALYSIS_VERSION,id:analysisId,revision:state.revision,createdAt,baseline:toPublicAnalysisResult(baselineInternal),current:toPublicAnalysisResult(currentInternal),comparison,wordCounts,repeatedPhrases,changeMap,claims,claimSummary,reviewQueue,evidence};
   return{...state,analysis,updatedAt:createdAt};
 }
 
@@ -458,7 +466,7 @@ export function proposeTextPatch(state:EvidenceWorkspaceState,input:{baseRevisio
   if(input.baseRevision!==state.revision)throw new WorkspaceError("STALE_REVISION",`Patch targets revision ${input.baseRevision}; the current revision is ${state.revision}.`);
   const findingIds=[...new Set(Array.isArray(input.findingIds)?input.findingIds:[])];
   if(!findingIds.length)throw new WorkspaceError("FINDING_REQUIRED","Link the patch to at least one finding.");
-  const valid=new Set(state.findings.filter(item=>item.revision===state.revision).map(item=>item.id));
+  const valid=new Set(state.findings.filter(item=>item.revision===state.revision&&item.analysisId===state.analysis?.id).map(item=>item.id));
   if(findingIds.some(ref=>!valid.has(ref)))throw new WorkspaceError("INVALID_FINDING","Every patch must cite a finding from the current revision.");
   const expectedText=required(input.expectedText,"Expected text",10_000);
   if(typeof input.replacementText!=="string"||input.replacementText.length>10_000)throw new WorkspaceError("INVALID_INPUT","Replacement text must be 10,000 characters or fewer.");
@@ -538,14 +546,14 @@ export function workspaceSummary(state:EvidenceWorkspaceState){
     workspaceId:state.id,revision:state.revision,goal:state.goal,focusTerms:state.focusTerms,
     hasCurrentAnalysis:Boolean(state.analysis&&state.analysis.revision===state.revision),
     analysisId:state.analysis?.id||null,
-    metrics:state.analysis?{baselineWords:state.analysis.baseline.tokenCount,currentWords:state.analysis.current.tokenCount,wordDelta:state.analysis.comparison.metrics.tokenCount.delta,vocabularyDelta:state.analysis.comparison.metrics.vocabularySize.delta}:null,
+    metrics:state.analysis?{baselineWords:state.analysis.wordCounts.baseline,currentWords:state.analysis.wordCounts.current,wordDelta:state.analysis.wordCounts.delta,vocabularyDelta:state.analysis.comparison.metrics.vocabularySize.delta}:null,
     changeMap:state.analysis?.changeMap||null,
     claimSummary:state.analysis?.claimSummary||[],
     claims:state.analysis?.claims||[],
     reviewQueue:state.analysis?.reviewQueue||[],
     evidence:state.analysis?.evidence||[],
-    findings:state.findings.map(({id,revision,title,explanation,evidenceRefs})=>({id,revision,title,explanation,evidenceRefs})),
-    reviewPlan:{minimumRecommendations:3,maximumRecommendations:5,requirements:["At least one structure or clarity recommendation","At least one trust or verification recommendation when claim risks exist","At most one cleanup recommendation"],currentRecommendations:state.patches.filter(item=>item.baseRevision===state.revision&&item.recommendationKind).length},
+    findings:state.findings.map(({id,revision,analysisId,title,explanation,evidenceRefs})=>({id,revision,analysisId,isCurrent:revision===state.revision&&analysisId===state.analysis?.id,title,explanation,evidenceRefs})),
+    reviewPlan:{minimumRecommendations:3,maximumRecommendations:5,requirements:["At least one structure or clarity recommendation","At least one trust or verification recommendation when claim risks exist","At most one cleanup recommendation"],currentRecommendations:state.patches.filter(item=>item.baseRevision===state.revision&&item.recommendationKind&&(item.status==="proposed"||item.status==="approved")).length},
     patches:state.patches.map(({id,baseRevision,findingIds,expectedText,replacementText,rationale,status,recommendationKind})=>({id,baseRevision,findingIds,expectedText,replacementText,rationale,status,recommendationKind})),
   };
 }
@@ -560,7 +568,7 @@ export function exportWorkspaceReport(state:EvidenceWorkspaceState,format:"markd
   const analysis=currentAnalysis(state);
   if(format==="json")return{format,filename:`text-analysis-evidence-${state.id}.json`,content:JSON.stringify(state,null,2)};
   const focus=analysis.current.focusCoverage.length?analysis.current.focusCoverage.map(row=>`- ${row.term}: baseline ${analysis.baseline.focusCoverage.find(item=>item.term===row.term)?.count||0}; current ${row.count} (${row.per1000.toFixed(2)} per 1,000 current words)`).join("\n"):"- No focus terms supplied.";
-  const findings=state.findings.length?state.findings.map(item=>`### ${item.title}\n\n${item.explanation}\n\nRevision: ${item.revision}${item.revision===state.revision?" (current)":" (historical; not evidence for the current revision)"}\nAnalysis: ${item.analysisId}\nEvidence: ${item.evidenceRefs.join(", ")}`).join("\n\n"):"No findings recorded.";
+  const findings=state.findings.length?state.findings.map(item=>`### ${item.title}\n\n${item.explanation}\n\nRevision: ${item.revision}${item.revision===state.revision&&item.analysisId===analysis.id?" (current)":" (historical; not evidence for the current revision)"}\nAnalysis: ${item.analysisId}\nEvidence: ${item.evidenceRefs.join(", ")}`).join("\n\n"):"No findings recorded.";
   const patches=state.patches.length?state.patches.map(item=>`- **${item.recommendationKind?`${item.recommendationKind} · `:""}${item.status}** — \`${item.expectedText}\` → \`${item.replacementText}\` (${item.rationale})`).join("\n"):"- No patches recorded.";
   const claimRows=analysis.claimSummary.length?analysis.claimSummary.map(item=>`| ${item.label} | ${item.baseline} | ${item.current} | ${item.retained} | ${item.currentOnly} | ${item.baselineOnly} |`).join("\n"):"| No commercial claims detected | 0 | 0 | 0 | 0 | 0 |";
   const reviewRows=analysis.reviewQueue.length?analysis.reviewQueue.map(item=>`### ${item.priority.toUpperCase()} · ${item.title}\n\n${item.detail}${item.baselineExcerpts?.length?`\n\nBaseline:\n\n${item.baselineExcerpts.map(markdownExcerpt).join("\n\n")}`:""}${item.currentExcerpts?.length?`\n\nCurrent:\n\n${item.currentExcerpts.map(markdownExcerpt).join("\n\n")}`:""}\n\nEvidence: ${item.evidenceRefs.join(", ")}`).join("\n\n"):"- No deterministic review items detected.";
@@ -568,7 +576,7 @@ export function exportWorkspaceReport(state:EvidenceWorkspaceState,format:"markd
   const removed=blocks.removed.length?blocks.removed.map(markdownExcerpt).join("\n\n"):"No unmatched baseline blocks.";
   const added=blocks.added.length?blocks.added.map(markdownExcerpt).join("\n\n"):"No unmatched current blocks.";
   const changeMap=analysis.changeMap;
-  const content=`# Claim-Aware Version Review\n\nWorkspace: ${state.id}\nRevision: ${state.revision}\nGoal: ${state.goal}\n\nThis report flags changes and possible omissions for human review. It does not verify facts or establish that meaning is preserved. Claim and condition detection uses supported English wording patterns; exact term matching can miss paraphrases. No text is changed without an approved patch.\n\n## Decision brief\n\n- Analyzed word change: ${changeMap.wordDelta} (${changeMap.wordDeltaPercent}%).\n- Exact blocks: ${changeMap.retainedBlocks} retained, ${changeMap.addedBlocks} added, ${changeMap.removedBlocks} removed.\n- Review queue: ${analysis.reviewQueue.filter(item=>item.priority==="high").length} high, ${analysis.reviewQueue.filter(item=>item.priority==="medium").length} medium, ${analysis.reviewQueue.filter(item=>item.priority==="low").length} low priority.\n\n## Before / after metrics\n\n| Metric | Baseline | Current | Delta |\n| --- | ---: | ---: | ---: |\n| Words | ${analysis.baseline.tokenCount} | ${analysis.current.tokenCount} | ${analysis.comparison.metrics.tokenCount.delta} |\n| Vocabulary | ${analysis.baseline.vocabularySize} | ${analysis.current.vocabularySize} | ${analysis.comparison.metrics.vocabularySize.delta} |\n\n## Commercial claim ledger\n\n| Claim type | Baseline | Current | Exact retained | Current only | Baseline only |\n| --- | ---: | ---: | ---: | ---: | ---: |\n${claimRows}\n\n## Prioritized review queue\n\n${reviewRows}\n\n## Removed or rewritten text\n\n${removed}\n\n## Added or rewritten text\n\n${added}\n\n## Focus coverage\n\n${focus}\n\n## Findings\n\n${findings}\n\n## Patch decisions\n\n${patches}\n`;
+  const content=`# Claim-Aware Version Review\n\nWorkspace: ${state.id}\nRevision: ${state.revision}\nGoal: ${state.goal}\n\nThis report flags changes and possible omissions for human review. It does not verify facts or establish that meaning is preserved. Claim and condition detection uses supported English wording patterns; exact term matching can miss paraphrases. No text is changed without an approved patch.\n\n## Decision brief\n\n- Word change: ${changeMap.wordDelta} (${changeMap.wordDeltaPercent}%).\n- Exact blocks: ${changeMap.retainedBlocks} retained, ${changeMap.addedBlocks} added, ${changeMap.removedBlocks} removed.\n- Review queue: ${analysis.reviewQueue.filter(item=>item.priority==="high").length} high, ${analysis.reviewQueue.filter(item=>item.priority==="medium").length} medium, ${analysis.reviewQueue.filter(item=>item.priority==="low").length} low priority.\n\n## Before / after metrics\n\n| Metric | Baseline | Current | Delta |\n| --- | ---: | ---: | ---: |\n| Words (including stopwords) | ${analysis.wordCounts.baseline} | ${analysis.wordCounts.current} | ${analysis.wordCounts.delta} |\n| Words excluding stopwords | ${analysis.baseline.tokenCount} | ${analysis.current.tokenCount} | ${analysis.comparison.metrics.tokenCount.delta} |\n| Vocabulary | ${analysis.baseline.vocabularySize} | ${analysis.current.vocabularySize} | ${analysis.comparison.metrics.vocabularySize.delta} |\n\nWords includes stopwords and excludes standalone numbers. Vocabulary and word-frequency statistics exclude stopwords; tracked-term rates use all counted words.\n\n## Commercial claim ledger\n\n| Claim type | Baseline | Current | Exact retained | Current only | Baseline only |\n| --- | ---: | ---: | ---: | ---: | ---: |\n${claimRows}\n\n## Prioritized review queue\n\n${reviewRows}\n\n## Removed or rewritten text\n\n${removed}\n\n## Added or rewritten text\n\n${added}\n\n## Focus coverage\n\n${focus}\n\n## Findings\n\n${findings}\n\n## Patch decisions\n\n${patches}\n`;
   return{format,filename:`text-analysis-evidence-${state.id}.md`,content};
 }
 
@@ -577,5 +585,11 @@ export function restoreWorkspace(value:unknown):EvidenceWorkspaceState{
   const candidate=value as Partial<EvidenceWorkspaceState>;
   if(candidate.version!==EVIDENCE_WORKSPACE_VERSION||typeof candidate.id!=="string"||typeof candidate.originalText!=="string"||typeof candidate.currentText!=="string"||!Number.isInteger(candidate.revision)||!Array.isArray(candidate.focusTerms)||!Array.isArray(candidate.findings)||!Array.isArray(candidate.patches)||!Array.isArray(candidate.history))throw new WorkspaceError("INVALID_WORKSPACE","Saved workspace has an unsupported or incomplete structure.");
   if(candidate.originalText.length>MAX_WORKSPACE_TEXT_CHARS||candidate.currentText.length>MAX_WORKSPACE_TEXT_CHARS)throw new WorkspaceError("INVALID_WORKSPACE","Saved workspace text exceeds the current limit.");
-  return candidate as EvidenceWorkspaceState;
+  const state=candidate as EvidenceWorkspaceState;
+  // Keep the user's work, but require current checks before exporting or applying old proposals.
+  if(state.analysis&&state.analysis.engineVersion!==WORKSPACE_ANALYSIS_VERSION)return{
+    ...state,analysis:null,
+    patches:state.patches.map(item=>item.status==="proposed"||item.status==="approved"?{...item,status:"stale" as const}:item),
+  };
+  return state;
 }
