@@ -53,6 +53,6 @@ export function SiteFooter({locale}:{locale:UiLang}){
   const labels=LABELS[locale];
   return <footer className="site-footer">
     <div className="site-footer-brand"><SiteBrand locale={locale}/><p>{labels.privacy}</p></div>
-    <div className="site-footer-links"><nav className="site-footer-nav" aria-label={labels.navigation}>{navItems(locale).map(item=><a key={item.key} href={item.href}>{item.label}</a>)}</nav><nav className="site-footer-utility" aria-label={labels.resources}><a href={localizedPath(locale,"/cli")}>CLI</a><a href={localizedPath(locale,"/agents")}>{labels.agents}</a><a href="/privacy">Privacy</a><a href="/openapi.json">OpenAPI</a><a href="/llms.txt">llms.txt</a><a href="/sitemap.xml">{labels.sitemap}</a></nav></div>
+    <div className="site-footer-links"><nav className="site-footer-nav" aria-label={labels.navigation}>{navItems(locale).map(item=><a key={item.key} href={item.href}>{item.label}</a>)}</nav><nav className="site-footer-utility" aria-label={labels.resources}><a href={localizedPath(locale,"/cli")}>CLI</a><a href={localizedPath(locale,"/agents")}>{labels.agents}</a><a href="/about">About</a><a href="/contact">Contact</a><a href="mailto:alextovt2@gmail.com">Email</a><a href="/privacy">Privacy</a><a href="/openapi.json">OpenAPI</a><a href="/llms.txt">llms.txt</a><a href="/sitemap.xml">{labels.sitemap}</a></nav></div>
   </footer>;
 }

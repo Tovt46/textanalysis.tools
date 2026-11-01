@@ -229,7 +229,7 @@ test("serves a valid XML sitemap", async () => {
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^application\/xml/i);
   const xml = await response.text();
-  assert.doesNotMatch(xml, /<lastmod\b/i);
+  assert.equal([...xml.matchAll(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/g)].length,[...xml.matchAll(/<url>/g)].length);
   assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
   assert.match(xml, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9" xmlns:xhtml="http:\/\/www\.w3\.org\/1999\/xhtml">/);
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/uk<\/loc>/);
@@ -265,7 +265,7 @@ test("serves a valid XML sitemap", async () => {
   assert.match(xml, /<loc>https:\/\/textanalysis\.tools\/es\/tf-idf-formula<\/loc>/);
   assert.match(xml, /hreflang="es" href="https:\/\/textanalysis\.tools\/es\/tools\/tf-idf-calculator"/);
   assert.match(xml, /hreflang="x-default" href="https:\/\/textanalysis\.tools\/tools\/tf-idf-calculator"/);
-  assert.equal((xml.match(/<url>/g)||[]).length,92);
+  assert.equal((xml.match(/<url>/g)||[]).length,94);
 });
 
 test("documents every tool page as a free WebApplication", async () => {
@@ -345,7 +345,7 @@ test("limits shared-cache lifetime for every sitemap page",async()=>{
   const sitemapResponse=await request("/sitemap.xml");
   const sitemap=await sitemapResponse.text();
   const paths=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]).pathname);
-  assert.equal(paths.length,92);
+  assert.equal(paths.length,94);
   for(let offset=0;offset<paths.length;offset+=12){
     await Promise.all(paths.slice(offset,offset+12).map(async path=>{
       const response=await request(path,{headers:{accept:"text/html"}});

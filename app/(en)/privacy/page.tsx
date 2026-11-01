@@ -24,6 +24,7 @@ const handlingRows=[
   ["Public API","Server memory","Request content is processed to create the response. It is not added to an account, document database, or analysis history."],
   ["TextContract Agent","Nebius Token Factory; Tavily only for live rules","The source, brief, and candidate are sent to Nemotron for the current stateless step. Up to three explicitly current claims can be sent to Tavily as search queries. This tab keeps the workspace in sessionStorage."],
   ["CLI","Your local Node.js process","Files, inline text, and stdin stay in the CLI process. A URL is downloaded directly by the CLI."],
+  ["Hosted MCP server","Public API","Tool arguments are processed on the server through the public analysis API, with the same input, rate, and result limits. No server-side document history is created."],
   ["Local MCP server","Your local Node.js process","Tool arguments and results stay between the MCP client and the local server. A URL is downloaded directly by that process."],
 ] as const;
 

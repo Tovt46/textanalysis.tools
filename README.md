@@ -314,7 +314,7 @@ After each deployment run:
 npm run smoke:production
 ```
 
-The smoke check verifies all 92 sitemap pages, a shared-cache lifetime of no
+The smoke check verifies all 94 sitemap pages, a shared-cache lifetime of no
 more than five minutes, the current navigation marker, every linked Next.js
 static asset (including JavaScript and CSS), the Rewrite Review entry and quickstart, the canonical `/en` redirect,
 versioned API operations, request IDs, health, and CORS preflight responses. Set `SMOKE_BASE_URL` to

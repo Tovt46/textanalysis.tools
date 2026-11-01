@@ -6,8 +6,8 @@ const content=`# Text Analysis Tools
 
 ## Agent API
 
-- OpenAPI specification: ${SITE_URL}/openapi.json
-- Human-readable API documentation: ${SITE_URL}/api-docs
+- [OpenAPI specification](${SITE_URL}/openapi.json)
+- [Human-readable API documentation](${SITE_URL}/api-docs)
 - API health: GET ${SITE_URL}/api/health
 - Analyze one input: POST ${SITE_URL}/api/v1/analyze
 - Compare two inputs: POST ${SITE_URL}/api/v1/compare
@@ -22,13 +22,13 @@ Requests use application/json. Supported languages are English, Russian, Ukraini
 
 ## Local CLI
 
-- CLI documentation: ${SITE_URL}/cli
-- Agent integration guide: ${SITE_URL}/agents
-- npm package: https://www.npmjs.com/package/textanalysis-tools
+- [CLI documentation](${SITE_URL}/cli)
+- [Agent integration guide](${SITE_URL}/agents)
+- [npm package](https://www.npmjs.com/package/textanalysis-tools)
 - Executable: textanalysis
 - Analysis commands: analyze, frequency, density, compare, ngram, bow, tfidf, similarity
 - Repeatable workflow checks: textanalysis check article.md --format ci
-- Version 1 check schema: ${SITE_URL}/textanalysis-config.schema.json
+- [Version 1 check schema](${SITE_URL}/textanalysis-config.schema.json)
 - Importable ESM TypeScript API: import analysis functions from textanalysis-tools
 - Local MCP server: npx --yes textanalysis-tools mcp
 
@@ -40,80 +40,87 @@ The npm package exposes the same eight deterministic analysis operations as read
 
 ## Rewrite Review
 
-- Editorial comparison: ${SITE_URL}/tools/rewrite-review
+- [Editorial comparison](${SITE_URL}/tools/rewrite-review)
 - Compare an original with its rewrite, inspect changed prices, possible missing conditions, and lost tracked terms, then export Markdown or JSON.
 - Runs locally with its own browser-tab review state; shares the deterministic Evidence Workspace engine and human-approved edit controls. English wording patterns are review signals, not fact or semantic verification.
 
 ## WebMCP Evidence Workspace
 
-- Human-agent workspace: ${SITE_URL}/tools/evidence-workspace
+- [Human-agent workspace](${SITE_URL}/tools/evidence-workspace)
 - Page tools: create_analysis_workspace, analyze_workspace, submit_review_plan, apply_approved_patch, export_analysis_report
 
 The English workspace registers five tools through document.modelContext when WebMCP is available. analyze_workspace returns an exact block-change map, a commercial claim ledger, and a prioritized queue of changed or verification-sensitive claims. submit_review_plan then requires one complete set of 3–5 evidence-linked exact diffs, including substantive structure or clarity work and trust or verification work when claim risks exist; at most one item may be cleanup. These are review signals and proposals, not truth judgments. Human approval is intentionally not exposed as a tool: the reviewer must approve or reject each patch in the visible page before apply_approved_patch can succeed. The complete workflow also remains usable through normal page controls when WebMCP is unavailable.
 
 ## TextContract Agent
 
-- Guarded rewriting workflow: ${SITE_URL}/tools/text-contract
+- [Guarded rewriting workflow](${SITE_URL}/tools/text-contract)
 - Steps: compile visible rules, obtain human approval, generate one draft, evaluate it, optionally repair once, and re-evaluate
 - Server routes: POST ${SITE_URL}/api/text-contract/compile, POST ${SITE_URL}/api/text-contract/generate, POST ${SITE_URL}/api/text-contract/evaluate
 
 TextContract accepts one source document and one rewrite brief. It sends them to NVIDIA Nemotron through Nebius Token Factory only for the current stateless API step. Browser workspace state stays in sessionStorage; the application does not create a server-side document history. Tavily is used only for up to three rules explicitly marked as requiring current evidence. The model-backed routes are same-origin application endpoints, not part of the public no-key analysis API. READY requires every enabled check to pass; missing evidence or incomplete model output never becomes a pass.
 
+## Hosted MCP
+
+- [HTTP MCP endpoint](${SITE_URL}/mcp): Stateless Streamable HTTP; analyze_text uses the public API limits and processes submitted content on the server.
+- [MCP server card](${SITE_URL}/.well-known/mcp/server-card.json)
+
 ## Main pages
 
-- Product homepage: ${SITE_URL}/
-- Text analysis tools: ${SITE_URL}/tools
-- Text analysis guide directory: ${SITE_URL}/guides
-- Bag of Words analyzer: ${SITE_URL}/tools/bag-of-words-analyzer
-- Word frequency counter: ${SITE_URL}/tools/word-frequency-counter
-- Keyword density checker: ${SITE_URL}/tools/keyword-density-checker
-- Text analysis comparison: ${SITE_URL}/tools/text-analysis-comparison
-- Rewrite review: ${SITE_URL}/tools/rewrite-review
-- Text Analysis Evidence Workspace: ${SITE_URL}/tools/evidence-workspace
-- TextContract Agent: ${SITE_URL}/tools/text-contract
-- N-gram analyzer: ${SITE_URL}/tools/ngram-analyzer
-- Bag of Words generator: ${SITE_URL}/tools/bag-of-words-generator
-- TF-IDF calculator: ${SITE_URL}/tools/tf-idf-calculator
-- Text similarity calculator: ${SITE_URL}/tools/text-similarity-calculator
-- How to calculate word frequency: ${SITE_URL}/how-to-calculate-word-frequency
-- Keyword density formula and limitations: ${SITE_URL}/keyword-density-formula
-- Bag of Words model guide: ${SITE_URL}/bag-of-words-model
-- Bag of Words vs Word2Vec: ${SITE_URL}/bag-of-words-vs-word2vec
-- TF-IDF formula and worked example: ${SITE_URL}/tf-idf-formula
-- Cosine similarity for text: ${SITE_URL}/cosine-similarity-for-text
-- N-gram guide: ${SITE_URL}/what-are-n-grams
-- Text comparison by normalized word frequency: ${SITE_URL}/compare-texts-by-word-frequency
-- Command-line interface documentation: ${SITE_URL}/cli
-- AI agent and MCP documentation: ${SITE_URL}/agents
-- Privacy and data handling: ${SITE_URL}/privacy
+- [Product homepage](${SITE_URL}/)
+- [Text analysis tools](${SITE_URL}/tools)
+- [Text analysis guide directory](${SITE_URL}/guides)
+- [Bag of Words analyzer](${SITE_URL}/tools/bag-of-words-analyzer)
+- [Word frequency counter](${SITE_URL}/tools/word-frequency-counter)
+- [Keyword density checker](${SITE_URL}/tools/keyword-density-checker)
+- [Text analysis comparison](${SITE_URL}/tools/text-analysis-comparison)
+- [Rewrite review](${SITE_URL}/tools/rewrite-review)
+- [Text Analysis Evidence Workspace](${SITE_URL}/tools/evidence-workspace)
+- [TextContract Agent](${SITE_URL}/tools/text-contract)
+- [N-gram analyzer](${SITE_URL}/tools/ngram-analyzer)
+- [Bag of Words generator](${SITE_URL}/tools/bag-of-words-generator)
+- [TF-IDF calculator](${SITE_URL}/tools/tf-idf-calculator)
+- [Text similarity calculator](${SITE_URL}/tools/text-similarity-calculator)
+- [How to calculate word frequency](${SITE_URL}/how-to-calculate-word-frequency)
+- [Keyword density formula and limitations](${SITE_URL}/keyword-density-formula)
+- [Bag of Words model guide](${SITE_URL}/bag-of-words-model)
+- [Bag of Words vs Word2Vec](${SITE_URL}/bag-of-words-vs-word2vec)
+- [TF-IDF formula and worked example](${SITE_URL}/tf-idf-formula)
+- [Cosine similarity for text](${SITE_URL}/cosine-similarity-for-text)
+- [N-gram guide](${SITE_URL}/what-are-n-grams)
+- [Text comparison by normalized word frequency](${SITE_URL}/compare-texts-by-word-frequency)
+- [Command-line interface documentation](${SITE_URL}/cli)
+- [AI agent and MCP documentation](${SITE_URL}/agents)
+- [About](${SITE_URL}/about)
+- [Contact](${SITE_URL}/contact)
+- [Privacy and data handling](${SITE_URL}/privacy)
 
 ## Russian pages
 
-- Главная: ${SITE_URL}/ru
-- Все инструменты: ${SITE_URL}/ru/tools
-- Все руководства: ${SITE_URL}/ru/guides
-- Документация API: ${SITE_URL}/ru/api-docs
-- Документация CLI: ${SITE_URL}/ru/cli
+- [Главная](${SITE_URL}/ru)
+- [Все инструменты](${SITE_URL}/ru/tools)
+- [Все руководства](${SITE_URL}/ru/guides)
+- [Документация API](${SITE_URL}/ru/api-docs)
+- [Документация CLI](${SITE_URL}/ru/cli)
 - Инструменты доступны по тем же путям с префиксом /ru, например ${SITE_URL}/ru/tools/tf-idf-calculator
 - Руководства доступны по тем же путям с префиксом /ru, например ${SITE_URL}/ru/tf-idf-formula
 
 ## Ukrainian pages
 
-- Головна: ${SITE_URL}/uk
-- Усі інструменти: ${SITE_URL}/uk/tools
-- Усі гайди: ${SITE_URL}/uk/guides
-- Документація API: ${SITE_URL}/uk/api-docs
-- Документація CLI: ${SITE_URL}/uk/cli
+- [Головна](${SITE_URL}/uk)
+- [Усі інструменти](${SITE_URL}/uk/tools)
+- [Усі гайди](${SITE_URL}/uk/guides)
+- [Документація API](${SITE_URL}/uk/api-docs)
+- [Документація CLI](${SITE_URL}/uk/cli)
 - Інструменти доступні за тими самими шляхами з префіксом /uk, наприклад ${SITE_URL}/uk/tools/tf-idf-calculator
 - Гайди доступні за тими самими шляхами з префіксом /uk, наприклад ${SITE_URL}/uk/tf-idf-formula
 
 ## Spanish pages
 
-- Inicio: ${SITE_URL}/es
-- Todas las herramientas: ${SITE_URL}/es/tools
-- Todas las guías: ${SITE_URL}/es/guides
-- Documentación de la API: ${SITE_URL}/es/api-docs
-- Documentación de CLI: ${SITE_URL}/es/cli
+- [Inicio](${SITE_URL}/es)
+- [Todas las herramientas](${SITE_URL}/es/tools)
+- [Todas las guías](${SITE_URL}/es/guides)
+- [Documentación de la API](${SITE_URL}/es/api-docs)
+- [Documentación de CLI](${SITE_URL}/es/cli)
 - Las herramientas usan las mismas rutas con el prefijo /es, por ejemplo ${SITE_URL}/es/tools/tf-idf-calculator
 - Las guías usan las mismas rutas con el prefijo /es, por ejemplo ${SITE_URL}/es/tf-idf-formula
 `;

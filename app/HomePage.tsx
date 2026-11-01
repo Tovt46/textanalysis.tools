@@ -1,3 +1,5 @@
+import HomeAgentTools from "./HomeAgentTools";
+import {homeSchema} from "./site-identity";
 import Link from "next/link";
 import HomeIntegrations from "./HomeIntegrations";
 import "./home-redesign.css";
@@ -373,6 +375,8 @@ export default function HomePage({ locale }: { locale: UiLang }) {
   const toolPaths = TOOL_PATHS.map((path, index) => index === 2 ? BOW_LANGUAGE_PATHS[locale] : localizedPath(locale, path));
   const guidePaths = GUIDE_PATHS.map(path => localizedPath(locale, path));
   return <div className="redesign-home">
+    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(homeSchema(localizedPath(locale,"/"),locale)).replace(/</g,"\u003c")}}/>
+    <HomeAgentTools/>
     <SiteHeader locale={locale} active="home" languagePaths={HOME_PATHS}/>
     <main id="main-content" className="rh-main">
       <section className="rh-hero rh-container">

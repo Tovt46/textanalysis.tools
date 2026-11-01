@@ -169,6 +169,38 @@ type BucketState={entries:Record<string,RateLimitWindow>};
 
 const sleep=(milliseconds:number)=>new Promise(resolve=>setTimeout(resolve,milliseconds));
 
+// Instances in one process share a queue before contending for the filesystem
+// lock. This avoids a burst of local requests polling the same lock in sync;
+// the exclusive file still coordinates independent Node processes.
+const localLockTails=new Map<string,Promise<void>>();
+
+async function acquireLocalLock(path:string,deadline:number){
+  const previous=localLockTails.get(path)??Promise.resolve();
+  let release!:()=>void;
+  const turn=new Promise<void>(resolve=>{release=resolve;});
+  const tail=previous.then(()=>turn);
+  localLockTails.set(path,tail);
+  void tail.then(()=>{
+    if(localLockTails.get(path)===tail)localLockTails.delete(path);
+  });
+  let timeout:ReturnType<typeof setTimeout>|undefined;
+  try{
+    await Promise.race([
+      previous,
+      new Promise<never>((_resolve,reject)=>{
+        timeout=setTimeout(()=>reject(new Error("Timed out waiting for the shared rate-limit store lock.")),Math.max(0,deadline-Date.now()));
+      }),
+    ]);
+    if(Date.now()>=deadline)throw new Error("Timed out waiting for the shared rate-limit store lock.");
+    return release;
+  }catch(error){
+    release();
+    throw error;
+  }finally{
+    if(timeout)clearTimeout(timeout);
+  }
+}
+
 function errorCode(error:unknown){
   return error&&typeof error==="object"&&"code" in error?String(error.code):"";
 }
@@ -229,33 +261,39 @@ export class FileRateLimitStore implements RateLimitStore{
 
   private async acquireLock(lockPath:string){
     const deadline=Date.now()+this.lockTimeoutMs;
+    const releaseLocal=await acquireLocalLock(lockPath,deadline);
     let delay=8;
-    while(true){
-      try{
-        const handle=await open(lockPath,"wx",0o600);
+    try{
+      while(true){
         try{
-          await handle.writeFile(`${process.pid}:${Date.now()}`);
-          return handle;
-        }catch(error){
-          await handle.close().catch(()=>undefined);
-          await unlink(lockPath).catch(()=>undefined);
-          throw error;
-        }
-      }catch(error){
-        if(errorCode(error)!=="EEXIST")throw error;
-        try{
-          const details=await stat(lockPath);
-          if(Date.now()-details.mtimeMs>this.staleLockMs){
+          const handle=await open(lockPath,"wx",0o600);
+          try{
+            await handle.writeFile(`${process.pid}:${Date.now()}`);
+            return {handle,releaseLocal};
+          }catch(error){
+            await handle.close().catch(()=>undefined);
             await unlink(lockPath).catch(()=>undefined);
-            continue;
+            throw error;
           }
-        }catch(staleError){
-          if(errorCode(staleError)==="ENOENT")continue;
+        }catch(error){
+          if(errorCode(error)!=="EEXIST")throw error;
+          try{
+            const details=await stat(lockPath);
+            if(Date.now()-details.mtimeMs>this.staleLockMs){
+              await unlink(lockPath).catch(()=>undefined);
+              continue;
+            }
+          }catch(staleError){
+            if(errorCode(staleError)==="ENOENT")continue;
+          }
+          if(Date.now()>=deadline)throw new Error("Timed out waiting for the shared rate-limit store lock.");
+          await sleep(delay);
+          delay=Math.min(64,delay*2);
         }
-        if(Date.now()>=deadline)throw new Error("Timed out waiting for the shared rate-limit store lock.");
-        await sleep(delay);
-        delay=Math.min(64,delay*2);
       }
+    }catch(error){
+      releaseLocal();
+      throw error;
     }
   }
 
@@ -302,8 +340,9 @@ export class FileRateLimitStore implements RateLimitStore{
       }
       return {...next};
     }finally{
-      await lock.close().catch(()=>undefined);
+      await lock.handle.close().catch(()=>undefined);
       await unlink(lockPath).catch(()=>undefined);
+      lock.releaseLocal();
     }
   }
 
@@ -321,8 +360,9 @@ export class FileRateLimitStore implements RateLimitStore{
         await unlink(temporaryPath).catch(()=>undefined);
       }
     }finally{
-      await lock.close().catch(()=>undefined);
+      await lock.handle.close().catch(()=>undefined);
       await unlink(lockPath).catch(()=>undefined);
+      lock.releaseLocal();
     }
   }
 }

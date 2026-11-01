@@ -1,3 +1,4 @@
+import lastModified from "../content-lastmod.json";
 import type { UiLang } from "../i18n";
 import { languagePaths,localizedPath } from "../localization";
 import { SITE_URL } from "../seo-metadata";
@@ -28,6 +29,12 @@ const PATHS=[
   "/compare-texts-by-word-frequency",
 ] as const;
 
+// Update content-lastmod.json when page content or its analysis behavior changes.
+// Dates are source-history dates, never the request time or an arbitrary build time.
+function lastmod(path:string){
+  return `<lastmod>${lastModified[path as keyof typeof lastModified]}</lastmod>`;
+}
+
 function absolute(path:string){
   return `${SITE_URL}${path}`;
 }
@@ -43,23 +50,29 @@ function entry(path:string,locale:UiLang){
   ].join("\n    ");
   return `  <url>
     <loc>${absolute(localizedPath(locale,path))}</loc>
+    ${lastmod(localizedPath(locale,path))}
     ${alternates}
   </url>`;
 }
 
 const privacyEntry=`  <url>
     <loc>${absolute("/privacy")}</loc>
+    ${lastmod("/privacy")}
   </url>`;
 const evidenceWorkspaceEntry=`  <url>
     <loc>${absolute("/tools/evidence-workspace")}</loc>
+    ${lastmod("/tools/evidence-workspace")}
   </url>`;
 const rewriteReviewEntry=`  <url>
     <loc>${absolute("/tools/rewrite-review")}</loc>
+    ${lastmod("/tools/rewrite-review")}
   </url>`;
 const textContractEntry=`  <url>
     <loc>${absolute("/tools/text-contract")}</loc>
+    ${lastmod("/tools/text-contract")}
   </url>`;
-const entries=[...PATHS.flatMap(path=>LANGUAGES.map(locale=>entry(path,locale))),textContractEntry,evidenceWorkspaceEntry,rewriteReviewEntry,privacyEntry].join("\n");
+const identityEntries=["/about","/contact"].map(path=>`  <url><loc>${absolute(path)}</loc>${lastmod(path)}</url>`);
+const entries=[...identityEntries,...PATHS.flatMap(path=>LANGUAGES.map(locale=>entry(path,locale))),textContractEntry,evidenceWorkspaceEntry,rewriteReviewEntry,privacyEntry].join("\n");
 const xml=`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${entries}

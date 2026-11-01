@@ -11,7 +11,7 @@ const expectedRateLimitBackend=process.env.EXPECT_RATE_LIMIT_BACKEND?.trim();
 const expectedDeploymentRevision=process.env.EXPECT_DEPLOYMENT_REVISION?.trim().toLowerCase();
 const checkNpmRelease=process.env.CHECK_NPM_RELEASE==="1";
 const pageConcurrency=Number(process.env.SMOKE_PAGE_CONCURRENCY||8);
-const expectedSitemapPages=92;
+const expectedSitemapPages=94;
 const toolPages=[
   "/tools/bag-of-words-analyzer",
   "/tools/word-frequency-counter",

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {spawn} from "node:child_process";
 import {mkdtemp,rm,writeFile} from "node:fs/promises";
 import {createServer} from "node:http";
 import {tmpdir} from "node:os";
@@ -178,11 +179,18 @@ test("classifies transport abort and timeout exceptions as remote timeouts",asyn
   }
 });
 
-test("a blackholed address cannot consume the whole multi-address deadline",async()=>{
+test("a blackholed address cannot consume the whole multi-address deadline",async t=>{
+  // Advance the deadline clock explicitly: a busy test worker can otherwise
+  // spend the entire 80 ms budget before the fallback gets a turn to run.
+  t.mock.timers.enable({apis:["Date","setTimeout"]});
   const attempted=[];
   const startedAt=Date.now();
-  const text=await api.fetchRemoteText("https://public.example/",{
+  const budget=api.createRemoteFetchBudget({maxRequests:2,maxBytes:100,maxConcurrent:1});
+  let startedFirstAttempt;
+  const firstAttempt=new Promise(resolve=>{startedFirstAttempt=resolve;});
+  const result=api.fetchRemoteText("https://public.example/",{
     timeoutMs:80,
+    budget,
     lookup:async()=>[
       {address:"93.184.216.34",family:4},
       {address:"93.184.216.35",family:4},
@@ -190,14 +198,49 @@ test("a blackholed address cannot consume the whole multi-address deadline",asyn
     fetchImpl:async(_url,init,address)=>{
       attempted.push(address.address);
       if(address.address.endsWith(".35"))return textResponse("fallback after timeout");
+      startedFirstAttempt();
       return new Promise((_resolve,reject)=>{
         init.signal?.addEventListener("abort",()=>reject(init.signal.reason),{once:true});
       });
     },
   });
+  await firstAttempt;
+  // The first of two addresses gets half of the shared deadline. Its request
+  // never resolves; the application deadline must still start the fallback.
+  t.mock.timers.tick(40);
+  const text=await result;
   assert.equal(text,"fallback after timeout");
   assert.deepEqual(attempted,["93.184.216.34","93.184.216.35"]);
-  assert.ok(Date.now()-startedAt<500);
+  assert.equal(Date.now()-startedAt,40);
+  assert.equal(budget.snapshot().requests,2);
+});
+
+test("address fallback cannot extend the shared deadline",async t=>{
+  t.mock.timers.enable({apis:["Date","setTimeout"]});
+  const attempted=[];
+  const startedAt=Date.now();
+  const startedAttempts=[];
+  const attempts=[0,1].map(index=>new Promise(resolve=>{startedAttempts[index]=resolve;}));
+  const result=api.fetchRemoteText("https://public.example/",{
+    timeoutMs:80,
+    lookup:async()=>[
+      {address:"93.184.216.34",family:4},
+      {address:"93.184.216.35",family:4},
+    ],
+    fetchImpl:async(_url,_init,address)=>{
+      attempted.push(address.address);
+      startedAttempts[attempted.length-1]();
+      return new Promise(()=>{});
+    },
+  });
+  const rejected=expectApiError(result,{status:422,code:"REMOTE_FETCH_TIMEOUT"});
+  await attempts[0];
+  t.mock.timers.tick(40);
+  await attempts[1];
+  t.mock.timers.tick(40);
+  await rejected;
+  assert.deepEqual(attempted,["93.184.216.34","93.184.216.35"]);
+  assert.equal(Date.now()-startedAt,80);
 });
 
 test("rejects missing and malformed redirect locations and cancels their bodies",async()=>{
@@ -633,10 +676,100 @@ test("file rate-limit store shares atomic counters across worker instances",asyn
     const first=new api.FileRateLimitStore(directory,{bucketCount:1,maximumKeys:100});
     const second=new api.FileRateLimitStore(directory,{bucketCount:1,maximumKeys:100});
     const increments=Array.from({length:30},(_,index)=>(index%2?first:second).increment("203.0.113.10",1,1_000,60_000));
-    const windows=await Promise.all(increments);
+    // Drain every writer before cleanup, even when one fails. Otherwise a
+    // pending writer can recreate files while rm hides the original failure.
+    const completed=await Promise.allSettled(increments);
+    for(const result of completed)assert.equal(result.status,"fulfilled",result.status==="rejected"?String(result.reason):undefined);
+    const windows=completed.map(result=>result.value);
     assert.deepEqual(windows.map(window=>window.count).sort((a,b)=>a-b),Array.from({length:30},(_,index)=>index+1));
     assert.deepEqual(await first.increment("203.0.113.10",1,61_001,60_000),{startedAt:61_001,count:1});
   }finally{
+    await rm(directory,{recursive:true,force:true});
+  }
+});
+
+test("file rate-limit lock timeouts release queued turns for later requests",async()=>{
+  const directory=await mkdtemp(join(tmpdir(),"textanalysis-rate-limit-queue-"));
+  const lockPath=join(directory,"bucket-0.json.lock");
+  try{
+    const first=new api.FileRateLimitStore(directory,{bucketCount:1,lockTimeoutMs:100});
+    const second=new api.FileRateLimitStore(directory,{bucketCount:1,lockTimeoutMs:100});
+    await writeFile(lockPath,"external worker");
+    const blocked=await Promise.allSettled([
+      first.increment("client",1,1_000,60_000),
+      second.increment("client",1,1_000,60_000),
+    ]);
+    for(const result of blocked){
+      assert.equal(result.status,"rejected");
+      assert.match(result.reason.message,/timed out waiting/i);
+    }
+    await rm(lockPath);
+    assert.deepEqual(await first.increment("client",1,1_001,60_000),{startedAt:1_001,count:1});
+    assert.deepEqual(await second.increment("client",1,1_002,60_000),{startedAt:1_001,count:2});
+  }finally{
+    await rm(directory,{recursive:true,force:true});
+  }
+});
+
+test("file rate-limit counters remain atomic across independent Node processes",{timeout:10_000},async()=>{
+  const directory=await mkdtemp(join(tmpdir(),"textanalysis-rate-limit-processes-"));
+  const workerSource=`
+    const api=await import(process.argv[1]);
+    const store=new api.FileRateLimitStore(process.argv[2],{bucketCount:1,maximumKeys:100});
+    process.once("message",async()=>{
+      try{
+        const windows=await Promise.all(Array.from({length:4},()=>store.increment("client",1,1_000,60_000)));
+        process.send({counts:windows.map(window=>window.count)},()=>process.disconnect());
+      }catch(error){
+        console.error(error);
+        process.exitCode=1;
+        process.disconnect();
+      }
+    });
+    process.send({ready:true});
+  `;
+  function startWorker(){
+    const child=spawn(process.execPath,["--input-type=module","--eval",workerSource,pathToFileURL(bundledModule).href,directory],{stdio:["ignore","ignore","pipe","ipc"],signal:AbortSignal.timeout(5_000)});
+    const closed=new Promise(resolve=>child.once("close",resolve));
+    let counts;
+    let stderr="";
+    let resolveReady;
+    let rejectReady;
+    const ready=new Promise((resolve,reject)=>{resolveReady=resolve;rejectReady=reject;});
+    child.stderr.on("data",chunk=>{stderr+=chunk;});
+    child.on("message",message=>{
+      if(message.ready)resolveReady();
+      if(message.counts)counts=message.counts;
+    });
+    const completed=new Promise((resolve,reject)=>{
+      child.once("error",error=>{rejectReady(error);reject(error);});
+      child.once("close",code=>{
+        if(code!==0||!counts){
+          const error=new Error(`Rate-limit worker failed (${code}): ${stderr}`);
+          rejectReady(error);
+          reject(error);
+        }else resolve(counts);
+      });
+    });
+    // A startup failure can occur before the test reaches the result barrier.
+    void completed.catch(()=>undefined);
+    return {child,ready,completed,closed};
+  }
+  const workers=[startWorker(),startWorker()];
+  try{
+    await Promise.all(workers.map(worker=>worker.ready));
+    for(const worker of workers)worker.child.send("start");
+    const counts=(await Promise.all(workers.map(worker=>worker.completed))).flat().sort((a,b)=>a-b);
+    assert.deepEqual(counts,Array.from({length:8},(_,index)=>index+1));
+    const store=new api.FileRateLimitStore(directory,{bucketCount:1,maximumKeys:100});
+    assert.deepEqual(await store.increment("client",1,1_001,60_000),{startedAt:1_000,count:9});
+  }finally{
+    for(const worker of workers){
+      if(worker.child.exitCode===null&&worker.child.signalCode===null)worker.child.kill();
+    }
+    // An abort can emit error before close. Wait for actual process shutdown
+    // so a terminated writer cannot race with removing its store directory.
+    await Promise.all(workers.map(worker=>worker.closed));
     await rm(directory,{recursive:true,force:true});
   }
 });
