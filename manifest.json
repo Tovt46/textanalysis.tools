@@ -1,8 +1,8 @@
 {
   "version": 1,
   "host": "textanalysis.tools",
-  "revision": "7b394df38a61a08cbb05c34970abab16229e7056",
-  "generatedAt": "2026-11-02T11:01:45.494Z",
+  "revision": "7e80907b742631da7085171029f4867100bb6c6b",
+  "generatedAt": "2026-11-02T11:17:02.984Z",
   "pages": {
     "https://textanalysis.tools/": {
       "lastmod": "2026-11-01",
@@ -13,8 +13,10 @@
       "fingerprint": "ece0d193a2c4df4fd48f42c51102886c5a701a6668f39a3b81f37453cc770653"
     },
     "https://textanalysis.tools/agents": {
-      "lastmod": "2026-09-14",
-      "fingerprint": "593eb4dfa6ed12b85c17c73953564889efa5418a6a18b9b4f5a748014ec0bb76"
+      "lastmod": "2026-11-02",
+      "fingerprint": "cc62eb36c9f939f755e57b9a09cfaca2a8d0e06d432ed7f9678dc06c344b4290",
+      "submittedAt": "2026-11-02T11:17:04.183Z",
+      "submissionStatus": 202
     },
     "https://textanalysis.tools/api-docs": {
       "lastmod": "2026-09-14",
@@ -49,8 +51,10 @@
       "fingerprint": "71f5c77a1b0f2d03fdde8650cb804b012beeb20fdba2f284d4da1f5aa4c8f8c4"
     },
     "https://textanalysis.tools/es/agents": {
-      "lastmod": "2026-09-14",
-      "fingerprint": "fff157733e0ccb3e411d71d05f25960021da6a4961db4374eef88b41f382374b"
+      "lastmod": "2026-11-02",
+      "fingerprint": "ef7bf0238a7d92fcfe024e6c544d9a8f5a41cf48101d041c088c9f88ec024ea2",
+      "submittedAt": "2026-11-02T11:17:04.183Z",
+      "submissionStatus": 202
     },
     "https://textanalysis.tools/es/api-docs": {
       "lastmod": "2026-09-14",
@@ -153,8 +157,10 @@
       "fingerprint": "ab8c97936a94f57d58c40b24528adf104f45460b9415fe8e50606c3fe2b4f91d"
     },
     "https://textanalysis.tools/ru/agents": {
-      "lastmod": "2026-09-14",
-      "fingerprint": "94696e769f4f5f6b3472899d50a369cd9f37790ac24b5533f871088c665957e1"
+      "lastmod": "2026-11-02",
+      "fingerprint": "dac37805740e148374aa0a3ec9aaaeb1ac6dc480aaf39382358761e3ceefc08f",
+      "submittedAt": "2026-11-02T11:17:04.183Z",
+      "submissionStatus": 202
     },
     "https://textanalysis.tools/ru/api-docs": {
       "lastmod": "2026-09-14",
@@ -293,8 +299,10 @@
       "fingerprint": "9026d0e5d38e7356eb5c6144a33da64569b38744e67f3419f9d35c7a3ab5bcae"
     },
     "https://textanalysis.tools/uk/agents": {
-      "lastmod": "2026-09-14",
-      "fingerprint": "56f801bccb51acd3bb4e6b49bc6c233ae48c1dc20e34aa6cc3fb7195d9a6d11d"
+      "lastmod": "2026-11-02",
+      "fingerprint": "b09cbd995ac221c06fd335736af8031f94308af679bb2d4d3b6165df8b0ef1b1",
+      "submittedAt": "2026-11-02T11:17:04.183Z",
+      "submissionStatus": 202
     },
     "https://textanalysis.tools/uk/api-docs": {
       "lastmod": "2026-09-14",
@@ -380,7 +388,5 @@
       "lastmod": "2026-09-14",
       "fingerprint": "f2d24a7f3d96b5abd972362e0a6906876e6ae853365b61ddeb28d3a2fceaa82b"
     }
-  },
-  "baselineOnly": true,
-  "initializedAt": "2026-11-02T11:04:37.624Z"
+  }
 }
