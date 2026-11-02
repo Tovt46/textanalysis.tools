@@ -39,6 +39,18 @@ jobs:
       - name: Install Chromium for browser interaction tests
         run: npx playwright install --with-deps chromium
 
+      - name: Check all 13 agent-readiness requirements against the production build
+        run: npm run test:agent-readiness
+
+      - name: Upload agent-readiness evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: agent-readiness-local
+          path: test-results/agent-readiness/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Test all tool examples at desktop and mobile sizes
         run: npm run test:browser
 

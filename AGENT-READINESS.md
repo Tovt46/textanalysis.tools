@@ -14,7 +14,27 @@ The local npm stdio MCP server continues to offer its existing eight analysis to
 
 ## Checks
 
-`npm test` includes discovery/negotiation and a real initialize → tools/list → tools/call HTTP contract. `npx playwright test tests/agent-readiness.browser.spec.mjs` checks both WebMCP browser surfaces, tool execution, no-WebMCP fallback, contact navigation, and desktop/mobile overflow. `npm run lint` and `npm run build` cover the application changes. Local success does not establish deployment or production state.
+`npm test` includes discovery/negotiation, negative validator regressions, and a real initialize → tools/list → tools/call HTTP contract. After it creates a production build, `npm run test:agent-readiness` starts an isolated `next start` server and requires all 13 checks below. `npm run smoke:production` includes the same gate against the deployed site; `npm run smoke:agent-readiness` runs only that gate. Set `SMOKE_BASE_URL` for another running server and `EXPECT_DEPLOYMENT_REVISION` to require a particular revision before and after verification.
+
+| # | Automated requirement |
+| --- | --- |
+| 1 | Content-Signal declares search and AI-training preferences |
+| 2 | Every sitemap URL has a real, non-future lastmod date |
+| 3 | Homepage JSON-LD parses and declares schema.org context |
+| 4 | Organization/LocalBusiness has complete identity and contact fields |
+| 5 | sameAs contains the project's public profile identities |
+| 6 | Organization, WebSite, WebPage, and WebApplication types are present |
+| 7 | About, Contact, and Privacy are linked and their pages work |
+| 8 | Homepage mailto and structured email are machine-readable |
+| 9 | llms.txt has a title, summary, sections, and key Markdown links |
+| 10 | Canonical HTML/Markdown negotiation, quality values, HEAD, validators, and RSC preserve cache separation |
+| 11 | Resource Link headers and exact Vary: Accept are present |
+| 12 | Native browser WebMCP discovers and executes the homepage tool at three viewport sizes |
+| 13 | MCP Server Card agrees with initialize, tools/list, and synthetic tools/call; untrusted Origin is rejected |
+
+Install the locked dependencies and browser with `npm ci` and `npx playwright install --with-deps chromium`. The native gate enables experimental WebMCP flags and never substitutes a mock API. `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` selects an explicitly installed Chromium when needed. The older `tests/agent-readiness.browser.spec.mjs` remains separate compatibility coverage for document/navigator registration and browsers without WebMCP.
+
+CI runs this gate against the production build. Post-deployment CI waits only for the expected health revision, runs the full production smoke once, and checks revision stability. Both jobs retain JSON/Markdown reports and browser screenshots from `test-results/agent-readiness/` for 14 days, including failures. `AGENT_READINESS_OUTPUT_DIR` overrides the directory. Exactly 13 distinct PASS results are required; missing browser support, skips, and missing results fail. sameAs checks validate declared project identities without making CI depend on external profile availability. Content dates are validated, not rewritten or forced to the latest build date. Local success does not establish deployment or production state.
 
 ## Security follow-up — 2026-11-01
 

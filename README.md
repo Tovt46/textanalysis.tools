@@ -133,11 +133,19 @@ npm test
 npm run lint
 npm run test:cli
 npm run test:browser
+npm run test:agent-readiness
 npm run test:package
 ```
 
 `npm test` creates a production build and runs the rendered-page and analyzer
 test suite.
+
+`npm run test:agent-readiness` starts its own `next start` server using that
+production build and requires all 13 agent-readiness checks to pass. Install
+the pinned browser first with `npx playwright install --with-deps chromium`.
+It uses native WebMCP discovery and execution, with experimental browser flags;
+missing browser support fails the gate. To use an installed Chromium explicitly,
+set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to its executable path.
 
 For Hostinger production, use the standard Node runtime scripts without Cloudflare:
 
@@ -324,6 +332,21 @@ when the deployment is expected to load GA4. Set
 `EXPECT_RATE_LIMIT_BACKEND=shared` for production: smoke checks always reject
 `degraded`, while this option also rejects an unintended local-only backend.
 
+It also requires all 13 agent-readiness checks: content signals, a valid lastmod
+for every sitemap URL, JSON-LD, complete Organization identity, project sameAs
+profiles, multiple schema types, About/Contact/Privacy links, machine-readable
+contact details, llms.txt Markdown links, HTML/Markdown negotiation and caching,
+resource Link headers, native WebMCP on desktop/tablet/mobile, and an MCP Server
+Card backed by working initialize/list/analyze calls. Profile declarations are
+checked without depending on third-party website availability. The synthetic
+MCP probe uses no paid provider or persistent storage.
+
+Run `npm ci` and `npx playwright install --with-deps chromium` before the smoke
+test on a fresh machine. For just the 13-check gate against an existing server,
+run `npm run smoke:agent-readiness` with the same environment variables. JSON,
+Markdown, and browser screenshots are saved to `test-results/agent-readiness/`;
+override this directory with `AGENT_READINESS_OUTPUT_DIR`.
+
 For local verification against a production build:
 
 ```bash
@@ -342,6 +365,13 @@ connected to this repository and automatically builds and deploys every push to
 No repository SSH secrets, deploy key, PM2 workflow, Cloudflare token, or custom
 GitHub Actions deployment job is required. Build status and logs are available
 in hPanel under `Websites → textanalysis.tools → Deployments`.
+
+CI runs the 13-check gate against the local production build on every pull
+request and main push. After successful main CI, the production workflow waits
+only for the exact validated revision at `/api/health`, then runs the complete
+smoke test once. Content failures are not retried as deployment delays. Both
+workflows upload agent-readiness evidence even when the gate fails, and a
+missing, skipped, or failed check fails the job.
 
 If the post-deployment smoke check reports a one-year page TTL or missing
 `/_next/static/` assets, clear both the website cache and CDN cache in hPanel

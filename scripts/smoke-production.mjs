@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
+import {verifyAgentReadiness} from "./check-agent-readiness.mjs";
 
 const cliPackage=JSON.parse(await readFile(new URL("../packages/cli/package.json",import.meta.url),"utf8"));
 const escapedCliVersion=cliPackage.version.replaceAll(/[.*+?^${}()|[\]\\]/g,"\\$&");
@@ -109,25 +110,6 @@ async function checkAssetUrls(assets,label){
 function assertNegotiatedVary(response,label){
   const fields=(response.headers.get("vary")||"").split(",").map(value=>value.trim().toLowerCase());
   assert.ok(fields.includes("accept"),`${label} lacks the exact Vary: Accept field: ${response.headers.get("vary")}`);
-}
-
-async function checkHomepageNegotiation(){
-  for(const accept of ["text/html","text/markdown","text/html","text/markdown;q=0, text/html","text/markdown"]){
-    const response=await request("/",{headers:{Accept:accept}});
-    assert.equal(response.status,200);
-    assertNegotiatedVary(response,`Homepage ${accept}`);
-    const markdown=accept==="text/markdown";
-    assert.match(response.headers.get("content-type")||"",markdown?/^text\/markdown/:/^text\/html/);
-    const body=await response.text();
-    assert.match(body,markdown?/^# Text Analysis Tools/:/<h1/);
-    if(!markdown)assertDeploySafeCache(response,"Negotiated HTML homepage");
-  }
-  for(const accept of ["text/html","text/markdown"]){
-    const response=await request("/",{method:"HEAD",headers:{Accept:accept}});
-    assert.equal(response.status,200);
-    assertNegotiatedVary(response,`Homepage HEAD ${accept}`);
-    assert.equal(await response.text(),"");
-  }
 }
 
 async function checkHomepage(){
@@ -380,8 +362,10 @@ async function checkApis(){
   }
 }
 
+await checkHealth();
+const readiness=await verifyAgentReadiness({baseUrl,expectedRevision:expectedDeploymentRevision});
+assert.equal(readiness.summary.status,"PASS","Agent-readiness gate failed; see test-results/agent-readiness/report.json (or AGENT_READINESS_OUTPUT_DIR).");
 await checkHomepage();
-await checkHomepageNegotiation();
 await checkRedirect();
 await checkToolPages();
 await checkEvidenceWorkspace();
@@ -392,5 +376,6 @@ await checkSitemapPagesAndAssets();
 await checkHealth();
 await checkPublishedNpmPackage();
 await checkApis();
+await checkHealth();
 
-console.log(`Production smoke check passed for ${baseUrl.origin}: ${expectedSitemapPages} pages, negotiated HTML/Markdown caching, linked assets, 8 deterministic tools, Rewrite Review, 8 public analysis APIs, TextContract metadata, and health.`);
+console.log(`Production smoke check passed for ${baseUrl.origin}: all 13 agent-readiness checks, ${expectedSitemapPages} pages, negotiated HTML/Markdown caching, linked assets, 8 deterministic tools, Rewrite Review, 8 public analysis APIs, TextContract metadata, and health.`);
