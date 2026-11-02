@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 import {execFileSync} from "node:child_process";
+import {createHash} from "node:crypto";
+import {readFileSync} from "node:fs";
+
+const varyPatchFingerprint=createHash("sha256").update(readFileSync("scripts/patch-next-vary.mjs")).digest("hex");
 
 function deploymentRevision(){
   const configured=process.env.TEXTANALYSIS_BUILD_REVISION?.trim()||process.env.GITHUB_SHA?.trim();
@@ -12,6 +16,14 @@ function deploymentRevision(){
 
 const nextConfig: NextConfig = {
   expireTime: 300,
+  webpack(config){
+    // Next excludes its own files from webpack cache dependencies. A template
+    // compatibility fix must therefore participate in the cache version.
+    if(config.cache&&typeof config.cache==="object"){
+      config.cache.version=`${config.cache.version??""}|vary:${varyPatchFingerprint}`;
+    }
+    return config;
+  },
   redirects(){
     return [{
       source:"/:path*",

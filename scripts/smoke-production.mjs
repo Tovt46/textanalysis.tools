@@ -106,6 +106,30 @@ async function checkAssetUrls(assets,label){
   });
 }
 
+function assertNegotiatedVary(response,label){
+  const fields=(response.headers.get("vary")||"").split(",").map(value=>value.trim().toLowerCase());
+  assert.ok(fields.includes("accept"),`${label} lacks the exact Vary: Accept field: ${response.headers.get("vary")}`);
+}
+
+async function checkHomepageNegotiation(){
+  for(const accept of ["text/html","text/markdown","text/html","text/markdown;q=0, text/html","text/markdown"]){
+    const response=await request("/",{headers:{Accept:accept}});
+    assert.equal(response.status,200);
+    assertNegotiatedVary(response,`Homepage ${accept}`);
+    const markdown=accept==="text/markdown";
+    assert.match(response.headers.get("content-type")||"",markdown?/^text\/markdown/:/^text\/html/);
+    const body=await response.text();
+    assert.match(body,markdown?/^# Text Analysis Tools/:/<h1/);
+    if(!markdown)assertDeploySafeCache(response,"Negotiated HTML homepage");
+  }
+  for(const accept of ["text/html","text/markdown"]){
+    const response=await request("/",{method:"HEAD",headers:{Accept:accept}});
+    assert.equal(response.status,200);
+    assertNegotiatedVary(response,`Homepage HEAD ${accept}`);
+    assert.equal(await response.text(),"");
+  }
+}
+
 async function checkHomepage(){
   const response=await request("/");
   assert.equal(response.status,200,"The bare homepage must return HTTP 200.");
@@ -115,6 +139,7 @@ async function checkHomepage(){
   assert.equal(homepageHeading.replaceAll(/<[^>]+>/g," ").replaceAll(/\s+/g," ").trim(),"Every word in focus","The bare homepage is not the current product homepage.");
   assert.doesNotMatch(html,/Free Bag of Words SEO analyzer\./i,"The bare homepage still contains the retired analyzer hero.");
   assertDeploySafeCache(response,"Homepage");
+  assertNegotiatedVary(response,"HTML homepage");
   assert.match(html,/href="\/tools\/rewrite-review\?example=rewrite"/i,"Homepage is missing the Rewrite Review example entry.");
   assert.match(html,/href="\/tools\/rewrite-review\?mode=own"/i,"Homepage is missing the own-text review entry.");
 
@@ -356,6 +381,7 @@ async function checkApis(){
 }
 
 await checkHomepage();
+await checkHomepageNegotiation();
 await checkRedirect();
 await checkToolPages();
 await checkEvidenceWorkspace();
@@ -367,4 +393,4 @@ await checkHealth();
 await checkPublishedNpmPackage();
 await checkApis();
 
-console.log(`Production smoke check passed for ${baseUrl.origin}: ${expectedSitemapPages} pages, linked assets, 8 deterministic tools, Rewrite Review, 8 public analysis APIs, TextContract metadata, and health.`);
+console.log(`Production smoke check passed for ${baseUrl.origin}: ${expectedSitemapPages} pages, negotiated HTML/Markdown caching, linked assets, 8 deterministic tools, Rewrite Review, 8 public analysis APIs, TextContract metadata, and health.`);

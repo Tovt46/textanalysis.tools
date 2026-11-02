@@ -6,7 +6,7 @@ const request=(path,options)=>fetch(new URL(path,base),options);
 test("agent discovery, sitemap dates, structured identity, and Markdown negotiation",{skip:!base},async()=>{
   const htmlResponse=await request("/");
   assert.match(htmlResponse.headers.get("link"),/llms\.txt/);
-  assert.match(htmlResponse.headers.get("vary"),/Accept/i);
+  assert.ok(htmlResponse.headers.get("vary").split(",").some(token=>token.trim().toLowerCase()==="accept"));
   const html=await htmlResponse.text();
   const schemas=[...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)].map(match=>JSON.parse(match[1]));
   const nodes=schemas.flatMap(schema=>schema["@graph"]??[schema]);

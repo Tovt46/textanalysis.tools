@@ -45,3 +45,11 @@ All requested local checks pass; there are no remaining test failures. Live prod
 The deployment preflight also ran CI's full dependency audit, including development tooling. Its minimatch advisory was resolved with a dev-only compatibility entry backed entirely by patched minimatch 11.0.3. Scoped overrides preserve the callable CommonJS interface expected by ESLint consumers; the TypeScript parser receives version 11 directly. All compatibility/glob tests, repository lint, a clean isolated npm ci, and the full audit passed with zero vulnerabilities.
 
 After this fix, TEST_PORT=3108 npm test completed a fresh production build and passed all 230 tests. npm run release:verify and git diff --check also passed. This document records local validation before the authorized main-branch release. Post-deployment HTTP/native WebMCP evidence is recorded separately in outputs/agent-readiness-live-2026-11-01/.
+
+## Vary header compatibility fix — 2026-11-02
+
+Next 16.4.3 overwrites proxy response Vary fields in the generated app-page renderer. The upstream fix is still pending (vercel/next.js#91039). scripts/patch-next-vary.mjs applies an exact-version-guarded, idempotent merge to both renderer templates before dev/build. It preserves existing negotiation/compression fields, all framework RSC fields, and wildcard semantics without changing next start, ISR, or cache TTLs. A SHA-256 fingerprint of the fix participates in the webpack cache version so an old cached renderer cannot survive the patch. A Next upgrade deliberately requires review/removal of the compatibility fix.
+
+Regression tests require the exact Accept token (Accept-Encoding does not count), exercise warm HTML/Markdown requests, HEAD, conditional 304 responses, and RSC responses. Production smoke also checks normal alternating homepage representations and HEAD responses. This supersedes the missing HTML Vary: Accept limitation recorded with the November 1 deployment.
+
+Local validation: a fresh production build passed all 234 tests; lint and the full audit passed. A subsequent cached rebuild passed the negotiation verifier (normal alternating GET, HEAD, conditional 304, cross-representation ETag, quality values and RSC), and desktop/mobile browser navigation checks passed. Live results are recorded separately under outputs/vary-accept-live-2026-11-02/.

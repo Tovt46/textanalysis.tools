@@ -10,10 +10,10 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "next dev",
-    "dev:hostinger": "next dev",
-    "build": "next build --webpack",
-    "build:hostinger": "next build --webpack",
+    "dev": "node scripts/patch-next-vary.mjs && next dev",
+    "dev:hostinger": "node scripts/patch-next-vary.mjs && next dev",
+    "build": "node scripts/patch-next-vary.mjs && next build --webpack",
+    "build:hostinger": "node scripts/patch-next-vary.mjs && next build --webpack",
     "cli": "npm run cli:build --silent && node packages/cli/dist/textanalysis.mjs",
     "cli:build": "npm run cli:build:bin --silent && npm run sdk:build --silent",
     "cli:build:bin": "esbuild cli/index.ts --bundle --platform=node --format=esm --target=node22 --external:@modelcontextprotocol/sdk --external:@modelcontextprotocol/sdk/* --external:zod --external:zod/* --outfile=packages/cli/dist/textanalysis.mjs",
