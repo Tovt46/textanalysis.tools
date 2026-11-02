@@ -230,8 +230,16 @@ export async function runHttpChecks({baseUrl,expectedRevision}){
     return {...response,...parseHomepage(response.text)};
   })();
   async function check(number,name,verify){
-    try{checks.push({number,name,status:"PASS",evidence:await verify()});}
-    catch(error){checks.push({number,name,status:"FAIL",error:error.message});}
+    const evidence={};
+    try{
+      const result=await verify(evidence);
+      checks.push({number,name,status:"PASS",evidence:{...evidence,...result}});
+    }
+    catch(error){
+      const last=evidence.requests?.at(-1);
+      const context=last?`${last.method} ${last.url} Accept=${JSON.stringify(last.accept)} status=${last.status??"no response"}: `:"";
+      checks.push({number,name,status:"FAIL",error:context+error.message,evidence});
+    }
   }
   await check(1,"Content Signals declared",async()=>{
     const response=await request("/robots.txt");
@@ -277,23 +285,30 @@ export async function runHttpChecks({baseUrl,expectedRevision}){
     assert.equal(response.status,200);
     return assertLlms(response.text);
   });
-  await check(10,"Markdown negotiation and cache isolation",async()=>{
-    const requests=[];
+  await check(10,"Markdown negotiation and cache isolation",async evidence=>{
+    const requests=evidence.requests=[];
     const hashes={html:[],markdown:[]};
     let etag;
-    const record=(response,accept,method="GET")=>{
-      assertVaryAccept(response.headers.get("vary"),{router:accept==="text/html"});
-      requests.push({accept,method,status:response.status,vary:response.headers.get("vary"),cacheControl:response.headers.get("cache-control"),edgeCache:response.headers.get("x-hcdn-cache-status"),etag:response.headers.get("etag"),hash:hash(response.text)});
+    const variant=async(path,init={},negotiated=true)=>{
+      const accept=init.headers?.Accept??null;
+      const entry={url:new URL(path,base).href,accept,method:init.method??"GET",requestHeaders:init.headers??{},...(init.cache?{requestCache:init.cache}:{})};
+      requests.push(entry);
+      const response=await request(path,init);
+      Object.assign(entry,{status:response.status,headers:Object.fromEntries(response.headers),vary:response.headers.get("vary"),cacheControl:response.headers.get("cache-control"),edgeCache:response.headers.get("x-hcdn-cache-status"),etag:response.headers.get("etag"),hash:hash(response.text),bytes:Buffer.byteLength(response.text)});
+      if(response.status>=400)entry.bodyPreview=response.text.slice(0,1000);
+      // Preserve the complete response before any assertion so a region-specific
+      // CDN failure identifies the actual GET/HEAD/304/Flight variant and headers.
+      if(negotiated)assertVaryAccept(response.headers.get("vary"),{router:accept==="text/html"});
+      return response;
     };
     // Use the canonical URL and ordinary request headers: a cache-busting query
     // or Cache-Control: no-cache would hide cross-representation CDN regressions.
     for(let round=0;round<3;round++)for(const kind of ["html","markdown"]){
       const accept=`text/${kind}`;
-      const response=await request("/",{headers:{Accept:accept}});
+      const response=await variant("/",{headers:{Accept:accept}});
       assert.equal(response.status,200);
       assert.match(response.headers.get("content-type")??"",kind==="html"?/^text\/html(?:;|$)/:/^text\/markdown(?:;|$)/);
       assert.match(response.text,kind==="html"?/<h1\b/:/^# Text Analysis Tools/);
-      record(response,accept);
       hashes[kind].push(hash(response.text));
       if(kind==="html"){
         assertHtmlCache(response.headers);
@@ -304,47 +319,45 @@ export async function runHttpChecks({baseUrl,expectedRevision}){
     assert.equal(new Set(hashes.html).size,1,"Warm HTML representation changed during negotiation");
     assert.equal(new Set(hashes.markdown).size,1,"Warm Markdown representation changed during negotiation");
     assert.notEqual(hashes.html[0],hashes.markdown[0],"HTML and Markdown must be different representations");
-    const direct=await request("/index.md");
+    const direct=await variant("/index.md",{},false);
     assert.equal(direct.status,200);
     assert.match(direct.headers.get("content-type")??"",/^text\/markdown(?:;|$)/);
     assert.equal(hash(direct.text),hashes.markdown[0],"Negotiated Markdown differs from its advertised alternate");
     for(const accept of ["text/markdown;q=0, text/html","text/markdown;q=0.2, text/html;q=0.9"]){
-      const response=await request("/",{headers:{Accept:accept}});
+      const response=await variant("/",{headers:{Accept:accept}});
       assert.equal(response.status,200);
       assert.match(response.headers.get("content-type")??"",/^text\/html(?:;|$)/);
-      record(response,accept);
     }
     for(const kind of ["html","markdown"]){
       const accept=`text/${kind}`;
-      const response=await request("/",{method:"HEAD",headers:{Accept:accept}});
+      const response=await variant("/",{method:"HEAD",headers:{Accept:accept}});
       assert.equal(response.status,200);
       assert.equal(response.text,"");
       assert.match(response.headers.get("content-type")??"",kind==="html"?/^text\/html(?:;|$)/:/^text\/markdown(?:;|$)/);
-      record(response,accept,"HEAD");
     }
     // Node fetch otherwise adds Cache-Control: no-cache for conditional headers,
     // which asks Next to ignore the validator. This mode sends max-age=0 instead.
-    const unchanged=await request("/",{headers:{Accept:"text/html","If-None-Match":etag},cache:"no-cache"});
+    const unchanged=await variant("/",{headers:{Accept:"text/html","If-None-Match":etag},cache:"no-cache"});
     assert.equal(unchanged.status,304,"Matching HTML ETag must return 304");
     assert.equal(unchanged.text,"");
     assertHtmlCache(unchanged.headers);
-    record(unchanged,"text/html");
-    const cross=await request("/",{headers:{Accept:"text/markdown","If-None-Match":etag},cache:"no-cache"});
+    const cross=await variant("/",{headers:{Accept:"text/markdown","If-None-Match":etag},cache:"no-cache"});
     assert.equal(cross.status,200,"An HTML ETag must not validate a Markdown representation");
     assert.match(cross.headers.get("content-type")??"",/^text\/markdown(?:;|$)/);
     assert.equal(hash(cross.text),hashes.markdown[0]);
-    record(cross,"text/markdown");
     // Next's real client transport always adds its _rsc marker; use the
     // installed helper so this exercises Flight rather than a synthetic header.
     const flightHeaders={Accept:"text/x-component",rsc:"1"};
     const flightUrl=new URL("/",base);
     await setCacheBustingSearchParam(flightUrl,flightHeaders);
-    const flight=await request(flightUrl,{headers:flightHeaders});
+    evidence.rsc={url:flightUrl.href,requestHeaders:flightHeaders};
+    const flight=await variant(flightUrl,{headers:flightHeaders},false);
+    Object.assign(evidence.rsc,{status:flight.status,type:flight.headers.get("content-type"),vary:flight.headers.get("vary"),headers:Object.fromEntries(flight.headers)});
     assert.equal(flight.status,200);
     assert.match(flight.headers.get("content-type")??"",/^text\/x-component(?:;|$)/);
     assertVaryAccept(flight.headers.get("vary"),{router:true});
     assert.doesNotMatch(flight.text,/^<!doctype html/i);
-    return {requests,rsc:{url:flightUrl.href,type:flight.headers.get("content-type"),vary:flight.headers.get("vary")}};
+    return evidence;
   });
   await check(11,"Homepage resource Link response headers",async()=>{
     const home=await homepage();

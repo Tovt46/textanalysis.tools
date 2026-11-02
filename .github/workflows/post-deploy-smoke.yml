@@ -1,6 +1,7 @@
 name: Production smoke after main
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows:
       - CI
@@ -17,20 +18,21 @@ concurrency:
 jobs:
   smoke:
     if: >-
+      github.event_name == 'workflow_dispatch' || (
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_branch == 'main'
+      github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       EXPECT_RATE_LIMIT_BACKEND: shared
-      EXPECT_DEPLOYMENT_REVISION: ${{ github.event.workflow_run.head_sha }}
+      EXPECT_DEPLOYMENT_REVISION: ${{ github.event.workflow_run.head_sha || github.sha }}
       CHECK_NPM_RELEASE: 1
     steps:
       - name: Check out the validated revision
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Use Node.js 24
         uses: actions/setup-node@v7

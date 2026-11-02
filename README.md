@@ -372,6 +372,8 @@ only for the exact validated revision at `/api/health`, then runs the complete
 smoke test once. Content failures are not retried as deployment delays. Both
 workflows upload agent-readiness evidence even when the gate fails, and a
 missing, skipped, or failed check fails the job.
+The production workflow also supports a manual run from GitHub Actions against
+the selected revision; it requires that exact revision to be deployed.
 
 If the post-deployment smoke check reports a one-year page TTL or missing
 `/_next/static/` assets, clear both the website cache and CDN cache in hPanel

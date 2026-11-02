@@ -153,7 +153,7 @@ test("HTTP gate reports every missing readiness capability as a failure",async()
       response.writeHead(200,{"content-type":"application/json","cache-control":"no-store"});
       response.end(JSON.stringify({status:"ok",revision}));
     }else{
-      response.writeHead(404,{"content-type":"text/plain"});
+      response.writeHead(404,{"content-type":"text/plain","x-readiness-fixture":"missing-capability"});
       response.end("Missing capability");
     }
   });
@@ -162,6 +162,10 @@ test("HTTP gate reports every missing readiness capability as a failure",async()
     const checks=await runHttpChecks({baseUrl:`http://127.0.0.1:${server.address().port}`,expectedRevision:revision});
     assert.deepEqual(checks.map(check=>check.number),[1,2,3,4,5,6,7,8,9,10,11,13]);
     assert.ok(checks.every(check=>check.status==="FAIL"&&check.error));
+    const negotiation=checks.find(check=>check.number===10);
+    assert.match(negotiation.error,/GET .*Accept="text\/html" status=404/);
+    assert.equal(negotiation.evidence.requests[0].headers["x-readiness-fixture"],"missing-capability");
+    assert.equal(negotiation.evidence.requests[0].bodyPreview,"Missing capability");
     assert.equal(requested.filter(path=>path==="/api/health").length,2);
     for(const path of ["/robots.txt","/sitemap.xml","/","/llms.txt","/.well-known/mcp/server-card.json"]){
       assert.ok(requested.includes(path),path);
