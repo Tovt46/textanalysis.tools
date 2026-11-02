@@ -32,6 +32,10 @@ type AgentCopy={
   contracts:string;
   contractsTitle:string;
   contractsText:string;
+  hostedTitle:string;
+  hostedIntro:string;
+  hostedPrivacy:string;
+  hostedCard:string;
   boundaries:string;
   boundariesTitle:string;
   boundaryItems:string[];
@@ -54,6 +58,7 @@ export const AGENT_COPY:Record<UiLang,AgentCopy>={
     mcpSection:"Local MCP",mcpSectionTitle:"Connect the npm package to an MCP client",mcpIntro:"The MCP command starts a local stdio server. Text supplied to a tool stays inside that process; only explicit public URL inputs use the network.",
     tools:"Tools",toolsTitle:"Eight focused operations",toolsText:"Each tool has a bounded input schema and structured output. Agents can choose a focused operation instead of parsing a general-purpose report.",toolMeta:"read-only · structured JSON · local execution",
     contracts:"Contracts",contractsTitle:"Use OpenAPI when HTTP is the better transport",contractsText:"The public API exposes the same analysis primitives for remote applications. Use the machine-readable contract for tool generation and the concise capability map for discovery.",
+    hostedTitle:"Hosted HTTP MCP",hostedIntro:"Connect a remote MCP client to this stateless Streamable HTTP endpoint. It exposes the read-only analyze_text tool without an API key and applies the public API's request and input limits.",hostedPrivacy:"Submitted text is processed in server memory without document storage.",hostedCard:"MCP Server Card",
     boundaries:"Boundaries",boundariesTitle:"Deterministic analysis, not generated judgment",
     boundaryItems:["No LLM is used to calculate the results.","Counts and formulas remain inspectable.","Local CLI and MCP text is not sent to textanalysis.tools.","Public URL inputs require a network request to that page.","Results are diagnostics, not guarantees about ranking or content quality."],
     ctaTitle:"Choose the interface that matches the workflow",ctaText:"Use MCP for local agent tools, CLI for shell automation, API for remote applications, or the web interface for manual review.",openCli:"Read CLI and MCP documentation",
@@ -71,6 +76,7 @@ export const AGENT_COPY:Record<UiLang,AgentCopy>={
     mcpSection:"Локальный MCP",mcpSectionTitle:"Подключите npm-пакет к MCP-клиенту",mcpIntro:"Команда MCP запускает локальный stdio-сервер. Переданный текст остаётся внутри процесса; сеть используется только для явно указанных публичных URL.",
     tools:"Инструменты",toolsTitle:"Восемь специализированных операций",toolsText:"У каждого инструмента есть ограниченная входная схема и структурированный результат. Агент может выбрать точную операцию вместо разбора общего отчёта.",toolMeta:"только чтение · структурированный JSON · локальное выполнение",
     contracts:"Контракты",contractsTitle:"Используйте OpenAPI, когда нужен HTTP",contractsText:"Публичный API предоставляет те же методы удалённым приложениям. Машиночитаемый контракт подходит для генерации tools, а краткая карта возможностей — для обнаружения.",
+    hostedTitle:"HTTP MCP на сервере",hostedIntro:"Подключите удалённый MCP-клиент к этой конечной точке Streamable HTTP без сохранения сессий. Доступен read-only инструмент analyze_text без API-ключа; действуют ограничения публичного API на запросы и входные данные.",hostedPrivacy:"Текст обрабатывается в памяти сервера без сохранения документов.",hostedCard:"Карточка MCP-сервера",
     boundaries:"Границы",boundariesTitle:"Детерминированный анализ, а не сгенерированная оценка",
     boundaryItems:["LLM не участвует в расчёте результатов.","Количество и формулы можно проверить.","Локальный текст CLI и MCP не отправляется на textanalysis.tools.","Анализ публичного URL требует сетевого запроса к странице.","Результаты — диагностика, а не гарантия ранжирования или качества."],
     ctaTitle:"Выберите интерфейс под свой процесс",ctaText:"MCP — для локальных tools агента, CLI — для shell-автоматизации, API — для удалённых приложений, Web — для ручной проверки.",openCli:"Документация CLI и MCP",
@@ -88,6 +94,7 @@ export const AGENT_COPY:Record<UiLang,AgentCopy>={
     mcpSection:"Локальний MCP",mcpSectionTitle:"Підключіть npm-пакет до MCP-клієнта",mcpIntro:"Команда MCP запускає локальний stdio-сервер. Переданий текст залишається всередині процесу; мережа використовується лише для явно вказаних публічних URL.",
     tools:"Інструменти",toolsTitle:"Вісім спеціалізованих операцій",toolsText:"Кожен інструмент має обмежену вхідну схему та структурований результат. Агент може вибрати точну операцію замість розбору загального звіту.",toolMeta:"лише читання · структурований JSON · локальне виконання",
     contracts:"Контракти",contractsTitle:"Використовуйте OpenAPI, коли потрібен HTTP",contractsText:"Публічний API надає ті самі методи віддаленим програмам. Машиночитаний контракт підходить для генерації tools, а коротка карта можливостей — для виявлення.",
+    hostedTitle:"HTTP MCP на сервері",hostedIntro:"Підключіть віддалений MCP-клієнт до цієї кінцевої точки Streamable HTTP без збереження сесій. Доступний read-only інструмент analyze_text без API-ключа; діють обмеження публічного API на запити та вхідні дані.",hostedPrivacy:"Текст обробляється в пам'яті сервера без збереження документів.",hostedCard:"Картка MCP-сервера",
     boundaries:"Межі",boundariesTitle:"Детермінований аналіз, а не згенерована оцінка",
     boundaryItems:["LLM не бере участі в розрахунку результатів.","Кількість і формули можна перевірити.","Локальний текст CLI та MCP не надсилається на textanalysis.tools.","Аналіз публічного URL потребує мережевого запиту до сторінки.","Результати — діагностика, а не гарантія ранжування чи якості."],
     ctaTitle:"Виберіть інтерфейс під свій процес",ctaText:"MCP — для локальних tools агента, CLI — для shell-автоматизації, API — для віддалених програм, Web — для ручної перевірки.",openCli:"Документація CLI та MCP",
@@ -105,6 +112,7 @@ export const AGENT_COPY:Record<UiLang,AgentCopy>={
     mcpSection:"MCP local",mcpSectionTitle:"Conecta el paquete npm a un cliente MCP",mcpIntro:"El comando MCP inicia un servidor stdio local. El texto permanece dentro del proceso; solo las URL públicas explícitas usan la red.",
     tools:"Herramientas",toolsTitle:"Ocho operaciones especializadas",toolsText:"Cada herramienta tiene un esquema de entrada acotado y salida estructurada. El agente puede elegir una operación concreta sin analizar un informe general.",toolMeta:"solo lectura · JSON estructurado · ejecución local",
     contracts:"Contratos",contractsTitle:"Usa OpenAPI cuando HTTP sea el transporte adecuado",contractsText:"La API pública ofrece los mismos métodos a aplicaciones remotas. Usa el contrato legible por máquinas para generar tools y el mapa conciso para descubrir capacidades.",
+    hostedTitle:"MCP alojado por HTTP",hostedIntro:"Conecta un cliente MCP remoto a este endpoint Streamable HTTP sin sesiones persistentes. Ofrece la herramienta analyze_text de solo lectura sin clave API y aplica los límites de solicitudes y datos de entrada de la API pública.",hostedPrivacy:"El texto enviado se procesa en la memoria del servidor sin almacenar documentos.",hostedCard:"Ficha del servidor MCP",
     boundaries:"Límites",boundariesTitle:"Análisis determinista, no juicio generado",
     boundaryItems:["Ningún LLM calcula los resultados.","Los recuentos y fórmulas se pueden inspeccionar.","El texto local de CLI y MCP no se envía a textanalysis.tools.","Las URL públicas requieren una solicitud de red a la página.","Los resultados son diagnósticos, no garantías de posicionamiento o calidad."],
     ctaTitle:"Elige la interfaz adecuada para el flujo",ctaText:"MCP para tools locales de agentes, CLI para automatización shell, API para aplicaciones remotas y Web para revisión manual.",openCli:"Documentación de CLI y MCP",
@@ -172,7 +180,7 @@ export default function AgentPage({locale}:{locale:UiLang}){
         <section id="mcp"><p className="section-number">02</p><h2>{copy.mcpSectionTitle}</h2><p>{copy.mcpIntro}</p><pre className="api-code"><code>{`npx --yes textanalysis-tools@${cliPackage.version} mcp`}</code></pre><pre className="api-code"><code>{mcpConfig}</code></pre></section>
         <section id="tools"><p className="section-number">03</p><h2>{copy.toolsTitle}</h2><p>{copy.toolsText}</p><div className="feature-list">{toolNames.map(name=><div key={name}><h3>{name}</h3><p>{copy.toolMeta}</p></div>)}</div></section>
         {locale==="en"&&<section id="recipes"><p className="section-number">04</p><h2>Three practical agent recipes</h2><p>Use these sequences as auditable building blocks. Keep source identifiers beside every result and make decisions from measured fields, not generated impressions.</p><div className="cli-command-grid">{agentRecipes.map(recipe=><div key={recipe.title}><code>{recipe.tools}</code><h3>{recipe.title}</h3><p>{recipe.goal}</p><ol className="question-list">{recipe.steps.map(step=><li key={step}>{step}</li>)}</ol></div>)}</div></section>}
-        <section id="contracts"><p className="section-number">{locale==="en"?"05":"04"}</p><h2>{copy.contractsTitle}</h2><p>{copy.contractsText}</p><div className="article-callout"><b>Machine-readable discovery</b><p><a href="/openapi.json">{SITE_URL}/openapi.json</a><br/><a href="/llms.txt">{SITE_URL}/llms.txt</a></p></div></section>
+        <section id="contracts"><p className="section-number">{locale==="en"?"05":"04"}</p><h2>{copy.contractsTitle}</h2><p>{copy.contractsText}</p><h3>{copy.hostedTitle}</h3><p>{copy.hostedIntro}</p><pre className="api-code"><code>{`POST ${SITE_URL}/mcp`}</code></pre><p>{copy.hostedPrivacy}</p><p><a href="/.well-known/mcp/server-card.json">{copy.hostedCard} →</a></p><div className="article-callout"><b>Machine-readable discovery</b><p><a href="/openapi.json">{SITE_URL}/openapi.json</a><br/><a href="/llms.txt">{SITE_URL}/llms.txt</a></p></div></section>
         <section id="boundaries"><p className="section-number">{locale==="en"?"06":"05"}</p><h2>{copy.boundariesTitle}</h2><ul className="question-list">{copy.boundaryItems.map(item=><li key={item}>{item}</li>)}</ul></section>
         <section className="article-final-cta"><p className="eyebrow">WEB · API · CLI · MCP</p><h2>{copy.ctaTitle}</h2><p>{copy.ctaText}</p><Link href={localizedPath(locale,"/cli")}>{copy.openCli} <span>→</span></Link></section>
       </div></div>

@@ -26,6 +26,8 @@
     "test:browser": "playwright test -c playwright.config.mjs",
     "test:agent-readiness": "node scripts/check-agent-readiness.mjs --local",
     "smoke:agent-readiness": "node scripts/check-agent-readiness.mjs",
+    "indexnow:plan": "node scripts/notify-indexnow.mjs --dry-run",
+    "indexnow:notify": "node scripts/notify-indexnow.mjs --apply",
     "release:verify": "node scripts/verify-release.mjs",
     "smoke:text-contract-providers": "node scripts/smoke-text-contract-providers.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",

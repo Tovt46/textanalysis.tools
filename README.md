@@ -358,6 +358,11 @@ SMOKE_BASE_URL=http://127.0.0.1:3000 npm run smoke:production
 
 ## GitHub auto deploy to Hostinger
 
+New and updated public pages are automatically notified through IndexNow after
+successful CI and verification of the deployed revision. The workflow compares
+semantic page content with a durable checkpoint, so unchanged rebuilds do not
+resubmit the site. See [IndexNow setup and receipts](INDEXNOW.md).
+
 Production uses Hostinger's native GitHub integration. The Hostinger Web App is
 connected to this repository and automatically builds and deploys every push to
 `main` with Next.js and Node.js 22.x.
