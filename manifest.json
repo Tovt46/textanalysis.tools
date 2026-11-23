@@ -1,12 +1,14 @@
 {
   "version": 1,
   "host": "textanalysis.tools",
-  "revision": "7e80907b742631da7085171029f4867100bb6c6b",
-  "generatedAt": "2026-11-02T11:17:02.984Z",
+  "revision": "12fb3270057d737ef917834c56027e510df0d1ba",
+  "generatedAt": "2026-11-23T15:31:40.587Z",
   "pages": {
     "https://textanalysis.tools/": {
-      "lastmod": "2026-11-01",
-      "fingerprint": "00727b78b4739119807937952eaf771399faf2daa147ac31873818be31d54992"
+      "lastmod": "2026-11-23",
+      "fingerprint": "cdda914fc0158f3a1e4d314bcfd5cac679e6c99c1c76df7735038070b663ea9b",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/about": {
       "lastmod": "2026-11-01",
@@ -47,8 +49,10 @@
       "fingerprint": "db3cdccd042b9c04ecc2295fe2c64409d7b500f2d6546c98bc62c9f5be62b02a"
     },
     "https://textanalysis.tools/es": {
-      "lastmod": "2026-11-01",
-      "fingerprint": "71f5c77a1b0f2d03fdde8650cb804b012beeb20fdba2f284d4da1f5aa4c8f8c4"
+      "lastmod": "2026-11-23",
+      "fingerprint": "e6d0a1a302ee8aa00e52d1dac097a2ab5ed0767dc07ec4d95500e1e134655123",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/es/agents": {
       "lastmod": "2026-11-02",
@@ -101,36 +105,52 @@
       "fingerprint": "76d8eeb8d6614c8d21100b3ecdf2da3595108bb43f79f3b3f13884e0e4d9e700"
     },
     "https://textanalysis.tools/es/tools/bag-of-words-analyzer": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "76fb90f569a2cafea7e59d25b5bc0e2adf3948f863d3042be20f5baf62167307"
+      "lastmod": "2026-11-23",
+      "fingerprint": "d1cff34ee9d496764f3ab6525073b3ef34c75f3792851e54a478de39ffbaa67b",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/es/tools/bag-of-words-generator": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "930a0f3e73db1a3dd22a2a75d89f29399a88fd0dc75e94c2c8e6a55f9eb693f8"
+      "lastmod": "2026-11-23",
+      "fingerprint": "930a0f3e73db1a3dd22a2a75d89f29399a88fd0dc75e94c2c8e6a55f9eb693f8",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/es/tools/keyword-density-checker": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "8fe5d72737131568c7475ed90f118a4d9c4d8ff55d6294cbaa36edd3b4e31a06"
+      "lastmod": "2026-11-23",
+      "fingerprint": "8fe5d72737131568c7475ed90f118a4d9c4d8ff55d6294cbaa36edd3b4e31a06",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/es/tools/ngram-analyzer": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "7255780d7d365dd154e2b6dd4620047f583600470b7ef684f3232808025d781a"
+      "lastmod": "2026-11-23",
+      "fingerprint": "7255780d7d365dd154e2b6dd4620047f583600470b7ef684f3232808025d781a",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/es/tools/text-analysis-comparison": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "d5901d3e9f2a5925a0420a3ca4d2fe70986fe70eeeac6677d4971fc4ea60c33c"
+      "lastmod": "2026-11-23",
+      "fingerprint": "d5901d3e9f2a5925a0420a3ca4d2fe70986fe70eeeac6677d4971fc4ea60c33c",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/es/tools/text-similarity-calculator": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "5301e363b5228af5a23108e0d3c7d528493f05838f0041a1cb54d27a35518ea7"
+      "lastmod": "2026-11-23",
+      "fingerprint": "5301e363b5228af5a23108e0d3c7d528493f05838f0041a1cb54d27a35518ea7",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/es/tools/tf-idf-calculator": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "c43a6bc4bb439d2c05c290855f7051fcd7823c74ca02b1ba217d6ad776749424"
+      "lastmod": "2026-11-23",
+      "fingerprint": "c43a6bc4bb439d2c05c290855f7051fcd7823c74ca02b1ba217d6ad776749424",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/es/tools/word-frequency-counter": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "ac2501522e7d59d0812e7593ded5ebadfbdac1c494ef6db89a6303f1f6cc4212"
+      "lastmod": "2026-11-23",
+      "fingerprint": "ac2501522e7d59d0812e7593ded5ebadfbdac1c494ef6db89a6303f1f6cc4212",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/es/what-are-n-grams": {
       "lastmod": "2026-09-14",
@@ -153,8 +173,10 @@
       "fingerprint": "7ccef76954426af198a99bd41d914e75512789075643817130d112ec13335dba"
     },
     "https://textanalysis.tools/ru": {
-      "lastmod": "2026-11-01",
-      "fingerprint": "ab8c97936a94f57d58c40b24528adf104f45460b9415fe8e50606c3fe2b4f91d"
+      "lastmod": "2026-11-23",
+      "fingerprint": "f21cc1bddefe07387cca8ebcea78d244bbbd7d3e4a7b068d3b1b19453ea86bc9",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/ru/agents": {
       "lastmod": "2026-11-02",
@@ -207,36 +229,52 @@
       "fingerprint": "32fc478396365b292ad5240bd5a324c9c83893ea8c69367d722f1ddd72bd1883"
     },
     "https://textanalysis.tools/ru/tools/bag-of-words-analyzer": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "c697651ffabba4e2a33ae4adedaa6a5eb1120e4d5ef0afa62de497802e2f3b5e"
+      "lastmod": "2026-11-23",
+      "fingerprint": "7d851d84222242b3bae4991c1fc91c102a9187f431710a0528711424ec4cf032",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/ru/tools/bag-of-words-generator": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "e025764e7f9e94a8249d8839e53813ba0032809259fba759d48ebcd5a4a4c93c"
+      "lastmod": "2026-11-23",
+      "fingerprint": "e025764e7f9e94a8249d8839e53813ba0032809259fba759d48ebcd5a4a4c93c",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/ru/tools/keyword-density-checker": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "08dd915fd398cb00795d09e0467aea18d3d2133aee2725ede79e82095cc9348a"
+      "lastmod": "2026-11-23",
+      "fingerprint": "08dd915fd398cb00795d09e0467aea18d3d2133aee2725ede79e82095cc9348a",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/ru/tools/ngram-analyzer": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "457399024c2fffda40650459d83f30c3cf13888dcda6f79add850fc23b488180"
+      "lastmod": "2026-11-23",
+      "fingerprint": "457399024c2fffda40650459d83f30c3cf13888dcda6f79add850fc23b488180",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/ru/tools/text-analysis-comparison": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "1d3b45ad6f2f0b42831838d62151e211bbf7d59388cc99c0772a637ba0499151"
+      "lastmod": "2026-11-23",
+      "fingerprint": "1d3b45ad6f2f0b42831838d62151e211bbf7d59388cc99c0772a637ba0499151",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/ru/tools/text-similarity-calculator": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "0592aa48f96fcab4c87877e4a260353db2eaec59fca72cc4acc7a38b4b50d7b1"
+      "lastmod": "2026-11-23",
+      "fingerprint": "0592aa48f96fcab4c87877e4a260353db2eaec59fca72cc4acc7a38b4b50d7b1",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/ru/tools/tf-idf-calculator": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "56927d9533c27a3384d72324b1a275a225f5860444a0ba1f4e10ab0a2a5d35b5"
+      "lastmod": "2026-11-23",
+      "fingerprint": "56927d9533c27a3384d72324b1a275a225f5860444a0ba1f4e10ab0a2a5d35b5",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/ru/tools/word-frequency-counter": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "e05bd5071e4853db47d05a947ee7b7c39d40b73f2e23822fbfeeca411f1a01e1"
+      "lastmod": "2026-11-23",
+      "fingerprint": "e05bd5071e4853db47d05a947ee7b7c39d40b73f2e23822fbfeeca411f1a01e1",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/ru/what-are-n-grams": {
       "lastmod": "2026-09-14",
@@ -251,52 +289,76 @@
       "fingerprint": "c48afb510067874e604ac033b78de69fc8612e783fb8ad3f415ef3b497be18ea"
     },
     "https://textanalysis.tools/tools/bag-of-words-analyzer": {
-      "lastmod": "2026-10-18",
-      "fingerprint": "5e43b183048f01ecfc6a2c7b456057d21ee64c30b44eee29d343977776ceccb3"
+      "lastmod": "2026-11-23",
+      "fingerprint": "d196754fb87b1727b9608c0e89966aba4c4d46afe82040d8fe63fcbde3bd2dd8",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/tools/bag-of-words-generator": {
-      "lastmod": "2026-10-18",
-      "fingerprint": "7e1696e1a1998e62a10ba520e2c502cd8e15253229002fbb7be022042cdaee1f"
+      "lastmod": "2026-11-23",
+      "fingerprint": "7e1696e1a1998e62a10ba520e2c502cd8e15253229002fbb7be022042cdaee1f",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/tools/evidence-workspace": {
-      "lastmod": "2026-10-24",
-      "fingerprint": "46012862dc72b7b112bf287710b9b56c3be719c2c833a92cfd1806afa0181042"
+      "lastmod": "2026-11-23",
+      "fingerprint": "46012862dc72b7b112bf287710b9b56c3be719c2c833a92cfd1806afa0181042",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/tools/keyword-density-checker": {
-      "lastmod": "2026-10-18",
-      "fingerprint": "c8e375eb77953ae91df9a0f792e30a1d53ecccd0268bbe94b9cce6562a996afd"
+      "lastmod": "2026-11-23",
+      "fingerprint": "c8e375eb77953ae91df9a0f792e30a1d53ecccd0268bbe94b9cce6562a996afd",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/tools/ngram-analyzer": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "d21c94115b9b27039e183fef86bacac86e29d51b93cbc8b124d57e09bc6b3f2c"
+      "lastmod": "2026-11-23",
+      "fingerprint": "d21c94115b9b27039e183fef86bacac86e29d51b93cbc8b124d57e09bc6b3f2c",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/tools/rewrite-review": {
-      "lastmod": "2026-10-24",
-      "fingerprint": "18b163469528b5eea3f56bc86d67c68a7cb64be6548e42725ebd7285a3a441c3"
+      "lastmod": "2026-11-23",
+      "fingerprint": "18b163469528b5eea3f56bc86d67c68a7cb64be6548e42725ebd7285a3a441c3",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/tools/text-analysis-comparison": {
-      "lastmod": "2026-10-18",
-      "fingerprint": "9205cd48542d7fa70fd0494ab552b81d52a944b5777e1e53ad97c8bed285d74f"
+      "lastmod": "2026-11-23",
+      "fingerprint": "9205cd48542d7fa70fd0494ab552b81d52a944b5777e1e53ad97c8bed285d74f",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/tools/text-contract": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "ab5be6b8b8f3ce88df0753f918d69cd40e52072a4d0f5a30cf1ce4c62865b484"
+      "lastmod": "2026-11-23",
+      "fingerprint": "ab5be6b8b8f3ce88df0753f918d69cd40e52072a4d0f5a30cf1ce4c62865b484",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/tools/text-similarity-calculator": {
-      "lastmod": "2026-10-18",
-      "fingerprint": "5ed7a744db1b6dc1949d03a4ae65d2a201eb54eb989184b3fcfb3a6eee12e6c2"
+      "lastmod": "2026-11-23",
+      "fingerprint": "5ed7a744db1b6dc1949d03a4ae65d2a201eb54eb989184b3fcfb3a6eee12e6c2",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/tools/tf-idf-calculator": {
-      "lastmod": "2026-10-18",
-      "fingerprint": "5d4c27ca727d55c47d0a2f84a0b8d601a13a1f6f8bba52688440c7228ca0dd03"
+      "lastmod": "2026-11-23",
+      "fingerprint": "5d4c27ca727d55c47d0a2f84a0b8d601a13a1f6f8bba52688440c7228ca0dd03",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/tools/word-frequency-counter": {
-      "lastmod": "2026-10-18",
-      "fingerprint": "2639f425b9846a530c99a586e7e024fb077533c0d334c687932f388ae4d3220a"
+      "lastmod": "2026-11-23",
+      "fingerprint": "2639f425b9846a530c99a586e7e024fb077533c0d334c687932f388ae4d3220a",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/uk": {
-      "lastmod": "2026-11-01",
-      "fingerprint": "9026d0e5d38e7356eb5c6144a33da64569b38744e67f3419f9d35c7a3ab5bcae"
+      "lastmod": "2026-11-23",
+      "fingerprint": "3823173622e78f2a66bda0ad1c3679584473fb0d078f766828f26f63247432cf",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/uk/agents": {
       "lastmod": "2026-11-02",
@@ -349,36 +411,52 @@
       "fingerprint": "d0db6ed5769ca64d5ad92a7c980f01cdca418a09f7a0086e2d4ee01dfdc46173"
     },
     "https://textanalysis.tools/uk/tools/bag-of-words-analyzer": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "bb2d6b722b859fac4cff3005d916dd4d2692945394a1bccc53fa915612fd999a"
+      "lastmod": "2026-11-23",
+      "fingerprint": "1569aa5a955af50c9e13c208c12ac34cf60ed2369a99070028dc4e3ed98fb1a7",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/uk/tools/bag-of-words-generator": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "5c3924065067e2c06fb3c6331dd9290ee804519013354f68d25efc97ebdc4bef"
+      "lastmod": "2026-11-23",
+      "fingerprint": "5c3924065067e2c06fb3c6331dd9290ee804519013354f68d25efc97ebdc4bef",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/uk/tools/keyword-density-checker": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "bde3f1bdc75099b50de57f85e99821071a16759e5cf064e40804a580b1b44f85"
+      "lastmod": "2026-11-23",
+      "fingerprint": "bde3f1bdc75099b50de57f85e99821071a16759e5cf064e40804a580b1b44f85",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/uk/tools/ngram-analyzer": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "cf647a3905a9fc3edccb46050b82a2fc99268e514c04332c6246575bd833d8ed"
+      "lastmod": "2026-11-23",
+      "fingerprint": "cf647a3905a9fc3edccb46050b82a2fc99268e514c04332c6246575bd833d8ed",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/uk/tools/text-analysis-comparison": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "518126a18ed1bc5c40badd537ac181de53f70b222606e64d3141a3d315050bea"
+      "lastmod": "2026-11-23",
+      "fingerprint": "518126a18ed1bc5c40badd537ac181de53f70b222606e64d3141a3d315050bea",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/uk/tools/text-similarity-calculator": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "15e38514bf8068549f3cc375e7ced9f25aca89fb98b84d862ade94a16ff7f058"
+      "lastmod": "2026-11-23",
+      "fingerprint": "15e38514bf8068549f3cc375e7ced9f25aca89fb98b84d862ade94a16ff7f058",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/uk/tools/tf-idf-calculator": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "9c8fe16c3eadef34a29ca20e342fd9bfa384befde0348be5225ddee79c5e3f14"
+      "lastmod": "2026-11-23",
+      "fingerprint": "9c8fe16c3eadef34a29ca20e342fd9bfa384befde0348be5225ddee79c5e3f14",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/uk/tools/word-frequency-counter": {
-      "lastmod": "2026-10-12",
-      "fingerprint": "a71e7f0d901d634f87eaad3db8fddd5f4707308e23739836b8d213992b871581"
+      "lastmod": "2026-11-23",
+      "fingerprint": "a71e7f0d901d634f87eaad3db8fddd5f4707308e23739836b8d213992b871581",
+      "submittedAt": "2026-11-23T15:31:41.808Z",
+      "submissionStatus": 200
     },
     "https://textanalysis.tools/uk/what-are-n-grams": {
       "lastmod": "2026-09-14",
