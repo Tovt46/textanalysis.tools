@@ -13,7 +13,8 @@ import {
   type SimilarityMethod,
   type TfIdfCorpusInput,
 } from "./analyze";
-import { compareAnalysisResults } from "./comparison";
+import { compareAnalysisResults, frequencyChanges } from "./comparison";
+import { snapshotZipfCounts } from "./zipf-comparison";
 import {
   BROWSER_COMPARISON_ROW_LIMIT,
   capBrowserDensity,
@@ -27,7 +28,7 @@ type WorkerResponse=
   |{id:number;type:"result";result:unknown}
   |{id:number;type:"error";message:string};
 
-type KeywordDensityPayload={input:AnalyzeInput;trackedKeywords:string};
+type KeywordDensityPayload={input:AnalyzeInput;trackedKeywords:string;baselineText?:string};
 type NgramPayload={input:AnalyzeInput;n:number};
 type ComparisonPayload={a:AnalyzeInput;b:AnalyzeInput};
 type TfIdfPayload={documents:AnalyzeInput[];top:number};
@@ -42,17 +43,25 @@ function run(operation:string,payload:unknown){
   if(operation==="bag-of-words")return capBrowserRows(analyzeBagOfWords(payload as AnalyzeInput));
   if(operation==="keyword-density"){
     const request=payload as KeywordDensityPayload;
-    return capBrowserDensity(analyzeKeywordDensity(request.input,request.trackedKeywords));
+    if(request.baselineText===undefined){
+      return {result:capBrowserDensity(analyzeKeywordDensity(request.input,request.trackedKeywords))};
+    }
+    const baseline=analyzeKeywordDensity({...request.input,text:request.baselineText});
+    const current=analyzeKeywordDensity(request.input,request.trackedKeywords);
+    const changes=(key:"unigrams"|"bigrams"|"trigrams")=>
+      frequencyChanges(baseline[key],current[key],baseline.wordCount,current.wordCount,100,0,"countB").rows;
+    return {
+      result:capBrowserDensity(current),
+      comparison:{1:changes("unigrams"),2:changes("bigrams"),3:changes("trigrams")},
+    };
   }
   if(operation==="ngram"){
     const request=payload as NgramPayload;
     return capBrowserRows(analyzeNgram(request.input,request.n));
   }
   if(operation==="zipf"){
-    const {_allUnigrams,_allBigrams,...result}=analyzeText(payload as AnalyzeInput);
-    void _allUnigrams;
-    void _allBigrams;
-    return result;
+    const analysis=analyzeText(payload as AnalyzeInput);
+    return {result:toPublicAnalysisResult(analysis),counts:snapshotZipfCounts(analysis._allUnigrams,analysis._allBigrams)};
   }
   if(operation==="comparison"){
     const request=payload as ComparisonPayload;

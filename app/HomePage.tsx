@@ -69,7 +69,7 @@ const COPY:Record<UiLang,HomeCopy>={
     open:"Open tool",
     english:"",
     tools:[
-      {name:"Word Frequency Counter",description:"Count every word, search and sort the full vocabulary, edit stop words, and export CSV or JSON."},
+      {name:"Word Frequency Counter",description:"Count words, search and sort the frequency table, edit stop words, and export CSV or JSON."},
       {name:"Keyword Density Checker",description:"Measure words, bigrams, and trigrams, track exact phrases, and compare density changes between two results."},
       {name:"Bag of Words Analyzer",description:"Review vocabulary, bigrams, tracked phrases, and Zipf distribution, then compare result A with result B."},
       {name:"Text Analysis Comparison",description:"Compare two texts or webpages by word count, vocabulary, normalized word frequency, bigrams, and Zipf diagnostics."},
@@ -82,7 +82,7 @@ const COPY:Record<UiLang,HomeCopy>={
     methodTitle:"Useful numbers, with the method left visible",
     methods:[
       {title:"Transparent calculations",description:"Counts, percentages, and per-1,000 rates stay visible so you can verify what each result means."},
-      {title:"Private by design",description:"Text-only work stays in your browser. If a workflow includes a public URL, required inputs use the stateless API and are not stored."},
+      {title:"Private by design",description:"Pasted text stays in your browser for standard analysis. URL analysis uses the site’s API without storing the inputs. TextContract sends your source and brief to Nebius."},
       {title:"Made for comparison",description:"Normalize texts of different lengths and compare drafts, pages, or versions using the same settings."},
       {title:"No optimization score",description:"The tools expose patterns and repetition without pretending that one percentage determines content quality."},
     ],
@@ -129,7 +129,7 @@ const COPY:Record<UiLang,HomeCopy>={
     open:"Открыть",
     english:"",
     tools:[
-      {name:"Счётчик частотности слов",description:"Посчитайте все слова, найдите нужный термин, отсортируйте словарь и экспортируйте CSV или JSON."},
+      {name:"Счётчик частотности слов",description:"Посчитайте слова, найдите термины в таблице частот и экспортируйте результат в CSV или JSON."},
       {name:"Анализатор плотности ключей",description:"Измерьте слова, биграммы и триграммы, проверьте точные фразы и сравните изменения между результатами."},
       {name:"Bag of Words-анализатор",description:"Проверьте лексику, биграммы, контрольные фразы и распределение Ципфа, затем сравните результаты A и B."},
       {name:"Сравнение двух текстов",description:"Сопоставьте два текста или URL по объёму, словарю, нормализованной частотности, биграммам и показателям Ципфа."},
@@ -142,7 +142,7 @@ const COPY:Record<UiLang,HomeCopy>={
     methodTitle:"Полезные цифры с понятной методикой",
     methods:[
       {title:"Прозрачные расчёты",description:"Количество, проценты и частота на 1 000 слов видны в результате — их можно проверить вручную."},
-      {title:"Приватность по умолчанию",description:"Работа только с текстом остаётся в браузере. Если в сценарии есть публичный URL, необходимые входные данные обрабатываются API без сохранения."},
+      {title:"Приватность по умолчанию",description:"Обычный анализ вставленного текста выполняется в браузере. Анализ по URL использует API сайта без хранения входных данных. TextContract отправляет исходник и задание в Nebius."},
       {title:"Создано для сравнения",description:"Сопоставляйте черновики, страницы и версии разной длины с одинаковыми настройками."},
       {title:"Без выдуманного SEO-балла",description:"Инструменты показывают повторы и закономерности, не выдавая один процент за оценку качества текста."},
     ],
@@ -189,7 +189,7 @@ const COPY:Record<UiLang,HomeCopy>={
     open:"Відкрити",
     english:"",
     tools:[
-      {name:"Лічильник частотності слів",description:"Порахуйте всі слова, знайдіть потрібний термін, відсортуйте словник і експортуйте CSV або JSON."},
+      {name:"Лічильник частотності слів",description:"Порахуйте слова, знайдіть терміни в таблиці частот і експортуйте результат у CSV або JSON."},
       {name:"Аналізатор щільності ключів",description:"Виміряйте слова, біграми й триграми, перевірте точні фрази та порівняйте зміни між результатами."},
       {name:"Bag of Words-аналізатор",description:"Перевірте лексику, біграми, контрольні фрази й розподіл Ципфа, а потім порівняйте результати A і B."},
       {name:"Порівняння двох текстів",description:"Зіставте два тексти або URL за обсягом, словником, нормалізованою частотністю, біграмами й показниками Ципфа."},
@@ -202,7 +202,7 @@ const COPY:Record<UiLang,HomeCopy>={
     methodTitle:"Корисні числа з прозорою методикою",
     methods:[
       {title:"Прозорі розрахунки",description:"Кількість, відсотки й частота на 1 000 слів залишаються видимими — їх можна перевірити вручну."},
-      {title:"Приватність за замовчуванням",description:"Робота лише з текстом залишається у браузері. Якщо у сценарії є публічний URL, потрібні вхідні дані обробляються API без збереження."},
+      {title:"Приватність за замовчуванням",description:"Звичайний аналіз вставленого тексту виконується у браузері. Аналіз за URL використовує API сайту без збереження вхідних даних. TextContract надсилає вихідний текст і завдання до Nebius."},
       {title:"Створено для порівняння",description:"Зіставляйте чернетки, сторінки й версії різної довжини з однаковими налаштуваннями."},
       {title:"Без вигаданого SEO-бала",description:"Інструменти показують повтори й закономірності, не видаючи один відсоток за оцінку якості тексту."},
     ],
@@ -249,7 +249,7 @@ const COPY:Record<UiLang,HomeCopy>={
     open:"Abrir herramienta",
     english:"",
     tools:[
-      {name:"Contador de frecuencia de palabras",description:"Cuenta todas las palabras, busca y ordena el vocabulario completo, edita palabras vacías y exporta CSV o JSON."},
+      {name:"Contador de frecuencia de palabras",description:"Cuenta palabras, busca en la tabla de frecuencias y exporta los resultados en CSV o JSON."},
       {name:"Analizador de densidad de palabras clave",description:"Mide palabras, bigramas y trigramas, sigue frases exactas y compara cambios de densidad entre dos resultados."},
       {name:"Analizador Bag of Words",description:"Revisa vocabulario, bigramas, frases controladas y distribución de Zipf; después compara los resultados A y B."},
       {name:"Comparador de textos",description:"Compara dos textos o páginas por extensión, vocabulario, frecuencia normalizada, bigramas y métricas de Zipf."},
@@ -262,7 +262,7 @@ const COPY:Record<UiLang,HomeCopy>={
     methodTitle:"Cifras útiles con una metodología visible",
     methods:[
       {title:"Cálculos transparentes",description:"Los recuentos, porcentajes y tasas por 1.000 permanecen visibles para que puedas verificar cada resultado."},
-      {title:"Privacidad por diseño",description:"El trabajo solo con texto permanece en el navegador. Si el flujo incluye una URL pública, la API procesa sin guardar las entradas necesarias."},
+      {title:"Privacidad por diseño",description:"El análisis habitual del texto pegado se realiza en el navegador. El análisis por URL utiliza la API del sitio sin guardar los datos de entrada. TextContract envía el texto original y las instrucciones a Nebius."},
       {title:"Creado para comparar",description:"Normaliza textos de distinta longitud y compara borradores, páginas o versiones con los mismos ajustes."},
       {title:"Sin puntuaciones inventadas",description:"Las herramientas muestran patrones y repeticiones sin presentar un único porcentaje como medida de calidad."},
     ],

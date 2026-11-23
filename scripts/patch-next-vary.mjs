@@ -3,11 +3,11 @@ import {createRequire} from "node:module";
 import {dirname,join,resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 
-const supportedVersion="16.4.3";
+const supportedVersion="16.4.6";
 const original=`            const varyHeader = routeModule.getVaryHeader(resolvedPathname, interceptionRoutePatterns);
             res.setHeader('Vary', varyHeader);`;
 const patched=`            const varyHeader = routeModule.getVaryHeader(resolvedPathname, interceptionRoutePatterns);
-            // textanalysis.tools: preserve negotiated Vary fields (Next 16.4.3 compatibility fix).
+            // textanalysis.tools: preserve negotiated Vary fields.
             const existingVary = res.getHeader('Vary');
             const varyFields = new Map();
             for (const value of [...(Array.isArray(existingVary) ? existingVary : [existingVary ?? '']), varyHeader]) {

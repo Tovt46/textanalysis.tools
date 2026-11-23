@@ -9,8 +9,8 @@ import type { UiLang } from "./i18n";
 import { BREADCRUMB_LABELS,formatNumber,localizedPath,localizeApiError } from "./localization";
 import { NGRAM_UI } from "./tool-ui-copy";
 import { CopyResultAction,ExampleAction,type ToolExample } from "./ToolWorkflowActions";
+import { useSourceInput, type SourceType } from "./lib/use-source-input";
 
-type SourceType="text"|"url";
 type SortKey="term"|"count"|"percentage"|"per1000";
 type SortDirection="asc"|"desc";
 type Analysis=ReturnType<typeof analyzeNgram>;
@@ -31,8 +31,7 @@ function csvCell(value:string|number){
 
 export default function NgramAnalyzerTool({uiLang="en"}:{uiLang?:UiLang}){
   const copy=NGRAM_UI[uiLang];
-  const [sourceType,setSourceType]=useState<SourceType>("text");
-  const [source,setSource]=useState("");
+  const { sourceType, setSourceType, source, setSource, loadText } = useSourceInput();
   const [language,setLanguage]=useState<"auto"|TextLanguage>("auto");
   const [ngramSize,setNgramSize]=useState(2);
   const [keepStopwords,setKeepStopwords]=useState(false);
@@ -115,9 +114,15 @@ export default function NgramAnalyzerTool({uiLang="en"}:{uiLang?:UiLang}){
     }
   }
 
-  function selectSourceType(value:SourceType){cancel();setSourceType(value);setSource("");setResult(null);setError("");}
+  function selectSourceType(value:SourceType){
+    if(value===sourceType)return;
+    cancel();
+    setSourceType(value);
+    setResult(null);
+    setError("");
+  }
   function loadExample(example:ToolExample){
-    cancel();setSourceType("text");setSource(example.sources[0]);setNgramSize(example.ngramSize);setLanguage(uiLang);setEditorLanguage(uiLang);setResult(null);setError("");
+    cancel();loadText(example.sources[0]);setNgramSize(example.ngramSize);setLanguage(uiLang);setEditorLanguage(uiLang);setResult(null);setError("");
   }
   function changeLanguage(value:"auto"|TextLanguage){cancel();setLanguage(value);if(value!=="auto")setEditorLanguage(value);}
   function changeEditorLanguage(value:TextLanguage){cancel();setEditorLanguage(value);setLanguage(value);}
@@ -159,7 +164,7 @@ export default function NgramAnalyzerTool({uiLang="en"}:{uiLang?:UiLang}){
 
     <form className="frequency-workspace" onSubmit={runAnalysis} aria-busy={loading}>
       <section className="frequency-input-card">
-        <div className="section-head"><div><span>01</span><h2>{copy.source}</h2></div><div className="tabs"><button type="button" className={sourceType==="text"?"active":""} onClick={()=>selectSourceType("text")}>{copy.text}</button><button type="button" className={sourceType==="url"?"active":""} onClick={()=>selectSourceType("url")}>{copy.url}</button></div></div>
+        <div className="section-head"><div><span>01</span><h2>{copy.source}</h2></div><div className="tabs"><button type="button" className={sourceType==="text"?"active":""} aria-pressed={sourceType==="text"} onClick={()=>selectSourceType("text")}>{copy.text}</button><button type="button" className={sourceType==="url"?"active":""} aria-pressed={sourceType==="url"} onClick={()=>selectSourceType("url")}>{copy.url}</button></div></div>
         {sourceType==="text"
           ?<div className="textarea-wrap"><textarea value={source} onChange={event=>{cancel();setSource(event.target.value);setResult(null);setError("");}} placeholder={copy.paste} aria-label={copy.textAria}/><span>{formatNumber(source.length,uiLang)} {copy.characters}</span></div>
           :<><input className="url-input" type="url" value={source} onChange={event=>{cancel();setSource(event.target.value);setResult(null);setError("");}} placeholder="https://example.com/page" aria-label={copy.urlAria} required/><p className="url-help">{copy.urlHelp}</p></>

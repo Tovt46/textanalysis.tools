@@ -3,7 +3,7 @@ import {compareAnalysisResults} from "./comparison";
 import {isPrivacyClaim} from "./privacy-claims";
 
 export const EVIDENCE_WORKSPACE_VERSION=2 as const;
-export const WORKSPACE_ANALYSIS_VERSION=2 as const;
+export const WORKSPACE_ANALYSIS_VERSION=3 as const;
 export const MAX_WORKSPACE_TEXT_CHARS=100_000;
 export const MAX_FOCUS_TERMS=20;
 export const MAX_FINDINGS=50;
@@ -75,8 +75,10 @@ export type WorkspaceAnalysis={
   repeatedPhrases:Array<{term:string;count:number;n:number}>;
   changeMap:WorkspaceChangeMap;
   claims:WorkspaceClaim[];
+  totalClaims:number;
   claimSummary:WorkspaceClaimSummary[];
   reviewQueue:WorkspaceReviewItem[];
+  totalReviewItems:number;
   evidence:WorkspaceEvidence[];
 };
 
@@ -200,7 +202,7 @@ const CLAIM_LABELS:Record<WorkspaceClaimCategory,string>={
   channel:"Reading channels",guarantee:"Guarantees",accuracy:"Accuracy claims",privacy:"Privacy",refund:"Refunds",social_proof:"Social proof",
 };
 const CLAIM_CATEGORY_ORDER=Object.keys(CLAIM_LABELS) as WorkspaceClaimCategory[];
-const MAX_CLAIMS_PER_SOURCE=60;
+const CLAIM_SAMPLE_SIZE_PER_SOURCE=60;
 const MAX_REVIEW_ITEMS=12;
 
 function normalizeComparable(value:string){return value.toLowerCase().replace(/[’']/g,"'").replace(/\s+/g," ").trim().replace(/[.!?,;:]+$/g,"");}
@@ -292,7 +294,6 @@ function extractClaims(text:string,source:"baseline"|"current"){
       if(seen.has(key))continue;
       seen.add(key);
       drafts.push({source,category,value:claimValue(category,segment),excerpt:excerpt(segment),normalized});
-      if(drafts.length>=MAX_CLAIMS_PER_SOURCE)return drafts;
     }
   }
   return drafts;
@@ -377,7 +378,7 @@ function buildReviewQueue(analysisId:string,originalText:string,currentText:stri
   });
   for(const row of summary.filter(item=>item.currentOnly>0&&item.baselineOnly>0&&["offer","price","rating","advisor_count"].includes(item.category)))drafts.push({
     priority:["offer","price","rating"].includes(row.category)?"high":"medium",category:"claim_drift",title:`Verify changed ${row.label.toLowerCase()}`,
-    detail:`Exact comparison found ${row.currentOnly} current-only and ${row.baselineOnly} baseline-only claims in the “${row.label}” category. Check the live source before publishing or patching values.`,
+    detail:`Exact comparison found ${row.currentOnly} current-only and ${row.baselineOnly} baseline-only claims in the “${row.label}” category.${row.currentOnly>4||row.baselineOnly>4?" The excerpts show up to four examples from each version.":""} Check the live source before publishing or patching values.`,
     claimIds:claims.filter(item=>item.category===row.category&&item.status!=="retained").slice(0,8).map(item=>item.id),
     baselineExcerpts:claims.filter(item=>item.source==="baseline"&&item.category===row.category&&item.status!=="retained").slice(0,4).map(item=>item.excerpt),
     currentExcerpts:claims.filter(item=>item.source==="current"&&item.category===row.category&&item.status!=="retained").slice(0,4).map(item=>item.excerpt),
@@ -392,10 +393,35 @@ function buildReviewQueue(analysisId:string,originalText:string,currentText:stri
   if(changeMap.wordDeltaPercent<=-25)drafts.push({priority:"low",category:"coverage",title:"Confirm the shorter version retained essential guidance",detail:`The current version is ${Math.abs(changeMap.wordDeltaPercent).toFixed(1)}% shorter by analyzed word count. Use the block map and claim gaps to verify that concision did not remove decision-critical information.`});
   const priorityOrder={high:0,medium:1,low:2};
   const categoryOrder={coverage:0,claim_drift:1,verification:2,balance:3,duplicate:4};
-  return drafts.sort((a,b)=>priorityOrder[a.priority]-priorityOrder[b.priority]||categoryOrder[a.category]-categoryOrder[b.category]).slice(0,MAX_REVIEW_ITEMS).map((item,index)=>{
+  const reviewQueue=drafts.sort((a,b)=>priorityOrder[a.priority]-priorityOrder[b.priority]||categoryOrder[a.category]-categoryOrder[b.category]).slice(0,MAX_REVIEW_ITEMS).map((item,index)=>{
     const ownId=`${analysisId}:review:${index}`;
     return{id:ownId,priority:item.priority,category:item.category,title:item.title,detail:item.detail,evidenceRefs:[ownId,...(item.claimIds||[]).map(claimId=>claimId.replace(":claim:",":evidence:claim:")),...(item.extraEvidenceRefs||[])],...(item.baselineExcerpts?{baselineExcerpts:item.baselineExcerpts}:{}),...(item.currentExcerpts?{currentExcerpts:item.currentExcerpts}:{}),...(item.patchCandidate?{patchCandidate:item.patchCandidate}:{})};
   });
+  return {reviewQueue,totalReviewItems:drafts.length};
+}
+
+function sampleClaimReferences(claims:WorkspaceClaim[],reviewQueue:WorkspaceReviewItem[]){
+  const cited=new Set(reviewQueue.flatMap(item=>item.evidenceRefs));
+  const samples:WorkspaceClaim[]=[];
+  for(const source of ["current","baseline"] as const){
+    const sourceClaims=claims.filter(claim=>claim.source===source);
+    if(sourceClaims.length<=CLAIM_SAMPLE_SIZE_PER_SOURCE){
+      samples.push(...sourceClaims);
+      continue;
+    }
+    // Keep every reference a reviewer can act on, then fill remaining space with changed claims first.
+    const selected=new Set(sourceClaims.filter(claim=>cited.has(claim.id.replace(":claim:",":evidence:claim:"))));
+    for(const claim of sourceClaims){
+      if(selected.size>=CLAIM_SAMPLE_SIZE_PER_SOURCE)break;
+      if(claim.status!=="retained")selected.add(claim);
+    }
+    for(const claim of sourceClaims){
+      if(selected.size>=CLAIM_SAMPLE_SIZE_PER_SOURCE)break;
+      selected.add(claim);
+    }
+    samples.push(...sourceClaims.filter(claim=>selected.has(claim)));
+  }
+  return samples;
 }
 
 export function analyzeWorkspace(state:EvidenceWorkspaceState,context:OperationContext={}):EvidenceWorkspaceState{
@@ -425,8 +451,9 @@ export function analyzeWorkspace(state:EvidenceWorkspaceState,context:OperationC
   const currentWords=countAnalysisTokens(state.currentText);
   const wordCounts={baseline:baselineWords,current:currentWords,delta:currentWords-baselineWords};
   const changeMap=buildChangeMap(state.originalText,state.currentText,wordCounts.delta,baselineWords);
-  const {claims,claimSummary}=buildClaims(analysisId,state.originalText,state.currentText);
-  const reviewQueue=buildReviewQueue(analysisId,state.originalText,state.currentText,claims,claimSummary,changeMap,baselineInternal.focusCoverage,currentInternal.focusCoverage);
+  const {claims:allClaims,claimSummary}=buildClaims(analysisId,state.originalText,state.currentText);
+  const {reviewQueue,totalReviewItems}=buildReviewQueue(analysisId,state.originalText,state.currentText,allClaims,claimSummary,changeMap,baselineInternal.focusCoverage,currentInternal.focusCoverage);
+  const claims=sampleClaimReferences(allClaims,reviewQueue);
   const claimEvidence:WorkspaceEvidence[]=claims.map(claim=>({
     id:claim.id.replace(":claim:",":evidence:claim:"),kind:"claim",label:`${claim.source==="current"?"Current":"Baseline"} ${CLAIM_LABELS[claim.category]}`,
     value:claim.value,detail:`${claim.status.replaceAll("_"," ")}: ${claim.excerpt}`,
@@ -442,7 +469,7 @@ export function analyzeWorkspace(state:EvidenceWorkspaceState,context:OperationC
     ...claimEvidence,...reviewEvidence,
   ];
   const createdAt=now(context);
-  const analysis:WorkspaceAnalysis={engineVersion:WORKSPACE_ANALYSIS_VERSION,id:analysisId,revision:state.revision,createdAt,baseline:toPublicAnalysisResult(baselineInternal),current:toPublicAnalysisResult(currentInternal),comparison,wordCounts,repeatedPhrases,changeMap,claims,claimSummary,reviewQueue,evidence};
+  const analysis:WorkspaceAnalysis={engineVersion:WORKSPACE_ANALYSIS_VERSION,id:analysisId,revision:state.revision,createdAt,baseline:toPublicAnalysisResult(baselineInternal),current:toPublicAnalysisResult(currentInternal),comparison,wordCounts,repeatedPhrases,changeMap,claims,totalClaims:allClaims.length,claimSummary,reviewQueue,totalReviewItems,evidence};
   return{...state,analysis,updatedAt:createdAt};
 }
 
@@ -550,7 +577,9 @@ export function workspaceSummary(state:EvidenceWorkspaceState){
     changeMap:state.analysis?.changeMap||null,
     claimSummary:state.analysis?.claimSummary||[],
     claims:state.analysis?.claims||[],
+    totalClaims:state.analysis?.totalClaims||0,
     reviewQueue:state.analysis?.reviewQueue||[],
+    totalReviewItems:state.analysis?.totalReviewItems||0,
     evidence:state.analysis?.evidence||[],
     findings:state.findings.map(({id,revision,analysisId,title,explanation,evidenceRefs})=>({id,revision,analysisId,isCurrent:revision===state.revision&&analysisId===state.analysis?.id,title,explanation,evidenceRefs})),
     reviewPlan:{minimumRecommendations:3,maximumRecommendations:5,requirements:["At least one structure or clarity recommendation","At least one trust or verification recommendation when claim risks exist","At most one cleanup recommendation"],currentRecommendations:state.patches.filter(item=>item.baseRevision===state.revision&&item.recommendationKind&&(item.status==="proposed"||item.status==="approved")).length},
@@ -571,7 +600,8 @@ export function exportWorkspaceReport(state:EvidenceWorkspaceState,format:"markd
   const findings=state.findings.length?state.findings.map(item=>`### ${item.title}\n\n${item.explanation}\n\nRevision: ${item.revision}${item.revision===state.revision&&item.analysisId===analysis.id?" (current)":" (historical; not evidence for the current revision)"}\nAnalysis: ${item.analysisId}\nEvidence: ${item.evidenceRefs.join(", ")}`).join("\n\n"):"No findings recorded.";
   const patches=state.patches.length?state.patches.map(item=>`- **${item.recommendationKind?`${item.recommendationKind} · `:""}${item.status}** — \`${item.expectedText}\` → \`${item.replacementText}\` (${item.rationale})`).join("\n"):"- No patches recorded.";
   const claimRows=analysis.claimSummary.length?analysis.claimSummary.map(item=>`| ${item.label} | ${item.baseline} | ${item.current} | ${item.retained} | ${item.currentOnly} | ${item.baselineOnly} |`).join("\n"):"| No commercial claims detected | 0 | 0 | 0 | 0 | 0 |";
-  const reviewRows=analysis.reviewQueue.length?analysis.reviewQueue.map(item=>`### ${item.priority.toUpperCase()} · ${item.title}\n\n${item.detail}${item.baselineExcerpts?.length?`\n\nBaseline:\n\n${item.baselineExcerpts.map(markdownExcerpt).join("\n\n")}`:""}${item.currentExcerpts?.length?`\n\nCurrent:\n\n${item.currentExcerpts.map(markdownExcerpt).join("\n\n")}`:""}\n\nEvidence: ${item.evidenceRefs.join(", ")}`).join("\n\n"):"- No deterministic review items detected.";
+  const queueNote=analysis.reviewQueue.length<analysis.totalReviewItems?`Showing the ${analysis.reviewQueue.length} highest-priority checks of ${analysis.totalReviewItems}.\n\n`:"";
+  const reviewRows=analysis.reviewQueue.length?queueNote+analysis.reviewQueue.map(item=>`### ${item.priority.toUpperCase()} · ${item.title}\n\n${item.detail}${item.baselineExcerpts?.length?`\n\nBaseline:\n\n${item.baselineExcerpts.map(markdownExcerpt).join("\n\n")}`:""}${item.currentExcerpts?.length?`\n\nCurrent:\n\n${item.currentExcerpts.map(markdownExcerpt).join("\n\n")}`:""}\n\nEvidence: ${item.evidenceRefs.join(", ")}`).join("\n\n"):"- No deterministic review items detected.";
   const blocks=compareBlocks(state.originalText,state.currentText);
   const removed=blocks.removed.length?blocks.removed.map(markdownExcerpt).join("\n\n"):"No unmatched baseline blocks.";
   const added=blocks.added.length?blocks.added.map(markdownExcerpt).join("\n\n"):"No unmatched current blocks.";

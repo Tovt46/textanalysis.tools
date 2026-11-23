@@ -7,6 +7,9 @@ import { AnalysisProgress,isAnalysisAbort,useBrowserAnalysis,validateBrowserInpu
 import { DEFAULT_STOPWORD_TEXT,parseStopwordText,type TextLanguage } from "./lib/stopwords";
 import { trackEvent } from "./lib/analytics";
 import { CopyResultAction,ExampleAction,type ToolExample } from "./ToolWorkflowActions";
+import { useSourceInput } from "./lib/use-source-input";
+import { compareZipfTerms,type TermCounts,type ZipfCounts } from "./lib/zipf-comparison";
+import type { FrequencyCount } from "./lib/comparison";
 
 type Zone = "above" | "within" | "below" | "sparse-tail";
 type ZipfRow = { rank:number; term:string; actualCount:number; expectedCount:number; ratio:number; zone:Zone };
@@ -18,7 +21,8 @@ type Analysis = {
 };
 type Lang = TextLanguage;
 type AnalysisSettings = { language:string; focus:string; top:number; tolerance:number; keepStopwords:boolean; stopwordLists:Record<Lang,string[]> };
-type SavedResult = { version:3; result:Analysis; settings:AnalysisSettings; savedAt:string; label:string };
+type AnalysisOutput = { result:Analysis; counts?:ZipfCounts };
+type SavedResult = AnalysisOutput & { version:3; settings:AnalysisSettings; savedAt:string; label:string };
 type ApiError = { code?:unknown; message?:unknown };
 
 const CACHE_KEY = "bow-zipf-baseline-v3";
@@ -29,7 +33,7 @@ function objectValue(value:unknown):Record<string,unknown>|null{
   return value!==null&&typeof value==="object"&&!Array.isArray(value)?value as Record<string,unknown>:null;
 }
 
-function readVersionedAnalysis(payload:unknown):Analysis|null{
+function readVersionedAnalysis(payload:unknown):AnalysisOutput|null{
   const envelope=objectValue(payload);
   const result=objectValue(envelope?.result);
   const zones=objectValue(result?.zoneCounts);
@@ -44,7 +48,11 @@ function readVersionedAnalysis(payload:unknown):Analysis|null{
     !Array.isArray(result.focusCoverage)||typeof result.stopwordCount!=="number"||
     !Array.isArray(result.notes)
   )return null;
-  return result as unknown as Analysis;
+  const counts=objectValue(envelope.counts);
+  const validEntries=(entries:unknown):entries is TermCounts=>Array.isArray(entries)&&entries.every(entry=>
+    Array.isArray(entry)&&typeof entry[0]==="string"&&Number.isSafeInteger(entry[1])&&entry[1]>0
+  );
+  return {result:result as unknown as Analysis,...(counts&&validEntries(counts.words)&&validEntries(counts.bigrams)?{counts:{words:counts.words,bigrams:counts.bigrams}}:{})};
 }
 
 function localizedApiError(payload:unknown,status:number,t:T){
@@ -127,14 +135,20 @@ function ZipfChart({ rows, t }: { rows:ZipfRow[]; t:T }) {
   return <canvas ref={ref} className="chart compact-chart" aria-label={t("chartTitle")} />;
 }
 
-function FrequencyComparisonTable({ title, a, b, totalA, totalB, t, open=false }: { title:string; a:{term:string;count:number}[]; b:{term:string;count:number}[]; totalA:number; totalB:number; t:T; open?:boolean }) {
-  const terms=[...new Set([...a.map(row=>row.term),...b.map(row=>row.term)])];
-  const rows=terms.map(term=>{const av=a.find(row=>row.term===term),bv=b.find(row=>row.term===term);const ar=av?(av.count/totalA)*1000:null,br=bv?(bv.count/totalB)*1000:null;return{term,av,bv,ar,br,weight:Math.max(ar||0,br||0)};}).sort((x,y)=>y.weight-x.weight).slice(0,30);
-  const cell=(item:{count:number}|undefined,rate:number|null)=><>{item?<><b>×{item.count}</b><small>{((rate||0)/10).toFixed(2)}%</small><small>{rate?.toFixed(1)} {t("per1000")}</small></>:<><b>—</b><small>{t("outsideTop")}</small></>}</>;
-  return <details className="ab-frequency" open={open}><summary>{title}<span>{rows.length} {t("rows")}</span></summary><div className="ab-table-scroll"><table className="ab-table"><thead><tr><th>{t("term")}</th><th>{t("resultA")}</th><th>{t("resultBLabel")}</th><th>{t("difference")}</th></tr></thead><tbody>{rows.map(row=>{const delta=(row.br||0)-(row.ar||0),deltaPct=delta/10;return <tr key={row.term}><td><b>{row.term}</b></td><td>{cell(row.av,row.ar)}</td><td>{cell(row.bv,row.br)}</td><td><span className={delta>0?"delta-up":delta<0?"delta-down":"delta-flat"}>{deltaPct>0?"+":""}{deltaPct.toFixed(2)} {t("percentagePoints")}</span><small>{delta>0?"+":""}{delta.toFixed(1)} {t("per1000")}</small></td></tr>;})}</tbody></table></div></details>;
+function FrequencyComparisonTable({ title, a, b, totalA, totalB, countsA, countsB, t, open=false }: {
+  title:string; a:FrequencyCount[]; b:FrequencyCount[]; totalA:number; totalB:number; countsA?:TermCounts; countsB?:TermCounts; t:T; open?:boolean;
+}) {
+  const rows=compareZipfTerms(a,b,totalA,totalB,countsA,countsB);
+  const cell=(count:number|null,rate:number|null)=>count===null||rate===null
+    ? <><b>—</b><small>{t("outsideTop")}</small></>
+    : <><b>×{count}</b><small>{(rate/10).toFixed(2)}%</small><small>{rate.toFixed(1)} {t("per1000")}</small></>;
+  return <details className="ab-frequency" open={open}><summary>{title}<span>{rows.length} {t("rows")}</span></summary><div className="ab-table-scroll"><table className="ab-table"><thead><tr><th>{t("term")}</th><th>{t("resultA")}</th><th>{t("resultBLabel")}</th><th>{t("difference")}</th></tr></thead><tbody>{rows.map(({term,countA,countB,per1000A,per1000B,delta})=>
+    <tr key={term}><td><b>{term}</b></td><td>{cell(countA,per1000A)}</td><td>{cell(countB,per1000B)}</td><td>{delta===null?"—":<>
+      <span className={delta>0?"delta-up":delta<0?"delta-down":"delta-flat"}>{delta>0?"+":""}{(delta/10).toFixed(2)} {t("percentagePoints")}</span><small>{delta>0?"+":""}{delta.toFixed(1)} {t("per1000")}</small>
+    </>}</td></tr>)}</tbody></table></div></details>;
 }
 
-function Comparison({ baseline, current, onClear, t, uiLang }: { baseline:SavedResult; current:Analysis; onClear:()=>void; t:T; uiLang:UiLang }) {
+function Comparison({ baseline, current, counts, onClear, t, uiLang }: { baseline:SavedResult; current:Analysis; counts?:ZipfCounts; onClear:()=>void; t:T; uiLang:UiLang }) {
   const metrics=[
     [t("filteredWords"),baseline.result.tokenCount,current.tokenCount,t("filteredWordsHelp")],
     [t("uniqueWords"),baseline.result.vocabularySize,current.vocabularySize,t("uniqueWordsHelp")],
@@ -142,7 +156,10 @@ function Comparison({ baseline, current, onClear, t, uiLang }: { baseline:SavedR
     [t("aboveIndicator"),baseline.result.zoneCounts.above,current.zoneCounts.above,t("aboveIndicatorHelp")],
   ];
   const terms=[...new Set([...baseline.result.focusCoverage.map(r=>r.term),...current.focusCoverage.map(r=>r.term)])];
-  const get=(rows:FocusRow[],term:string)=>rows.find(r=>r.term===term) || {term,count:0,per1000:0};
+  const focusCell=(rows:FocusRow[],term:string)=>{
+    const row=rows.find(item=>item.term===term);
+    return row?<strong>×{row.count}<small>{(row.per1000/10).toFixed(2)}%</small><small>{row.per1000.toFixed(1)} {t("per1000")}</small></strong>:<strong>—</strong>;
+  };
   return <section className="compare-section">
     <div className="compare-head"><div><p className="eyebrow">{t("compareEye")}</p><h2>{t("compareTitle")}</h2><p>{t("compareText")}</p></div><button className="text-button" onClick={onClear}>{t("deleteA")}</button></div>
     <div className="compare-labels"><div><span>A</span><b>{baseline.label}</b><small>{t("savedAt",{date:new Date(baseline.savedAt).toLocaleString(LOCALES[uiLang])})}</small></div><div><span>B</span><b>{t("current")}</b><small>{t("latest")}</small></div></div>
@@ -153,22 +170,24 @@ function Comparison({ baseline, current, onClear, t, uiLang }: { baseline:SavedR
     {terms.length>0&&<div className="focus-compare"><div className="focus-explainer"><h3>{t("focusTitle")}</h3><p>{t("focusExplain")}</p></div>
       <div className="compare-table">
         <div className="compare-row compare-row-head"><span>{t("phrase")}</span><b>A</b><b>B</b></div>
-        {terms.map(term=>{const a=get(baseline.result.focusCoverage,term),b=get(current.focusCoverage,term);return <div className="compare-row phrase-row" key={term}><span>“{term}”</span><strong>×{a.count}<small>{(a.per1000/10).toFixed(2)}%</small><small>{a.per1000.toFixed(1)} {t("per1000")}</small></strong><strong>×{b.count}<small>{(b.per1000/10).toFixed(2)}%</small><small>{b.per1000.toFixed(1)} {t("per1000")}</small></strong></div>;})}
+        {terms.map(term=><div className="compare-row phrase-row" key={term}><span>“{term}”</span>{focusCell(baseline.result.focusCoverage,term)}{focusCell(current.focusCoverage,term)}</div>)}
       </div>
     </div>}
     <div className="frequency-comparison"><div className="frequency-title"><h3>{t("frequencyTables")}</h3><p>{t("frequencyExplain")}</p></div>
-      <FrequencyComparisonTable title={t("words")} open t={t} a={baseline.result.rows.map(row=>({term:row.term,count:row.actualCount}))} b={current.rows.map(row=>({term:row.term,count:row.actualCount}))} totalA={baseline.result.tokenCount} totalB={current.tokenCount}/>
-      <FrequencyComparisonTable title={t("bigrams")} t={t} a={baseline.result.bigrams} b={current.bigrams} totalA={Math.max(1,baseline.result.tokenCount-1)} totalB={Math.max(1,current.tokenCount-1)}/>
+      <FrequencyComparisonTable title={t("words")} open t={t} a={baseline.result.rows.map(row=>({term:row.term,count:row.actualCount}))} b={current.rows.map(row=>({term:row.term,count:row.actualCount}))} totalA={baseline.result.tokenCount} totalB={current.tokenCount} countsA={baseline.counts?.words} countsB={counts?.words}/>
+      <FrequencyComparisonTable title={t("bigrams")} t={t} a={baseline.result.bigrams} b={current.bigrams} totalA={Math.max(1,baseline.result.tokenCount-1)} totalB={Math.max(1,current.tokenCount-1)} countsA={baseline.counts?.bigrams} countsB={counts?.bigrams}/>
     </div>
   </section>;
 }
 
 export default function BowApp({ uiLang,children }: { uiLang:UiLang;children?:ReactNode }) {
-  const [sourceType,setSourceType]=useState<"text"|"url">("text"); const [source,setSource]=useState("");
+  const {sourceType,setSourceType,source,setSource,loadText}=useSourceInput();
   const [language,setLanguage]=useState("en"); const [focus,setFocus]=useState("");
   const [top,setTop]=useState(20); const [tolerance,setTolerance]=useState(2); const [keepStopwords,setKeepStopwords]=useState(false);
   const [stopwordEditorLang,setStopwordEditorLang]=useState<Lang>("en"); const [stopwordLists,setStopwordLists]=useState<Record<Lang,string>>(DEFAULT_STOPWORD_TEXT);
-  const [result,setResult]=useState<Analysis|null>(null); const [baseline,setBaseline]=useState<SavedResult|null>(null);
+  const [completed,setCompleted]=useState<(AnalysisOutput&{settings:AnalysisSettings})|null>(null);
+  const result=completed?.result;
+  const [baseline,setBaseline]=useState<SavedResult|null>(null);
   const [error,setError]=useState("");
   const {busy:loading,progress,runWorker,runRemote,cancel}=useBrowserAnalysis();
   const t:T=useCallback((key,vars)=>translate(uiLang,key,vars),[uiLang]);
@@ -187,18 +206,24 @@ export default function BowApp({ uiLang,children }: { uiLang:UiLang;children?:Re
   }catch{}},0);return()=>window.clearTimeout(timer);},[]);
 
   const parsedStopwords=Object.fromEntries(Object.entries(stopwordLists).map(([lang,value])=>[lang,parseStopwordText(value)])) as Record<Lang,string[]>;
+  function invalidateResult(){cancel();setCompleted(null);setError("");}
+  function selectSourceType(type:"text"|"url"){
+    if(sourceType===type)return;
+    invalidateResult();setSourceType(type);
+  }
   async function analyze(event?:FormEvent){
     event?.preventDefault();setError("");
     trackEvent("analysis_started",{tool:"bow_analyzer",source_type:sourceType,text_language:language});
     if(sourceType==="url")trackEvent("url_analysis_started",{tool:"bow_analyzer",text_language:language});
     try{
-      let data:Analysis;
+      const settings=baseline?.settings??{language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords};
+      let output:AnalysisOutput;
       if(sourceType==="text"){
         validateBrowserInputs([source],uiLang);
-        data=await runWorker<Analysis>("zipf",{text:source,language:language as "auto"|Lang,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang});
+        output=await runWorker<AnalysisOutput>("zipf",{text:source,...settings,uiLanguage:uiLang});
       }else{
-        data=await runRemote(async signal=>{
-          const response=await fetch("/api/v1/analyze",{method:"POST",signal,headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({sourceType,source,language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords})});
+        output=await runRemote(async signal=>{
+          const response=await fetch("/api/v1/analyze",{method:"POST",signal,headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({sourceType,source,...settings,includeComparisonCounts:true})});
           const raw=await response.text();
           let payload:unknown;
           try{payload=JSON.parse(raw);}catch{throw new Error(response.status===403?t("requestBlocked"):t("invalidResponse"));}
@@ -208,17 +233,29 @@ export default function BowApp({ uiLang,children }: { uiLang:UiLang;children?:Re
           return versionedResult;
         });
       }
-      setResult(data);trackEvent("analysis_completed",{tool:"bow_analyzer",source_type:sourceType,text_language:data.language,word_count:data.tokenCount});if(baseline)trackEvent("comparison_completed",{tool:"bow_analyzer",source_type:sourceType});if(language==="auto"&&["ru","uk","en","es"].includes(data.language))setStopwordEditorLang(data.language as Lang);setTimeout(()=>document.getElementById("result")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
+      const data=output.result;
+      setCompleted({...output,settings});trackEvent("analysis_completed",{tool:"bow_analyzer",source_type:sourceType,text_language:data.language,word_count:data.tokenCount});if(baseline)trackEvent("comparison_completed",{tool:"bow_analyzer",source_type:sourceType});if(language==="auto"&&["ru","uk","en","es"].includes(data.language))setStopwordEditorLang(data.language as Lang);setTimeout(()=>document.getElementById("result")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
     }catch(err){if(isAnalysisAbort(err))return;const message=err instanceof Error?err.message:t("unknownError");setError(message);trackEvent("analysis_error",{tool:"bow_analyzer",source_type:sourceType,error_message:message.slice(0,100)});}
   }
-  function changeLanguage(value:string){cancel();setLanguage(value);trackEvent("language_changed",{tool:"bow_analyzer",text_language:value});if(value!=="auto")setStopwordEditorLang(value as Lang);}
-  function changeStopwordLanguage(value:Lang){cancel();setStopwordEditorLang(value);setLanguage(value);trackEvent("language_changed",{tool:"bow_analyzer",text_language:value,control:"stopword_editor"});}
-  function updateStopwords(value:string){cancel();const next={...stopwordLists,[stopwordEditorLang]:value};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}
-  function resetStopwords(){cancel();const next={...stopwordLists,[stopwordEditorLang]:DEFAULT_STOPWORD_TEXT[stopwordEditorLang]};setStopwordLists(next);localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}
-  function saveA(){if(!result)return;cancel();const settings:AnalysisSettings={language,focus,top,tolerance,keepStopwords,stopwordLists:parsedStopwords};const saved:SavedResult={version:3,result,settings,savedAt:new Date().toISOString(),label:t("analysisLabel",{count:result.tokenCount})};try{localStorage.setItem(CACHE_KEY,JSON.stringify(saved));}catch{setError(t("cacheFailed"));return;}trackEvent("comparison_result_saved",{tool:"bow_analyzer",word_count:result.tokenCount});setBaseline(saved);setResult(null);setSource("");window.scrollTo({top:0,behavior:"smooth"});}
+  function changeLanguage(value:string){invalidateResult();setLanguage(value);trackEvent("language_changed",{tool:"bow_analyzer",text_language:value});if(value!=="auto")setStopwordEditorLang(value as Lang);}
+  function changeStopwordLanguage(value:Lang){invalidateResult();setStopwordEditorLang(value);setLanguage(value);trackEvent("language_changed",{tool:"bow_analyzer",text_language:value,control:"stopword_editor"});}
+  function updateStopwords(value:string){invalidateResult();const next={...stopwordLists,[stopwordEditorLang]:value};setStopwordLists(next);try{localStorage.setItem(STOPWORDS_KEY,JSON.stringify(next));}catch{/* Browser storage may be unavailable. */}}
+  function resetStopwords(){updateStopwords(DEFAULT_STOPWORD_TEXT[stopwordEditorLang]);}
+  function saveA(){
+    if(!completed)return;
+    const saved:SavedResult={version:3,...completed,savedAt:new Date().toISOString(),label:t("analysisLabel",{count:completed.result.tokenCount})};
+    try{localStorage.setItem(CACHE_KEY,JSON.stringify(saved));}
+    catch{
+      // Keep the full comparison in this tab when only the top rows fit on disk.
+      try{localStorage.setItem(CACHE_KEY,JSON.stringify({...saved,counts:undefined}));}
+      catch{setError(t("cacheFailed"));return;}
+    }
+    trackEvent("comparison_result_saved",{tool:"bow_analyzer",word_count:completed.result.tokenCount});
+    setBaseline(saved);invalidateResult();setSource("");window.scrollTo({top:0,behavior:"smooth"});
+  }
   function clearA(){cancel();setBaseline(null);localStorage.removeItem(CACHE_KEY);}
   function loadExample(example:ToolExample){
-    cancel();setSourceType("text");setSource(example.sources[0]);setResult(null);setError("");
+    invalidateResult();loadText(example.sources[0]);
     if(!baseline){setFocus(example.focus);setLanguage(uiLang);setStopwordEditorLang(uiLang);}
   }
 
@@ -228,23 +265,23 @@ export default function BowApp({ uiLang,children }: { uiLang:UiLang;children?:Re
 
     <form className="workspace" onSubmit={analyze} aria-busy={loading}>
       <section className="input-card">
-        <div className="section-head"><div><span>01</span><h2>{t("source")}</h2></div><div className="tabs"><button type="button" className={sourceType==="text"?"active":""} onClick={()=>{cancel();setSourceType("text");setSource("")}}>{t("text")}</button><button type="button" className={sourceType==="url"?"active":""} onClick={()=>{cancel();setSourceType("url");setSource("")}}>{t("url")}</button></div></div>
-        {sourceType==="text"?<div className="textarea-wrap"><textarea value={source} onChange={e=>{cancel();setSource(e.target.value);setResult(null);setError("");}} placeholder={t("textPlaceholder")}/><span>{source.length.toLocaleString(LOCALES[uiLang])} {t("chars")}</span></div>:<input className="url-input" type="url" value={source} onChange={e=>{cancel();setSource(e.target.value);setResult(null);setError("");}} placeholder="https://example.com/page" required/>}
-        <label className="field wide"><span>{t("focus")} <Tip>{t("focusHelp")}</Tip></span><input value={focus} disabled={Boolean(baseline)} onChange={e=>{cancel();setFocus(e.target.value);}}/><small>{baseline?t("settingsLocked"):t("focusNote")}</small></label>
+        <div className="section-head"><div><span>01</span><h2>{t("source")}</h2></div><div className="tabs"><button type="button" aria-pressed={sourceType==="text"} className={sourceType==="text"?"active":""} onClick={()=>selectSourceType("text")}>{t("text")}</button><button type="button" aria-pressed={sourceType==="url"} className={sourceType==="url"?"active":""} onClick={()=>selectSourceType("url")}>{t("url")}</button></div></div>
+        {sourceType==="text"?<div className="textarea-wrap"><textarea aria-label={t("textPlaceholder")} value={source} onChange={e=>{invalidateResult();setSource(e.target.value);}} placeholder={t("textPlaceholder")}/><span>{source.length.toLocaleString(LOCALES[uiLang])} {t("chars")}</span></div>:<input className="url-input" aria-label={t("url")} type="url" value={source} onChange={e=>{invalidateResult();setSource(e.target.value);}} placeholder="https://example.com/page" required/>}
+        <label className="field wide"><span>{t("focus")} <Tip>{t("focusHelp")}</Tip></span><input value={focus} disabled={Boolean(baseline)} onChange={e=>{invalidateResult();setFocus(e.target.value);}}/><small>{baseline?t("settingsLocked"):t("focusNote")}</small></label>
         <ExampleAction tool="bag-of-words-analyzer" locale={uiLang} onLoad={loadExample}/>
+        <button className="analyze-button" disabled={loading||!source.trim()}><span>{loading?t("loading"):baseline?t("analyzeB"):t("analyze")}</span><b aria-hidden="true">→</b></button>
+        <AnalysisProgress active={loading} progress={progress} label={t("loading")}/>
+        {error&&<p className="error" role="alert">{error}</p>}
       </section>
       <aside className="settings-card">
         <div className="section-head simple"><div><span>02</span><h2>{t("settings")}</h2></div></div>
         {baseline&&<p className="settings-lock"><b>A</b>{t("settingsLockNotice")}</p>}
         <label className="field"><span>{t("language")} <Tip>{t("languageHelp")}</Tip></span><select value={language} disabled={Boolean(baseline)} onChange={e=>changeLanguage(e.target.value)}><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option><option value="auto">{t("auto")}</option></select><small>{language==="auto"?t("autoNote"):t("syncNote",{lang:language.toUpperCase()})}</small></label>
-        <label className="field"><span>{t("top")} <Tip>{t("topHelp")}</Tip></span><input type="number" min="5" max="100" value={top} disabled={Boolean(baseline)} onChange={e=>{cancel();setTop(Number(e.target.value));}}/><small>{t("topNote")}</small></label>
-        <label className="field range-field"><span><span>{t("sensitivity")} <Tip>{t("sensitivityHelp")}</Tip></span><b>×{tolerance.toFixed(1)}</b></span><input type="range" min="1.2" max="4" step="0.1" value={tolerance} disabled={Boolean(baseline)} onChange={e=>{cancel();setTolerance(Number(e.target.value));}}/><small>{t("sensitivityNote")}</small></label>
-        <label className="check"><input type="checkbox" checked={keepStopwords} disabled={Boolean(baseline)} onChange={e=>{cancel();setKeepStopwords(e.target.checked);}}/><span><b>{t("keepStops")} <Tip>{t("keepStopsHelp")}</Tip></b><small>{keepStopwords?t("stopsOn"):t("stopsOff")}</small></span></label>
+        <label className="field"><span>{t("top")} <Tip>{t("topHelp")}</Tip></span><input type="number" min="5" max="100" value={top} disabled={Boolean(baseline)} onChange={e=>{invalidateResult();setTop(Number(e.target.value));}}/><small>{t("topNote")}</small></label>
+        <label className="field range-field"><span><span>{t("sensitivity")} <Tip>{t("sensitivityHelp")}</Tip></span><b>×{tolerance.toFixed(1)}</b></span><input type="range" min="1.2" max="4" step="0.1" value={tolerance} disabled={Boolean(baseline)} onChange={e=>{invalidateResult();setTolerance(Number(e.target.value));}}/><small>{t("sensitivityNote")}</small></label>
+        <label className="check"><input type="checkbox" checked={keepStopwords} disabled={Boolean(baseline)} onChange={e=>{invalidateResult();setKeepStopwords(e.target.checked);}}/><span><b>{t("keepStops")} <Tip>{t("keepStopsHelp")}</Tip></b><small>{keepStopwords?t("stopsOn"):t("stopsOff")}</small></span></label>
         <details className="stopword-editor"><summary>{t("editStops")} <span>{parsedStopwords[stopwordEditorLang].length}</span></summary><div className="stopword-body"><div className="stopword-tabs">{(["en","uk","ru","es"] as Lang[]).map(lang=><button type="button" disabled={Boolean(baseline)} key={lang} className={stopwordEditorLang===lang?"active":""} onClick={()=>changeStopwordLanguage(lang)}>{lang.toUpperCase()}</button>)}</div><p>{baseline?t("settingsLocked"):t("stopEditorNote")}</p><textarea value={stopwordLists[stopwordEditorLang]} disabled={Boolean(baseline)} onChange={e=>updateStopwords(e.target.value)} aria-label={`${t("editStops")} ${stopwordEditorLang}`}/><div className="stopword-actions"><small>{parsedStopwords[stopwordEditorLang].length} {t("savedLocally")}</small><button type="button" disabled={Boolean(baseline)} onClick={resetStopwords}>{t("resetStops")}</button></div></div></details>
-        <button className="analyze-button" disabled={loading||!source.trim()}><span>{loading?t("loading"):baseline?t("analyzeB"):t("analyze")}</span><b>→</b></button>
-        <AnalysisProgress active={loading} progress={progress} label={t("loading")}/>
         {baseline&&<div className="cached-pill"><span>A</span><p><b>{baseline.label}</b><small>{t("cached")}</small></p><button type="button" onClick={clearA} aria-label={t("removeSaved")}>×</button></div>}
-        {error&&<p className="error">{error}</p>}
       </aside>
     </form>
 
@@ -258,10 +295,10 @@ export default function BowApp({ uiLang,children }: { uiLang:UiLang;children?:Re
         <Metric label={t("metricAbove")} value={String(result.zoneCounts.above)} explanation={t("metricAboveHelp")}/>
       </div>
       <div className="plain-summary"><h3>{t("meaning")}</h3><ol>{result.notes.slice(0,3).map((note,i)=><li key={note}><span>{i+1}</span><p>{note}</p></li>)}</ol></div>
-      <details className="details-block"><summary>{t("details")} <span>{t("detailsSub")}</span></summary><ZoneGuide tolerance={tolerance} t={t}/><div className="details-content"><article className="chart-card"><div className="card-title"><div><p>{t("distribution")}</p><h3>{t("chartTitle")}</h3></div><div className="legend"><span className="actual">{t("fact")}</span><span className="expected">{t("model")}</span></div></div><ZipfChart rows={result.rows} t={t}/><p className="chart-note">{t("chartNote")}</p></article><div className="table-card compact-table"><table><thead><tr><th>{t("rank")}</th><th>{t("word")}</th><th>{t("inText")}</th><th>{t("byModel")}</th><th>{t("statusLabel")}</th></tr></thead><tbody>{result.rows.map(row=><tr key={row.rank}><td>{row.rank}</td><td><b>{row.term}</b></td><td><span className="frequency-value"><b>×{row.actualCount}</b><small>{((row.actualCount/result.tokenCount)*100).toFixed(2)}%</small></span></td><td>{row.expectedCount.toFixed(1)}</td><td><ZoneBadge zone={row.zone} t={t}/></td></tr>)}</tbody></table></div></div></details>
+      <details className="details-block"><summary>{t("details")} <span>{t("detailsSub")}</span></summary><ZoneGuide tolerance={completed.settings.tolerance} t={t}/><div className="details-content"><article className="chart-card"><div className="card-title"><div><p>{t("distribution")}</p><h3>{t("chartTitle")}</h3></div><div className="legend"><span className="actual">{t("fact")}</span><span className="expected">{t("model")}</span></div></div><ZipfChart rows={result.rows} t={t}/><p className="chart-note">{t("chartNote")}</p></article><div className="table-card compact-table"><table><thead><tr><th>{t("rank")}</th><th>{t("word")}</th><th>{t("inText")}</th><th>{t("byModel")}</th><th>{t("statusLabel")}</th></tr></thead><tbody>{result.rows.map(row=><tr key={row.rank}><td>{row.rank}</td><td><b>{row.term}</b></td><td><span className="frequency-value"><b>×{row.actualCount}</b><small>{((row.actualCount/result.tokenCount)*100).toFixed(2)}%</small></span></td><td>{row.expectedCount.toFixed(1)}</td><td><ZoneBadge zone={row.zone} t={t}/></td></tr>)}</tbody></table></div></div></details>
     </section>}
 
-    {baseline&&result&&<Comparison baseline={baseline} current={result} onClear={clearA} t={t} uiLang={uiLang}/>} 
+    {baseline&&result&&<Comparison baseline={baseline} current={result} counts={completed?.counts} onClear={clearA} t={t} uiLang={uiLang}/>}
     {!result&&<section className="empty-state"><span>03</span><p>{baseline?t("emptyB"):t("empty")}</p></section>}
     {children}
     <SiteFooter locale={uiLang}/>

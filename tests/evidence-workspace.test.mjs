@@ -67,6 +67,8 @@ test("legacy saved analysis requires current checks without discarding texts or 
   state=domain.decidePatch(state,"legacy-patch","approved");
   assert.equal(domain.restoreWorkspace(state),state);
   const legacy=structuredClone(state);
+  legacy.analysis.engineVersion=2;
+  assert.equal(domain.restoreWorkspace(legacy).analysis,null);
   delete legacy.analysis.engineVersion;
   delete legacy.analysis.wordCounts;
   const restored=domain.restoreWorkspace(legacy);
@@ -135,6 +137,36 @@ test("claim extraction does not join a number to readers in a later sentence",()
 
   assert.ok(state.analysis.claims.some(item=>item.category==="price"&&item.value==="$29"));
   assert.equal(state.analysis.claims.some(item=>item.category==="advisor_count"),false);
+});
+
+test("rewrite review checks a price after the first 60 claims and preserves its evidence in exports",()=>{
+  const prices=Array.from({length:61},(_,i)=>`Service ${i+1} costs $${i+1} per month.`);
+  const originalText=prices.join("\n");
+  const currentText=originalText.replace("$61","$900");
+  const state=domain.analyzeWorkspace(domain.createAnalysisWorkspace({originalText,currentText,goal:"Review the price list."}));
+  const analysis=state.analysis;
+  assert.deepEqual(analysis.claimSummary,[{category:"price",label:"Prices",baseline:61,current:61,retained:60,currentOnly:1,baselineOnly:1}]);
+  assert.equal(analysis.totalClaims,122);
+  assert.equal(analysis.claims.length,120);
+  const price=analysis.reviewQueue.find(item=>item.title==="Verify changed prices");
+  assert.deepEqual(price.baselineExcerpts,[prices[60]]);
+  assert.deepEqual(price.currentExcerpts,["Service 61 costs $900 per month."]);
+  const ids=new Set(analysis.evidence.map(item=>item.id));
+  assert.ok(price.evidenceRefs.every(ref=>ids.has(ref)));
+  assert.deepEqual(new Set(analysis.claims.filter(claim=>claim.status!=="retained").map(claim=>claim.value)),new Set(["$61","$900"]));
+  assert.equal(domain.workspaceSummary(state).totalClaims,122);
+  assert.equal(JSON.parse(domain.exportWorkspaceReport(state,"json").content).analysis.totalClaims,122);
+  assert.match(domain.exportWorkspaceReport(state,"markdown").content,/\| Prices \| 61 \| 61 \| 60 \| 1 \| 1 \|/);
+});
+
+test("review reports disclose how many checks were queued when the list is capped",()=>{
+  const focusTerms=Array.from("abcdefghijklmn",letter=>`term${letter}`);
+  const state=domain.analyzeWorkspace(domain.createAnalysisWorkspace({
+    originalText:focusTerms.join(" "),currentText:"Visitors review the edited copy.",focusTerms,goal:"Check missing terms.",
+  }));
+  assert.equal(state.analysis.reviewQueue.length,12);
+  assert.ok(state.analysis.totalReviewItems>12);
+  assert.match(domain.exportWorkspaceReport(state,"markdown").content,new RegExp(`12 highest-priority checks of ${state.analysis.totalReviewItems}`));
 });
 
 test("rewrite review exposes the changed price, missing restriction, and missing tracked term",()=>{

@@ -10,7 +10,7 @@
 html[data-theme="light"] {
   color-scheme:light;
   --bg:#f8f8f6;--surface:#fff;--raised:#eeeee9;--sidebar:#f0f0ec;
-  --ink:#252527;--muted:#63646b;--faint:#72737a;--line:#deded9;
+  --ink:#252527;--muted:#63646b;--faint:#696b72;--line:#deded9;
   --accent:#a94e36;--action:#252527;--action-ink:#f8f8f6;--accent-wash:var(--raised);--art-glow:#25252707;
   --success:#426d4d;--success-wash:#426d4d0d;--warning:#926014;--warning-wash:#9260140c;--danger:#a83241;--danger-wash:#a832410c;--shadow-color:#0000000d;
 }

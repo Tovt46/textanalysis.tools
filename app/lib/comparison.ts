@@ -15,7 +15,7 @@ export type ComparisonInput={
   bigrams:FrequencyCount[];
 };
 
-function frequencyChanges(a:FrequencyCount[],b:FrequencyCount[],totalA:number,totalB:number,limit:number,offset:number){
+export function frequencyChanges(a:FrequencyCount[],b:FrequencyCount[],totalA:number,totalB:number,limit:number,offset=0,tieBreak:"term"|"countB"="term"){
   const terms=new Set([...a.map(row=>row.term),...b.map(row=>row.term)]);
   const aRows=new Map(a.map(row=>[row.term,row.count]));
   const bRows=new Map(b.map(row=>[row.term,row.count]));
@@ -25,7 +25,7 @@ function frequencyChanges(a:FrequencyCount[],b:FrequencyCount[],totalA:number,to
     const shareA=totalA?countA/totalA:0;
     const shareB=totalB?countB/totalB:0;
     return {term,countA,countB,countDelta:countB-countA,shareA,shareB,shareDelta:shareB-shareA};
-  }).sort((x,y)=>Math.abs(y.shareDelta)-Math.abs(x.shareDelta)||x.term.localeCompare(y.term));
+  }).sort((x,y)=>Math.abs(y.shareDelta)-Math.abs(x.shareDelta)||(tieBreak==="countB"?y.countB-x.countB:x.term.localeCompare(y.term)));
   const page=rows.slice(offset,offset+limit);
   return {rows:page,totalRows:terms.size,hasMore:offset+page.length<terms.size};
 }

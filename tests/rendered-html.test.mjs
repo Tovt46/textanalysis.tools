@@ -219,7 +219,7 @@ test("returns a client error for text that is too short", async () => {
 
 test("runs pasted-text analysis locally and handles non-JSON URL errors", async () => {
   const source = await readFile(new URL("../app/BowApp.tsx", import.meta.url), "utf8");
-  assert.match(source, /if\(sourceType==="text"\)\{\s*validateBrowserInputs\(\[source\],uiLang\);\s*data=await runWorker<Analysis>\("zipf"/);
+  assert.match(source, /if\(sourceType==="text"\)\{\s*validateBrowserInputs\(\[source\],uiLang\);\s*\w+\s*=\s*await runWorker(?:<[^>]+>)?\("zipf"/);
   assert.match(source, /const raw=await response\.text\(\)/);
   assert.doesNotMatch(source, /const data=await response\.json\(\)/);
 });
@@ -524,8 +524,8 @@ test("standalone comparison renders reproducible source-review examples", async 
   const response=await request("/tools/text-analysis-comparison",{headers:{accept:"text/html"}});
   assert.equal(response.status,200);
   const html=await response.text();
-  assert.match(html,/<h2>A revision adds repetition and removes a useful phrase<\/h2>/);
-  assert.match(html,/<h2>Same article, different menu: why the extracted text matters<\/h2>/);
+  assert.match(html,/<h2\b[^>]*>A revision adds repetition and removes a useful phrase<\/h2>/);
+  assert.match(html,/<h2\b[^>]*>Same article, different menu: why the extracted text matters<\/h2>/);
   assert.match(html,/href="\/examples\/editorial-revision.json"/);
   assert.match(html,/href="\/examples\/article-basic-navigation.html"/);
   assert.match(html,/Pasted text and reviewed URL text are compared in your browser/);

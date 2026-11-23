@@ -47,6 +47,34 @@ function assertDeterministicExample(tool,payload){
 }
 
 for(const tool of TOOLS){
+  test(`${tool.key}: keeps separate text and URL drafts when switching source`,async({page})=>{
+    await page.goto(route("en",tool.path));
+    const form=page.locator("form").filter({has:page.locator(".analyze-button")});
+    const textMode=form.getByRole("button",{name:"Text",exact:true}).first();
+    const urlMode=form.getByRole("button",{name:"URL",exact:true}).first();
+    const text=form.locator("textarea").first();
+    const url=form.locator('input[type="url"]').first();
+    const draft="The editor checked the revised price.";
+    const address="https://example.com/article";
+
+    await text.fill(draft);
+    await textMode.click();
+    await expect(text).toHaveValue(draft);
+    await expect(textMode).toHaveAttribute("aria-pressed","true");
+
+    await urlMode.click();
+    await expect(url).toHaveValue("");
+    await url.fill(address);
+    await urlMode.click();
+    await expect(url).toHaveValue(address);
+    await expect(urlMode).toHaveAttribute("aria-pressed","true");
+
+    await textMode.click();
+    await expect(text).toHaveValue(draft);
+    await urlMode.click();
+    await expect(url).toHaveValue(address);
+  });
+
   test(`${tool.key}: example, local analysis, and copy result`,async({page,context})=>{
     await context.grantPermissions(["clipboard-read","clipboard-write"],{origin:"http://127.0.0.1:3000"});
     await page.goto(route("en",tool.path));
@@ -73,6 +101,61 @@ for(const tool of TOOLS){
     void clipboard;
     const copied=JSON.parse(await page.evaluate(()=>navigator.clipboard.readText()));
     assertDeterministicExample(tool,copied);
+  });
+}
+
+test("text-similarity recalculates when the similarity method changes",async({page})=>{
+  await page.goto("/tools/text-similarity-calculator");
+  const form=page.locator(".comparison-workspace");
+  const sources=form.locator(".comparison-source-card textarea");
+  const result=page.locator("#text-similarity-results");
+  await sources.nth(0).fill("apple banana carrot");
+  await sources.nth(1).fill("apple fig pear");
+  await form.locator(".analyze-button").click();
+  await expect(result).toContainText("0.2020");
+  await expect(result.locator(".results-actions")).toContainText("TF-IDF");
+
+  await form.locator('select').filter({has:page.locator('option[value="bow"]')}).selectOption("bow");
+  await expect(result).toHaveCount(0);
+  await form.locator(".analyze-button").click();
+  await expect(result).toContainText("0.3333");
+  await expect(result.locator(".results-actions")).toContainText("Bag of Words");
+});
+
+for(const sourceTypes of [["text","url"],["url","url"]]){
+  test(`text-similarity sends the requested limit for ${sourceTypes.join("/")}`,async({page})=>{
+    const samples=["apple banana carrot date olive","apple banana carrot date pear"];
+    let sent;
+    await page.route("**/api/v1/similarity",async route=>{
+      sent=route.request().postDataJSON();
+      // Supply public page text to the real API handler without a network dependency.
+      const response=await route.fetch({postData:{
+        ...sent,
+        a:{...sent.a,sourceType:"text",source:samples[0]},
+        b:{...sent.b,sourceType:"text",source:samples[1]},
+      }});
+      await route.fulfill({response});
+    });
+    await page.goto("/tools/text-similarity-calculator");
+    const form=page.locator(".comparison-workspace");
+    for(const [index, sourceType] of sourceTypes.entries()){
+      const card=form.locator(".comparison-source-card").nth(index);
+      if(sourceType==="url"){
+        await card.getByRole("button",{name:"URL",exact:true}).click();
+        await card.locator('input[type="url"]').fill(`https://example.com/document-${index}`);
+      }else{
+        await card.locator("textarea").fill(samples[index]);
+      }
+    }
+    await form.getByRole("spinbutton").fill("3");
+    await form.locator(".analyze-button").click();
+    const contributionRows=page.locator("#text-similarity-results .frequency-table").first().locator("tbody tr");
+    await expect(contributionRows.filter({hasText:"apple"})).toBeVisible();
+    await expect(contributionRows).toHaveCount(3);
+    expect(sent.top).toBe(3);
+    expect([sent.a.sourceType,sent.b.sourceType]).toEqual(sourceTypes);
+    expect(sent.a).not.toHaveProperty("top");
+    expect(sent.b).not.toHaveProperty("top");
   });
 }
 

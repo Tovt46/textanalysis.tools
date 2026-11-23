@@ -22,10 +22,10 @@ type WebpageExtractionCopy={
 export function WebpageExtractionExample({id="webpage-extraction-example",copy}:{id?:string;copy?:WebpageExtractionCopy}){
   return <section id={id} className="editorial-workflow-example">
     <p className="section-number">WORKED EXAMPLE · WEBPAGE EXTRACTION</p>
-    <h2>Same article, different menu: why the extracted text matters</h2>
+    <h2 id={`${id}-title`}>Same article, different menu: why the extracted text matters</h2>
     <p>{copy?.introduction??<>The two downloadable pages contain the same article. Page B adds repeated navigation and footer labels. With <strong>English</strong> selected and <strong>Keep stop words</strong> enabled, analyzing the whole page produces different word counts even though the article has not changed.</>}</p>
     <div className="article-callout subtle"><b>The unchanged article</b><p>{fixture.webpageExample.articleText}</p></div>
-    <div className="table-scroll">
+    <div className="table-scroll" role="region" aria-labelledby={`${id}-title`} tabIndex={0}>
       <table aria-label="Word frequency changes caused by navigation and footer text">
         <thead><tr><th scope="col">Extracted source</th><th scope="col">Words</th><th scope="col">revision count</th><th scope="col">revision share</th><th scope="col">contact count</th><th scope="col">contact share</th></tr></thead>
         <tbody>{fixture.webpageExample.expected.map(row=><tr key={row.label}><th scope="row">{row.label}</th><td>{row.words}</td><td>{row.revision}</td><td>{percentage(row.revision,row.words)}</td><td>{row.contact}</td><td>{percentage(row.contact,row.words)}</td></tr>)}</tbody>
@@ -48,10 +48,10 @@ export function EditorialRevisionExample({mode="comparison",id="editorial-revisi
   const denominatorB=mode==="density"?wordsB:bigramWindowsB;
   return <section id={id} className="editorial-workflow-example">
     <p className="section-number">WORKED EXAMPLE · REVISION REVIEW</p>
-    <h2>A revision adds repetition and removes a useful phrase</h2>
+    <h2 id={`${id}-title`}>A revision adds repetition and removes a useful phrase</h2>
     <p>Version B is only one word longer. Yet “content review” grows from one exact occurrence to four, while “source note” disappears. Paste these original example texts as A and B, select <strong>English</strong>, and enable <strong>Keep stop words</strong> to reproduce the counts.</p>
     <div className="example-docs"><p><b>A · Original · {wordsA} words</b>{fixture.original}</p><p><b>B · Revision · {wordsB} words</b>{fixture.revised}</p></div>
-    <div className="table-scroll">
+    <div className="table-scroll" role="region" aria-labelledby={`${id}-title`} tabIndex={0}>
       <table aria-label={mode==="density"?"Exact phrase occurrence density before and after editing":"Bigram frequency changes before and after editing"}>
         <thead><tr><th scope="col">Exact phrase</th><th scope="col">A count</th><th scope="col">B count</th><th scope="col">A {mode==="density"?"density":"bigram share"}</th><th scope="col">B {mode==="density"?"density":"bigram share"}</th><th scope="col">Change</th></tr></thead>
         <tbody>{phrases.map(row=><tr key={row.term}><th scope="row">{row.term}</th><td>{row.countA}</td><td>{row.countB}</td><td>{percentage(row.countA,denominatorA)}</td><td>{percentage(row.countB,denominatorB)}</td><td>{percentagePointChange(row.countA,denominatorA,row.countB,denominatorB)}</td></tr>)}</tbody>

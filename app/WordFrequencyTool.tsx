@@ -14,9 +14,9 @@ import {EditorialSourceControls,SOURCE_WORKFLOW_COPY} from "./EditorialSourceCon
 import {ContextTermButton,TermContextPanel} from "./TermContextPanel";
 import {buildContextIndex,type ContextIndexOptions} from "./lib/term-contexts";
 import {sourcePreviewAnalysisText,useSourcePreview} from "./lib/source-preview-client";
+import { useSourceInput, type SourceType } from "./lib/use-source-input";
 import "./word-frequency-redesign.css";
 
-type SourceType="text"|"url";
 type Analysis=ReturnType<typeof analyzeWordFrequency>;
 type SortKey="term"|"count"|"percentage"|"per1000";
 type SortDirection="asc"|"desc";
@@ -44,8 +44,7 @@ function csvCell(value:string|number){
 export default function WordFrequencyTool({uiLang="en"}:{uiLang?:UiLang}){
   const copy=WORD_FREQUENCY_UI[uiLang];
   const workbenchCopy=WORKBENCH_COPY[uiLang];
-  const [sourceType,setSourceType]=useState<SourceType>("text");
-  const [source,setSource]=useState("");
+  const { sourceType, setSourceType, source, setSource, loadText } = useSourceInput();
   const [language,setLanguage]=useState<"auto"|TextLanguage>("auto");
   const [keepStopwords,setKeepStopwords]=useState(false);
   const [keepNumbers,setKeepNumbers]=useState(false);
@@ -136,9 +135,14 @@ export default function WordFrequencyTool({uiLang="en"}:{uiLang?:UiLang}){
     }finally{setPreviewing(false);}
   }
 
-  function selectSourceType(value:SourceType){invalidateResult();pageSource.clear();setSourceType(value);setSource("");}
+  function selectSourceType(value:SourceType){
+    if(value===sourceType)return;
+    invalidateResult();
+    pageSource.clear();
+    setSourceType(value);
+  }
   function loadExample(example:ToolExample){
-    invalidateResult();pageSource.clear();setSourceType("text");setSource(example.sources[0]);setLanguage(uiLang);setEditorLanguage(uiLang);
+    invalidateResult();pageSource.clear();loadText(example.sources[0]);setLanguage(uiLang);setEditorLanguage(uiLang);
   }
   function changeLanguage(value:"auto"|TextLanguage){invalidateResult();setLanguage(value);if(value!=="auto")setEditorLanguage(value);trackEvent("language_changed",{tool:"word_frequency_counter",text_language:value});}
   function changeEditorLanguage(value:TextLanguage){invalidateResult();setEditorLanguage(value);setLanguage(value);trackEvent("language_changed",{tool:"word_frequency_counter",text_language:value,control:"stopword_editor"});}

@@ -57,7 +57,7 @@ export default function EvidenceWorkspace({experience="workspace"}:{experience?:
   const [focusInput,setFocusInput]=useState("");
   const [workspace,setWorkspace]=useState<EvidenceWorkspaceState|null>(null);
   const workspaceRef=useRef<EvidenceWorkspaceState|null>(null);
-  const originalInputRef=useRef<HTMLTextAreaElement>(null);
+  const focusDraftOnMount=useRef(false);
   const resultHeadingRef=useRef<HTMLHeadingElement>(null);
   const [storageWarning,setStorageWarning]=useState("");
   const [entryNotice,setEntryNotice]=useState<"example"|"own"|null>(null);
@@ -71,6 +71,12 @@ export default function EvidenceWorkspace({experience="workspace"}:{experience?:
   const [expectedText,setExpectedText]=useState("");
   const [replacementText,setReplacementText]=useState("");
   const [patchRationale,setPatchRationale]=useState("");
+
+  const focusDraftInput=useCallback((input:HTMLTextAreaElement|null)=>{
+    if(!input||!focusDraftOnMount.current)return;
+    focusDraftOnMount.current=false;
+    input.focus();
+  },[]);
 
   const commit=useCallback((next:EvidenceWorkspaceState)=>{
     if(workspaceRef.current?.id!==next.id)setEntryNotice(null);
@@ -192,6 +198,7 @@ export default function EvidenceWorkspace({experience="workspace"}:{experience?:
 
   const startDraft=(keepTexts=false)=>{
     const active=workspaceRef.current;
+    focusDraftOnMount.current=true;
     setOriginalText(keepTexts?active?.originalText||"":"");
     setCurrentVersion(keepTexts?active?.currentText||"":"");
     setGoal(keepTexts?active?.goal||DEFAULT_REWRITE_GOAL:DEFAULT_REWRITE_GOAL);
@@ -202,7 +209,6 @@ export default function EvidenceWorkspace({experience="workspace"}:{experience?:
     setMessage(keepTexts?"Edit either text, then compare again. Previous notes and approvals have been cleared.":"Paste your original and rewritten text to start a new review.");
     // The URL is an entry hint, not saved document state. A reload should not reopen the example.
     window.history.replaceState(null,"",window.location.pathname);
-    requestAnimationFrame(()=>originalInputRef.current?.focus());
   };
 
   const analysis=workspace?.analysis&&workspace.analysis.revision===workspace.revision?workspace.analysis:null;
@@ -227,7 +233,7 @@ export default function EvidenceWorkspace({experience="workspace"}:{experience?:
       <div className="evidence-section-head"><div><span>01</span><div><p>COMPARE TWO VERSIONS</p><h2>What changed after the rewrite?</h2></div></div><button type="button" className="secondary-button" onClick={loadExample}>Load example</button></div>
       <p className="evidence-intro">Paste both versions to spot changed claims, missing conditions, and terms you want to keep. Your text stays in this browser.</p>
       <div className="evidence-source-grid">
-        <label><span>Original text · before rewriting</span><textarea ref={originalInputRef} data-testid="original-text" value={originalText} onChange={event=>setOriginalText(event.target.value)} maxLength={100_000} placeholder="Paste the original text here."/><small>{originalText.length.toLocaleString()} / 100,000 characters</small></label>
+        <label><span>Original text · before rewriting</span><textarea ref={focusDraftInput} data-testid="original-text" value={originalText} onChange={event=>setOriginalText(event.target.value)} maxLength={100_000} placeholder="Paste the original text here."/><small>{originalText.length.toLocaleString()} / 100,000 characters</small></label>
         <label><span>Rewritten text · after rewriting</span><textarea data-testid="current-version-input" value={currentVersion} onChange={event=>setCurrentVersion(event.target.value)} maxLength={100_000} placeholder="Paste the rewritten version here."/><small>{currentVersion.length.toLocaleString()} / 100,000 characters</small></label>
       </div>
       <div className="evidence-compare-options">
@@ -256,6 +262,7 @@ export default function EvidenceWorkspace({experience="workspace"}:{experience?:
 
           <p className="evidence-intro">{isRewrite?<>Compare each <strong>Original</strong> and <strong>Rewrite</strong> pair. <strong>HIGH / MEDIUM / LOW</strong> indicate review priority. <strong>No exact match</strong> means the wording was not found; the meaning may still be present. Check claims against your source.</>:"These are text changes to check, not a fact check. A removed phrase may have been reworded. Compare the excerpts and verify claims against your source."}</p>
           <div className="evidence-subsection-head"><div><span>EVIDENCE QUEUE</span><h3>Check these changes</h3></div><small>Evidence-bound · no automatic edits</small></div>
+          {analysis.reviewQueue.length<analysis.totalReviewItems&&<p>Showing the {analysis.reviewQueue.length} highest-priority checks of {analysis.totalReviewItems}.</p>}
           {!substantiveReviewItems.length?<p className="evidence-empty">No supported patterns were flagged. Check the version excerpts too; this does not prove that every meaning or fact was preserved.</p>:<div className="evidence-review-list" data-testid="review-queue">{substantiveReviewItems.map(item=>{
             const queued=queuedFindingTitles.has(item.title);
             return <article key={item.id} data-priority={item.priority} data-testid="review-item"><div><span>{item.priority.toUpperCase()} · {item.category.replaceAll("_"," ")}</span><h3>{item.title}</h3></div><ReviewEvidence item={item}/><button type="button" className="secondary-button" disabled={queued} onClick={()=>queueReviewItem(item)}>{queued?"Note added":"Add evidence note"}</button></article>;
@@ -276,13 +283,14 @@ export default function EvidenceWorkspace({experience="workspace"}:{experience?:
             <div data-testid="word-count"><span>WORDS</span><strong>{analysis.wordCounts.current}</strong><small>{formatDelta(analysis.wordCounts.delta)} · {formatDelta(analysis.changeMap.wordDeltaPercent,1)}%</small></div>
             <div><span>EXACT BLOCKS</span><strong>{analysis.changeMap.retainedBlocks}</strong><small>{analysis.changeMap.addedBlocks} added · {analysis.changeMap.removedBlocks} removed</small></div>
             <div><span>REVIEW NOTES</span><strong>{currentFindings.length}</strong><small>recorded for this revision</small></div>
-            <div><span>HIGH PRIORITY</span><strong>{highPriorityCount}</strong><small>{analysis.reviewQueue.length} total review items</small></div>
+            <div><span>HIGH PRIORITY</span><strong>{highPriorityCount}</strong><small>in the {analysis.reviewQueue.length} queued checks</small></div>
           </div>
 
           <p>Words includes stopwords and excludes standalone numbers. Vocabulary and word-frequency statistics exclude stopwords; tracked-term rates use all counted words.</p>
 
           <div className="evidence-subsection-head"><div><span>COMMERCIAL CLAIM LEDGER</span><h3>What changed and what needs verification</h3></div><small>Exact text matching; unmatched does not mean false</small></div>
           {!analysis.claimSummary.length?<p className="evidence-empty">No supported commercial claim patterns were detected.</p>:<div className="evidence-table-wrap" tabIndex={0} role="region" aria-label="Scrollable evidence table"><table className="evidence-table evidence-claim-table" data-testid="claim-ledger"><thead><tr><th>Claim type</th><th>Baseline</th><th>Current</th><th>Exact retained</th><th>Current only</th><th>Baseline only</th></tr></thead><tbody>{analysis.claimSummary.map(item=><tr key={item.category}><td>{item.label}</td><td>{item.baseline}</td><td>{item.current}</td><td>{item.retained}</td><td>{item.currentOnly}</td><td>{item.baselineOnly}</td></tr>)}</tbody></table></div>}
+          {analysis.claims.length<analysis.totalClaims&&<p>The table counts claims across both full texts. The evidence references include {analysis.claims.length} of {analysis.totalClaims} individual claim records.</p>}
 
           <details className="evidence-raw"><summary>Inspect {analysis.evidence.length} raw evidence references</summary><div className="evidence-table-wrap" tabIndex={0} role="region" aria-label="Scrollable evidence table"><table className="evidence-table"><thead><tr><th>Evidence ID</th><th>Measured fact</th><th>Value</th><th>Detail</th></tr></thead><tbody>{analysis.evidence.map(item=><tr key={item.id}><td><code>{item.id}</code></td><td>{item.label}</td><td>{item.value}</td><td>{item.detail}</td></tr>)}</tbody></table></div></details>
           </details>
@@ -301,7 +309,7 @@ export default function EvidenceWorkspace({experience="workspace"}:{experience?:
 
       <section className="evidence-stage evidence-export" aria-labelledby="export-stage">
         <div className="evidence-section-head"><div><span>03</span><div><p>VERIFY · EXPORT</p><h2 id="export-stage">Before / after report</h2></div></div></div>
-        <p>{analysis?(isRewrite?"Markdown gives a readable report; JSON gives structured data. Both include all flagged changes, your notes, and edit decisions. You can download without editing the text.":"Save the changed excerpts, flagged omissions, term coverage, review notes, and edit decisions. You can export without proposing any edits."):(isRewrite?"Select Build review above to analyze the current revision before downloading the updated report.":"After any applied patch, analyze the new revision before exporting.")}</p>
+        <p>{analysis?(isRewrite?"Download the review queue, your notes, and edit decisions as a readable Markdown report or structured JSON. You can download before editing the text.":"Save the changed excerpts, flagged omissions, term coverage, review notes, and edit decisions. You can export without proposing any edits."):(isRewrite?"Select Build review above to analyze the current revision before downloading the updated report.":"After any applied patch, analyze the new revision before exporting.")}</p>
         <div><button type="button" className="secondary-button" disabled={!analysis} onClick={()=>download("markdown")}>Download Markdown</button><button type="button" className="secondary-button" disabled={!analysis} onClick={()=>download("json")}>Download JSON</button></div>
       </section>
 
@@ -313,7 +321,7 @@ export default function EvidenceWorkspace({experience="workspace"}:{experience?:
           <label className="wide"><span>Explanation</span><textarea data-testid="finding-explanation" value={findingExplanation} onChange={event=>setFindingExplanation(event.target.value)} maxLength={1_500}/></label>
           <button type="button" className="secondary-button" onClick={submitFinding}>Add finding</button>
         </div></details>}
-        {!currentFindings.length?<p className="evidence-empty">{isRewrite?"“Add evidence note” saves a flag in Your evidence notes without changing the text. The report already includes every flagged change.":"Use “Add evidence note” on a change above to include your review notes here and in the report."}</p>:<div className="evidence-finding-list">{currentFindings.map(item=><article key={item.id} data-testid="finding-card"><span>{item.id}</span><h3>{item.title}</h3><p>{item.explanation}</p><small>Evidence: {item.evidenceRefs.join(", ")}</small></article>)}</div>}
+        {!currentFindings.length?<p className="evidence-empty">{isRewrite?"“Add evidence note” saves a flag in Your evidence notes without changing the text. The report includes the review queue and any notes you add.":"Use “Add evidence note” on a change above to include your review notes here and in the report."}</p>:<div className="evidence-finding-list">{currentFindings.map(item=><article key={item.id} data-testid="finding-card"><span>{item.id}</span><h3>{item.title}</h3><p>{item.explanation}</p><small>Evidence: {item.evidenceRefs.join(", ")}</small></article>)}</div>}
       </section>
 
       <section className="evidence-stage" aria-labelledby="patch-stage">

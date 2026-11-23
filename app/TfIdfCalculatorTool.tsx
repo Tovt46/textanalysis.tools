@@ -8,9 +8,9 @@ import type { UiLang } from "./i18n";
 import { BREADCRUMB_LABELS,formatNumber,localizedPath,localizeApiError } from "./localization";
 import { TFIDF_UI } from "./tool-ui-copy";
 import { CopyResultAction,ExampleAction,type ToolExample } from "./ToolWorkflowActions";
+import type { SourceDrafts, SourceType } from "./lib/use-source-input";
 
-type SourceType="text"|"url";
-type SourceDocument={id:number;sourceType:SourceType;source:string;};
+type SourceDocument={id:number;sourceType:SourceType;drafts:SourceDrafts;};
 type TfIdfDocument = {
   language:string;
   tokenCount:number;
@@ -50,8 +50,8 @@ function downloadFile(filename:string,content:string,type:string){
 export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
   const copy=TFIDF_UI[uiLang];
   const [sources,setSources]=useState<SourceDocument[]>([
-    {id:1,sourceType:"text",source:""},
-    {id:2,sourceType:"text",source:""},
+    {id:1,sourceType:"text",drafts:{text:"",url:""}},
+    {id:2,sourceType:"text",drafts:{text:"",url:""}},
   ]);
   const nextSourceId=useRef(3);
   const [language,setLanguage]=useState<"auto"|TextLanguage>("auto");
@@ -101,17 +101,17 @@ export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
 
   async function runAnalysis(event:FormEvent){
     event.preventDefault();
-    if(sources.length<2||sources.length>10||sources.some(item=>!item.source.trim()))return;
+    if(sources.length<2||sources.length>10||sources.some(item=>!item.drafts[item.sourceType].trim()))return;
     setError("");
     setResult(null);
     try{
-      validateBrowserInputs(sources.filter(item=>item.sourceType==="text").map(item=>item.source),uiLang);
+      validateBrowserInputs(sources.filter(item=>item.sourceType==="text").map(item=>item.drafts.text),uiLang);
       const limit=Math.max(1,Math.min(top,100));
       const requestBody={
         top:limit,
         documents:sources.map(item=>({
           sourceType:item.sourceType,
-          source:item.source,
+          source:item.drafts[item.sourceType],
           language,
           keepStopwords,
           stopwordLists:parsedStopwords,
@@ -120,7 +120,7 @@ export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
       let nextResult:TfIdfResult;
       if(sources.every(item=>item.sourceType==="text")){
         nextResult=await runWorker<TfIdfResult>("tf-idf",{
-          documents:sources.map(item=>({text:item.source,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang})),
+          documents:sources.map(item=>({text:item.drafts.text,language,keepStopwords,stopwordLists:parsedStopwords,uiLanguage:uiLang})),
           top:limit,
         });
       }else{
@@ -153,17 +153,18 @@ export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
     setResult(null);
     setError("");
   }
-  function selectSource(id:number,value:SourceType){
-    updateSource(id,{sourceType:value,source:""});
+  function selectSource(item:SourceDocument,value:SourceType){
+    if(item.sourceType===value)return;
+    updateSource(item.id,{sourceType:value});
   }
   function addSource(){
     cancel();
-    setSources(current=>current.length>=10?current:[...current,{id:nextSourceId.current++,sourceType:"text",source:""}]);
+    setSources(current=>current.length>=10?current:[...current,{id:nextSourceId.current++,sourceType:"text",drafts:{text:"",url:""}}]);
     setResult(null);
     setError("");
   }
   function loadExample(example:ToolExample){
-    cancel();setSources(example.sources.map((source,index)=>({id:index+1,sourceType:"text",source})));
+    cancel();setSources(example.sources.map((source,index)=>({id:index+1,sourceType:"text",drafts:{text:source,url:""}})));
     nextSourceId.current=example.sources.length+1;
     setLanguage(uiLang);setEditorLanguage(uiLang);setResult(null);setActiveDoc(0);setError("");
   }
@@ -200,7 +201,7 @@ export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
   }
 
   const shownRows=filteredRows.slice(0,DISPLAY_LIMIT);
-  const ready=sources.length>=2&&sources.length<=10&&sources.every(item=>item.source.trim());
+  const ready=sources.length>=2&&sources.length<=10&&sources.every(item=>item.drafts[item.sourceType].trim());
 
   return <>
     <section className="tool-hero">
@@ -219,12 +220,12 @@ export default function TfIdfCalculatorTool({uiLang="en"}:{uiLang?:UiLang}){
             const label=`${copy.document} ${String.fromCharCode(65+index)}`;
             return <div className="tfidf-source-card" key={item.id}>
               <div className="tfidf-source-head"><div><span>{String(index+1).padStart(2,"0")}</span><h3>{label}</h3></div>{sources.length>2&&<button type="button" onClick={()=>removeSource(item.id)} aria-label={`${copy.removeAria}: ${label}`}>{copy.remove}</button>}</div>
-              <label className="field wide"><span>{copy.source}</span>
-                <div className="tabs"><button type="button" className={item.sourceType==="text"?"active":""} onClick={()=>selectSource(item.id,"text")}>{copy.text}</button><button type="button" className={item.sourceType==="url"?"active":""} onClick={()=>selectSource(item.id,"url")}>{copy.url}</button></div>
+              <div className="field wide"><span>{copy.source}</span>
+                <div className="tabs"><button type="button" className={item.sourceType==="text"?"active":""} aria-pressed={item.sourceType==="text"} onClick={()=>selectSource(item,"text")}>{copy.text}</button><button type="button" className={item.sourceType==="url"?"active":""} aria-pressed={item.sourceType==="url"} onClick={()=>selectSource(item,"url")}>{copy.url}</button></div>
                 {item.sourceType==="text"
-                  ?<><textarea value={item.source} onChange={event=>updateSource(item.id,{source:event.target.value})} placeholder={`${copy.paste} ${String.fromCharCode(65+index)}…`} aria-label={label}/><span>{formatNumber(item.source.length,uiLang)} {copy.characters}</span></>
-                  :<><input className="url-input" type="url" value={item.source} onChange={event=>updateSource(item.id,{source:event.target.value})} placeholder={`https://example.com/document-${index+1}`} aria-label={`${copy.urlAria}: ${label}`} required/><p className="url-help">{copy.urlHelp}</p></>}
-              </label>
+                  ?<><textarea value={item.drafts.text} onChange={event=>updateSource(item.id,{drafts:{...item.drafts,text:event.target.value}})} placeholder={`${copy.paste} ${String.fromCharCode(65+index)}…`} aria-label={label}/><span>{formatNumber(item.drafts.text.length,uiLang)} {copy.characters}</span></>
+                  :<><input className="url-input" type="url" value={item.drafts.url} onChange={event=>updateSource(item.id,{drafts:{...item.drafts,url:event.target.value}})} placeholder={`https://example.com/document-${index+1}`} aria-label={`${copy.urlAria}: ${label}`} required/><p className="url-help">{copy.urlHelp}</p></>}
+              </div>
             </div>;
           })}
         </div>

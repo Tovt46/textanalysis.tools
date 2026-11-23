@@ -9,8 +9,8 @@ import type { UiLang } from "./i18n";
 import { BREADCRUMB_LABELS,formatNumber,localizedPath,localizeApiError } from "./localization";
 import { BOW_GENERATOR_UI } from "./tool-ui-copy";
 import { CopyResultAction,ExampleAction,type ToolExample } from "./ToolWorkflowActions";
+import { useSourceInput, type SourceType } from "./lib/use-source-input";
 
-type SourceType="text"|"url";
 type SortKey="term"|"count"|"frequency"|"percentage"|"per1000";
 type SortDirection="asc"|"desc";
 type Analysis=ReturnType<typeof analyzeBagOfWords>;
@@ -40,8 +40,7 @@ function renderFrequency(value:number){
 
 export default function BagOfWordsGeneratorTool({uiLang="en"}:{uiLang?:UiLang}){
   const copy=BOW_GENERATOR_UI[uiLang];
-  const [sourceType,setSourceType]=useState<SourceType>("text");
-  const [source,setSource]=useState("");
+  const { sourceType, setSourceType, source, setSource, loadText } = useSourceInput();
   const [language,setLanguage]=useState<"auto"|TextLanguage>("auto");
   const [keepStopwords,setKeepStopwords]=useState(false);
   const [editorLanguage,setEditorLanguage]=useState<TextLanguage>("en");
@@ -122,9 +121,15 @@ export default function BagOfWordsGeneratorTool({uiLang="en"}:{uiLang?:UiLang}){
     }
   }
 
-  function selectSourceType(value:SourceType){cancel();setSourceType(value);setSource("");setResult(null);setError("");}
+  function selectSourceType(value:SourceType){
+    if(value===sourceType)return;
+    cancel();
+    setSourceType(value);
+    setResult(null);
+    setError("");
+  }
   function loadExample(example:ToolExample){
-    cancel();setSourceType("text");setSource(example.sources[0]);setLanguage(uiLang);setEditorLanguage(uiLang);setResult(null);setError("");
+    cancel();loadText(example.sources[0]);setLanguage(uiLang);setEditorLanguage(uiLang);setResult(null);setError("");
   }
   function changeLanguage(value:"auto"|TextLanguage){
     cancel();
@@ -191,8 +196,8 @@ export default function BagOfWordsGeneratorTool({uiLang="en"}:{uiLang?:UiLang}){
       <section className="frequency-input-card">
         <div className="section-head"><div><span>01</span><h2>{copy.source}</h2></div>
           <div className="tabs">
-            <button type="button" className={sourceType==="text"?"active":""} onClick={()=>selectSourceType("text")}>{copy.text}</button>
-            <button type="button" className={sourceType==="url"?"active":""} onClick={()=>selectSourceType("url")}>{copy.url}</button>
+            <button type="button" className={sourceType==="text"?"active":""} aria-pressed={sourceType==="text"} onClick={()=>selectSourceType("text")}>{copy.text}</button>
+            <button type="button" className={sourceType==="url"?"active":""} aria-pressed={sourceType==="url"} onClick={()=>selectSourceType("url")}>{copy.url}</button>
           </div>
         </div>
         {sourceType==="text"

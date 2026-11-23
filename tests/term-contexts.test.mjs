@@ -73,6 +73,18 @@ test("Cyrillic, Ukrainian apostrophes and Spanish accented tokens agree with eng
   ]) assertEngineCounts(text, { language });
 });
 
+test("text cleanup preserves comparisons and escaped markup alongside real HTML", () => {
+  const text = '<p title="2 > 1">alpha < beta and gamma > delta</p><!-- a note --><script>hidden</script> &lt;tag&gt;';
+  assert.equal(cleanAnalysisText(text), "alpha < beta and gamma > delta <tag>");
+});
+
+test("English loanwords keep their accents without selecting Spanish stop words", () => {
+  const result = analyzeWordFrequency({ text: "The latest résumé for the café is here" });
+  assert.equal(result.language, "en");
+  assert.deepEqual(result.rows.map(row => row.term).sort(), ["café", "here", "latest", "résumé"]);
+  assert.equal(analyzeWordFrequency({ text: "El último café de la calle" }).language, "es");
+});
+
 test("numbers and minimum length use the engine's rules, including retained short numbers", () => {
   const text = "a an go GO editor editors 7 12 123 7 a1 a1 editor";
   const index = assertEngineCounts(text, { language: "en", keepNumbers: true, minimumTokenLength: 3 });

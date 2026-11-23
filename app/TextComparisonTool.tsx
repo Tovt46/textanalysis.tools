@@ -14,8 +14,8 @@ import {EditorialSourceControls,SOURCE_WORKFLOW_COPY} from "./EditorialSourceCon
 import {ContextTermButton,TermContextPanel} from "./TermContextPanel";
 import {buildContextIndex,type ContextIndexOptions} from "./lib/term-contexts";
 import {sourcePreviewAnalysisText,useSourcePreview} from "./lib/source-preview-client";
+import { useSourceInput, type SourceType } from "./lib/use-source-input";
 
-type SourceType="text"|"url";
 type ComparisonView="words"|"bigrams";
 type Comparison=ReturnType<typeof compareAnalysisResults>;
 type AnalysisSummary={
@@ -62,10 +62,8 @@ function deltaClass(value:number){
 
 export default function TextComparisonTool({uiLang="en"}:{uiLang?:UiLang}){
   const copy=TEXT_COMPARISON_UI[uiLang];
-  const [sourceTypeA,setSourceTypeA]=useState<SourceType>("text");
-  const [sourceTypeB,setSourceTypeB]=useState<SourceType>("text");
-  const [sourceA,setSourceA]=useState("");
-  const [sourceB,setSourceB]=useState("");
+  const { sourceType: sourceTypeA, setSourceType: setSourceTypeA, source: sourceA, setSource: setSourceA, loadText: loadTextA } = useSourceInput();
+  const { sourceType: sourceTypeB, setSourceType: setSourceTypeB, source: sourceB, setSource: setSourceB, loadText: loadTextB } = useSourceInput();
   const [language,setLanguage]=useState<"auto"|TextLanguage>("auto");
   const [keepStopwords,setKeepStopwords]=useState(false);
   const [result,setResult]=useState<ComparisonPayload|null>(null);
@@ -97,13 +95,14 @@ export default function TextComparisonTool({uiLang="en"}:{uiLang?:UiLang}){
   },[query,result,view]);
 
   function selectSource(side:"a"|"b",value:SourceType){
+    if(value===(side==="a"?sourceTypeA:sourceTypeB))return;
     invalidateResult();
     if(side==="a")pageA.clear();else pageB.clear();
-    if(side==="a"){setSourceTypeA(value);setSourceA("");}
-    else{setSourceTypeB(value);setSourceB("");}
+    if(side==="a")setSourceTypeA(value);
+    else setSourceTypeB(value);
   }
   function loadExample(example:ToolExample){
-    invalidateResult();pageA.clear();pageB.clear();setSourceTypeA("text");setSourceTypeB("text");setSourceA(example.sources[0]);setSourceB(example.sources[1]);setLanguage(uiLang);
+    invalidateResult();pageA.clear();pageB.clear();loadTextA(example.sources[0]);loadTextB(example.sources[1]);setLanguage(uiLang);
   }
 
   async function runComparison(event:FormEvent){
@@ -183,13 +182,13 @@ export default function TextComparisonTool({uiLang="en"}:{uiLang?:UiLang}){
     <form className="comparison-workspace" onSubmit={runComparison} aria-busy={loading}>
       <div className="comparison-source-grid">
         <section className="comparison-source-card">
-          <div className="section-head"><div><span>A</span><h2>{copy.original}</h2></div><div className="tabs"><button type="button" className={sourceTypeA==="text"?"active":""} onClick={()=>selectSource("a","text")}>{copy.text}</button><button type="button" className={sourceTypeA==="url"?"active":""} onClick={()=>selectSource("a","url")}>{copy.url}</button></div></div>
+          <div className="section-head"><div><span>A</span><h2>{copy.original}</h2></div><div className="tabs"><button type="button" className={sourceTypeA==="text"?"active":""} aria-pressed={sourceTypeA==="text"} onClick={()=>selectSource("a","text")}>{copy.text}</button><button type="button" className={sourceTypeA==="url"?"active":""} aria-pressed={sourceTypeA==="url"} onClick={()=>selectSource("a","url")}>{copy.url}</button></div></div>
           {sourceTypeA==="text"
             ?<div className="textarea-wrap"><textarea value={sourceA} onChange={event=>{invalidateResult();pageA.clear();setSourceA(event.target.value);}} placeholder={copy.pasteA} aria-label={copy.ariaA}/><span>{formatNumber(sourceA.length,uiLang)} {copy.characters}</span></div>
             :<><input className="url-input" type="url" value={sourceA} onChange={event=>{invalidateResult();pageA.clear();setSourceA(event.target.value);}} placeholder="https://example.com/original" aria-label={copy.urlA} required/><p className="url-help">{copy.urlHelpA}</p><EditorialSourceControls scope={pageA.scope} preview={pageA.preview} locale={uiLang} label="A" onScopeChange={value=>{invalidateResult();pageA.clear();pageA.setScope(value);}}/></>}
         </section>
         <section className="comparison-source-card">
-          <div className="section-head"><div><span>B</span><h2>{copy.updated}</h2></div><div className="tabs"><button type="button" className={sourceTypeB==="text"?"active":""} onClick={()=>selectSource("b","text")}>{copy.text}</button><button type="button" className={sourceTypeB==="url"?"active":""} onClick={()=>selectSource("b","url")}>{copy.url}</button></div></div>
+          <div className="section-head"><div><span>B</span><h2>{copy.updated}</h2></div><div className="tabs"><button type="button" className={sourceTypeB==="text"?"active":""} aria-pressed={sourceTypeB==="text"} onClick={()=>selectSource("b","text")}>{copy.text}</button><button type="button" className={sourceTypeB==="url"?"active":""} aria-pressed={sourceTypeB==="url"} onClick={()=>selectSource("b","url")}>{copy.url}</button></div></div>
           {sourceTypeB==="text"
             ?<div className="textarea-wrap"><textarea value={sourceB} onChange={event=>{invalidateResult();pageB.clear();setSourceB(event.target.value);}} placeholder={copy.pasteB} aria-label={copy.ariaB}/><span>{formatNumber(sourceB.length,uiLang)} {copy.characters}</span></div>
             :<><input className="url-input" type="url" value={sourceB} onChange={event=>{invalidateResult();pageB.clear();setSourceB(event.target.value);}} placeholder="https://example.com/updated" aria-label={copy.urlB} required/><p className="url-help">{copy.urlHelpB}</p><EditorialSourceControls scope={pageB.scope} preview={pageB.preview} locale={uiLang} label="B" onScopeChange={value=>{invalidateResult();pageB.clear();pageB.setScope(value);}}/></>}

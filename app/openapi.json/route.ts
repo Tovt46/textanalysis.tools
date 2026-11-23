@@ -301,7 +301,8 @@ const document={
     HealthResponse:{type:"object",required:["status","service","apiVersion","storage","rateLimit","revision"],properties:{status:{type:"string",const:"ok"},service:{type:"string",const:"textanalysis.tools"},apiVersion:{type:"string"},storage:{type:"string",const:"none"},rateLimit:{type:"string",enum:["shared","local","degraded"],description:"Current rate-limit backend state for this application worker. Degraded means the shared store is unavailable and bounded local fallback is active."},revision:{type:"string",description:"Git revision embedded at build time, or unknown when the build environment does not expose repository metadata."}}},
     AnalysisResult:analysisResult,
     ComparisonResult:comparisonResult,
-    AnalyzeResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/AnalysisResult"}}},
+    ZipfTermCounts:{type:"array",description:"Frequency-ordered [term, count] pairs. Large tables may be partial. An omitted term is known to have zero occurrences only when the saved counts sum to the number of analyzed positions.",items:{type:"array",prefixItems:[{type:"string"},{type:"integer",minimum:1}],minItems:2,maxItems:2}},
+    AnalyzeResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/AnalysisResult"},counts:{type:"object",required:["words","bigrams"],properties:{words:{$ref:"#/components/schemas/ZipfTermCounts"},bigrams:{$ref:"#/components/schemas/ZipfTermCounts"}}}}},
     CompareResponse:{type:"object",required:["apiVersion","storage","resultA","resultB","comparison"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},resultA:{$ref:"#/components/schemas/AnalysisResult"},resultB:{$ref:"#/components/schemas/AnalysisResult"},comparison:{$ref:"#/components/schemas/ComparisonResult"}}},
     WordFrequencyResult:wordFrequencyResult,
     WordFrequencyResponse:{type:"object",required:["apiVersion","storage","result"],properties:{apiVersion:{type:"string"},storage:{type:"string",enum:["none"]},result:{$ref:"#/components/schemas/WordFrequencyResult"}}},
@@ -337,7 +338,7 @@ const document={
         summary:"Analyze one text or public URL",
         requestBody:{
           required:true,
-          content:{"application/json":{schema:{$ref:"#/components/schemas/AnalyzeInput"}}},
+          content:{"application/json":{schema:{allOf:[{$ref:"#/components/schemas/AnalyzeInput"},{type:"object",properties:{includeComparisonCounts:{type:"boolean",default:false,description:"Include bounded word and bigram counts for comparing saved analyses."}}}]}}},
         },
         responses:{
           "200":{description:"Analysis completed",headers:rateLimitResponseHeaders,content:{"application/json":{schema:{$ref:"#/components/schemas/AnalyzeResponse"}}}},

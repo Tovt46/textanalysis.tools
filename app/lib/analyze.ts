@@ -35,6 +35,7 @@ function detectLanguage(text: string): Lang {
   const englishHints=new Set(["the","and","of","to","in","for","with","is","are","that","this","from","as","on","by","an","be","or"]);
   const spanishScore=words.reduce((score,word)=>score+(spanishHints.has(word)?1:0),0);
   const englishScore=words.reduce((score,word)=>score+(englishHints.has(word)?1:0),0);
+  if(englishScore>spanishScore)return "en";
   if(/[áéíóúüñ¿¡]/.test(lower)||(spanishScore>=2&&spanishScore>englishScore))return "es";
   return "en";
 }
@@ -59,8 +60,10 @@ export function cleanAnalysisText(raw: string) {
   };
 
   return raw
-    .replace(/<(script|style|noscript|svg|canvas)[^>]*>[\s\S]*?<\/\1>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<(script|style|noscript|svg|canvas)(?=[\s/>])[^>]*>[\s\S]*?<\/\1>/gi, " ")
+    // A space after '<' is plain text. A quoted '>' inside a tag is an attribute value.
+    .replace(/<(?:\/?[a-z][\w:.-]*(?=[\s/>])|[!?])(?:[^<>"']|"[^"]*"|'[^']*')*>/gi, " ")
     .replace(/&(#(?:x[0-9a-f]+|\d+)|[a-z][a-z0-9]+);/gi, decodeEntity)
     .replace(/\s+/g, " ")
     .trim();
